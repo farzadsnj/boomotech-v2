@@ -1,0 +1,89 @@
+# BoomoTech Brand Direction
+
+## Positioning
+
+BoomoTech is a practical technology partner for Australian small businesses and individuals. It combines dependable IT support with modern cloud, cybersecurity, web, automation, and AI capabilities.
+
+Positioning statement:
+
+> BoomoTech helps people and growing businesses fix technology problems today and build better systems for tomorrow.
+
+The differentiator is the bridge between hands-on support and forward-looking improvement. A customer may begin with a Wi-Fi, device, Microsoft 365, website, or workflow problem and continue into managed improvements, automation, cloud, or a custom solution.
+
+## Audiences
+
+### Small and growing businesses
+
+Common needs: unreliable systems, no dedicated IT team, onboarding/offboarding, Microsoft 365, network and Wi-Fi, security basics, backups, websites, repetitive admin, fragmented tools, and unclear vendor choices.
+
+Desired outcome: one accountable partner, less downtime, clearer costs, safer systems, and technology that supports growth.
+
+### Professionals and teams
+
+Examples: professional services, retail, trades, clinics and other privacy-sensitive teams, subject to verified capability and compliance scope.
+
+Desired outcome: reliable support, secure collaboration, streamlined workflows, and practical advice.
+
+### Individuals and home offices
+
+Common needs: device setup, Wi-Fi, email, backups, account recovery guidance, security checks, printer problems, data migration, and buying advice.
+
+Desired outcome: a clear, safe fix without jargon or pressure.
+
+## Brand attributes
+
+- Practical
+- Trustworthy
+- Clear
+- Modern
+- Capable
+- Approachable
+- Security-conscious
+- Outcome-focused
+
+## Voice
+
+Use plain Australian English. Be confident without exaggeration. Explain technical ideas in terms of time, risk, cost, ease, and business outcome.
+
+Prefer:
+
+- “Tell us what is going wrong. We’ll help you choose the right next step.”
+- “Remote and onsite support options.”
+- “Clear recommendations before work begins.”
+
+Avoid:
+
+- empty superlatives such as “revolutionary” or “world-leading”;
+- fear-based cybersecurity language;
+- dense acronym lists;
+- promises of instant fixes, guaranteed recovery, or 24/7 response unless operationally true;
+- presenting BoomoTech as a large team unless verified.
+
+## Message hierarchy
+
+1. Technology help that is understandable and useful.
+2. Immediate support plus longer-term improvement.
+3. Local Brisbane presence with remote Australian capability.
+4. Clear paths: solve a problem, book a consultation, explore a service, or shop.
+5. Proof and trust: process, experience, verified credentials, policies, and real case studies.
+
+## Tagline candidates
+
+Use as exploration, not final approved copy:
+
+- Practical technology. Better business.
+- Fix today. Build smarter tomorrow.
+- IT support and smarter systems, in one place.
+- Technology that works for you.
+
+Final tagline: `TODO(owner)`.
+
+## Brand facts requiring confirmation
+
+- Legal entity and ABN
+- Public address or service-area wording
+- Phone, support hours, and response commitments
+- Onsite service radius and travel fees
+- Verified certifications, insurance, partnerships, and vendor authorisations
+- Approved testimonials and portfolio clients
+- Warranty, refund, returns, cancellation, and privacy policies
