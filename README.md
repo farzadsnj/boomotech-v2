@@ -2,7 +2,9 @@
 
 BoomoTech V2 is the planned web platform for BoomoTech: practical IT support, cloud, cybersecurity, AI and automation, web/software services, consultation, service booking, educational content and curated commerce.
 
-This repository currently contains the product and implementation brief that Codex should follow.
+This repository contains the product brief and the Phase 0 / initial Phase 1 application foundation for BoomoTech V2.
+
+The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local typed content, reusable page layouts and progressive accessible motion. Phase 1 informational routes are available for review. Public enquiry, support intake, booking and commerce operations remain unavailable until their privacy and operational requirements are approved.
 
 ## Start here
 
@@ -21,3 +23,11 @@ This repository currently contains the product and implementation brief that Cod
 - [Roadmap](docs/ROADMAP.md)
 
 No production claims, prices, policies, testimonials, credentials or case studies should be added unless verified by the owner.
+
+## Run locally
+
+Use Node.js 24 and pnpm 11. Run `pnpm install`, then `pnpm dev`. Copy `.env.example` to `.env.local` if you need to override the local defaults.
+
+Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` before proposing changes. The same checks run in GitHub Actions.
+
+The architecture and outstanding assumptions are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Search indexing stays disabled until `SITE_URL` is an approved HTTPS origin and `SITE_INDEXING_ENABLED=true` is set after launch review.
