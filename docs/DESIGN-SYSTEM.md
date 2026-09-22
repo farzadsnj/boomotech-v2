@@ -8,16 +8,18 @@ Modern, calm and credible—not a generic neon “AI company” and not a crowde
 
 Use clean editorial structure, strong typography, generous but efficient spacing, layered cards, crisp product imagery, and subtle technical motifs inspired by connected systems. Prefer authentic team/work/process imagery or purposeful illustrations over cliché server-room photography.
 
-Final logo assets and existing brand colours: `TODO(owner)`.
+The supplied BoomoTech logo is the approved identity for this milestone. Use the transparent full logo and compact mark documented in `BRAND.md`; do not approximate the mark in CSS.
 
 ## Colour roles
 
-Initial accessible direction to prototype and test:
+Approved semantic direction:
 
-- Ink: deep navy/near-black for text and dark surfaces
-- Surface: warm off-white and cool neutral layers
-- Primary: confident blue
-- Accent: restrained cyan or teal
+- Ink: `#1D3A49` for text and dark surfaces
+- Surface: `#FAF9F6`, with `#FFFFFF` raised surfaces
+- Muted surface: `#EAF5FB`
+- Primary: `#0070B7`
+- Primary hover: `#005A94`
+- Accent: restrained pale and mid blues derived from the identity
 - Success, warning, danger, and info semantic colours
 - Borders: visible neutral contrast, not ultra-faint
 
@@ -61,6 +63,8 @@ Choose one highly readable variable sans family with excellent Latin support. A 
 ## Interaction
 
 Motion communicates hierarchy and state. Keep transitions roughly 150–300 ms. Respect `prefers-reduced-motion`. Avoid scroll hijacking, autoplay background video, cursor effects, parallax-heavy pages, and animations that delay a task.
+
+The implemented motion layer lives in `src/styles/motion.css` and uses CSS for page entry, hero sequencing, interactive feedback and mobile navigation. A small Intersection Observer component adds section reveals only after JavaScript is available; content remains visible when JavaScript fails. Reduced-motion mode removes movement and leaves all content visible.
 
 ## Accessibility
 

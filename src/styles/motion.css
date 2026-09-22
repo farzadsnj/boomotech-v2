@@ -1,0 +1,37 @@
+.page-entry { animation: page-enter .32s ease-out both; }
+
+.hero-stagger { animation: hero-enter .72s cubic-bezier(.2,.7,.2,1) both; }
+.hero-stagger--1 { animation-delay: .05s; }
+.hero-stagger--2 { animation-delay: .12s; }
+.hero-stagger--3 { animation-delay: .2s; }
+.hero-stagger--4 { animation-delay: .28s; }
+.hero-stagger--5 { animation-delay: .36s; }
+
+.hero-visual { animation: hero-visual-enter .85s .18s cubic-bezier(.2,.7,.2,1) both; }
+.hero-visual__core { animation: subtle-float 7s 1.2s ease-in-out infinite; }
+.hero-visual__orbit--one { animation: orbit-pulse 4.5s ease-in-out infinite; }
+.hero-visual__orbit--two { animation: orbit-pulse 4.5s 1.2s ease-in-out infinite; }
+
+.reveal { opacity: 1; transform: none; }
+.reveal.motion-ready { opacity: 0; transform: translateY(18px); transition: opacity .55s ease, transform .55s cubic-bezier(.2,.7,.2,1); }
+.reveal.motion-ready.is-visible { opacity: 1; transform: none; }
+.reveal--delay-1 { transition-delay: .06s !important; }
+.reveal--delay-2 { transition-delay: .12s !important; }
+.reveal--delay-3 { transition-delay: .18s !important; }
+
+.mobile-nav summary .menu-lines i { transition: transform .22s ease; }
+.mobile-nav[open] nav { animation: menu-open .22s ease-out both; transform-origin: top; }
+
+@keyframes page-enter { from { opacity: .01; } to { opacity: 1; } }
+@keyframes hero-enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes hero-visual-enter { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes subtle-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes orbit-pulse { 0%, 100% { opacity: .65; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.12); } }
+@keyframes menu-open { from { opacity: 0; transform: translateY(-7px) scaleY(.98); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .page-entry, .hero-stagger, .hero-visual, .hero-visual__core, .hero-visual__orbit, .mobile-nav[open] nav { animation: none !important; }
+  .reveal, .reveal.motion-ready { opacity: 1 !important; transform: none !important; transition: none !important; }
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

@@ -78,6 +78,33 @@ Use as exploration, not final approved copy:
 
 Final tagline: `TODO(owner)`.
 
+## Approved logo assets
+
+The supplied BoomoTech artwork is the approved source for this milestone. The application uses transparent derivatives that preserve the supplied artwork without redrawing or distortion:
+
+- `public/brand/boomotech-logo.png` — full symbol and wordmark;
+- `public/brand/boomotech-mark.png` — square compact mark;
+- `public/brand/boomotech-mark-192.png` — smaller app-icon source;
+- `src/app/icon.png` — App Router icon.
+
+Use the mark with the accessible text name in compact headers. Use the full identity where there is enough space, including the footer. Keep the original aspect ratio and clear space around every asset.
+
+## Approved colour extraction
+
+The dominant flat colours sampled from the supplied artwork are:
+
+- Primary blue: `#0070B7`
+- Deep navy / ink: `#1D3A49`
+
+The accessible interaction and surface palette derived from these colours is:
+
+- Primary hover blue: `#005A94`
+- Pale blue surface: `#EAF5FB`
+- Warm off-white surface: `#FAF9F6`
+- White raised surface: `#FFFFFF`
+
+Contrast checks against white: primary blue 5.25:1, hover blue 7.27:1, and navy 11.97:1. Navy on the pale-blue surface is 10.81:1. These combinations meet WCAG AA for normal text. Components must still check the actual foreground, background and state combination.
+
 ## Brand facts requiring confirmation
 
 - Legal entity and ABN

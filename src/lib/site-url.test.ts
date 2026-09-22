@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import { getSiteUrl, isIndexingEnabled } from "./site-url";
+import { intendedPublicRoutes } from "@/content/routes";
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -23,6 +24,8 @@ describe("search indexing gate", () => {
     vi.stubEnv("SITE_URL", "https://example.com");
     expect(isIndexingEnabled()).toBe(true);
     expect(robots().sitemap).toBe("https://example.com/sitemap.xml");
-    expect(sitemap()).toEqual([{ url: "https://example.com/", changeFrequency: "monthly", priority: 1 }]);
+    const entries = sitemap();
+    expect(entries).toHaveLength(intendedPublicRoutes.length);
+    expect(entries[0]).toEqual({ url: "https://example.com/", changeFrequency: "monthly", priority: 1 });
   });
 });

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { site } from "@/content/site";
 import { ArrowIcon } from "@/components/ui/arrow-icon";
+import { BrandLogo } from "@/components/brand/brand-logo";
 
 export function SiteFooter() {
   return (
@@ -8,9 +9,9 @@ export function SiteFooter() {
       <div className="container">
         <div className="site-footer__top">
           <div className="site-footer__intro">
-            <Link className="footer-brand" href="/">Boomo<span>Tech</span><span className="footer-brand__dot">.</span></Link>
+            <BrandLogo footer />
             <p>Practical technology help for the problems in front of you and the opportunities ahead.</p>
-            <Link className="footer-contact" href="/contact">Get in touch <ArrowIcon diagonal /></Link>
+            <Link className="footer-contact" href="/contact">Prepare to get in touch <ArrowIcon diagonal /></Link>
           </div>
           <div className="site-footer__columns">
             {site.footer.map((group) => (
@@ -22,7 +23,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="site-footer__bottom">
-          <p>© {new Date().getFullYear()} BoomoTech. Website foundation in progress.</p>
+          <p>© {new Date().getFullYear()} BoomoTech. Content pending owner approval.</p>
           <p>Brisbane, Queensland · Remote options across Australia</p>
         </div>
       </div>

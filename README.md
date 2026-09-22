@@ -2,9 +2,9 @@
 
 BoomoTech V2 is the planned web platform for BoomoTech: practical IT support, cloud, cybersecurity, AI and automation, web/software services, consultation, service booking, educational content and curated commerce.
 
-This repository contains the product brief and the first application foundation for BoomoTech V2.
+This repository contains the product brief and the Phase 0 / initial Phase 1 application foundation for BoomoTech V2.
 
-The Phase 0 application foundation is under development on a feature branch. It uses Next.js App Router, strict TypeScript, Tailwind CSS, and local structured content. Public enquiry, booking, commerce and account flows are previews only.
+The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local typed content, reusable page layouts and progressive accessible motion. Phase 1 informational routes are available for review. Public enquiry, support intake, booking and commerce operations remain unavailable until their privacy and operational requirements are approved.
 
 ## Start here
 

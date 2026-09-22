@@ -2,26 +2,26 @@
 
 ## Scope of this foundation
 
-The first slice is a responsive marketing shell and homepage. It provides discoverable routes for the Phase 1 journeys, with honest preview content where service scope, contact details, policies, or operations need owner approval. No form submission, booking availability, payments, account, support ticket storage, or external service is connected.
+The current slice is a responsive marketing shell, homepage and complete informational Phase 1 route set. Operational details remain honest unavailable states where service scope, contact details, policies, or owner decisions are pending. No form submission, booking availability, payments, account, support ticket storage, or external service is connected.
 
 ## Application shape
 
 - `src/app/` owns App Router pages, metadata files, and the global layout. Pages are Server Components by default.
-- `src/components/layout/` holds the site header and footer; `src/components/ui/` holds small reusable links, cards, and page sections. The initial mobile menu uses native `details`, so the shell needs no Client Component.
-- `src/content/` holds typed navigation, homepage copy, and route records. Editorial changes should not require rewriting components.
+- `src/components/layout/` holds the site header, footer and a small client wrapper that closes the native `details` mobile menu after navigation. `src/components/ui/`, `src/components/content/` and `src/components/motion/` hold reusable primitives, page layouts and progressive motion.
+- `src/content/` holds typed navigation, homepage copy, services, solutions and informational page records. Editorial changes should not require rewriting components.
 - `src/lib/` holds URL and metadata helpers. Data stays local until an approved content management approach exists.
-- `src/app/globals.css` defines semantic colour, typography, spacing, focus, and surface tokens. Tailwind utilities consume those tokens.
+- `src/app/globals.css` defines semantic colour, typography, spacing, focus, and shared shell styles. Page and motion rules are split into `src/styles/pages.css` and `src/styles/motion.css`.
 - Vitest checks content and metadata decisions. GitHub Actions runs lint, type-check, tests, and a production build.
 
 ## Assumptions pending owner decisions
 
 - The homepage copy in `CONTENT.md` is working copy, not approved production copy.
-- Brand assets, final colours, contact channels, legal text, service boundaries, and public domain are unconfirmed. The interface therefore uses a typographic wordmark, proposed colour tokens, and no invented claims.
-- Preview pages are marked as such and excluded from indexing. Indexing remains disabled site-wide until an approved public origin and content are supplied.
+- The supplied logo and its extracted core colours are approved for this milestone. Contact channels, legal text, service boundaries, operational terms and the public domain remain unconfirmed.
+- Informational pages are complete enough for review, but all routes remain excluded from indexing until an approved public origin, content, contacts and policies are supplied.
 - `SITE_URL` provides the canonical origin when known; local development falls back to `http://localhost:3000`. `SITE_INDEXING_ENABLED` is explicitly set to `true` only after launch review.
-- The local route records are information architecture, not a claim that every listed service can currently be delivered.
+- The local route records describe possible services and useful preparation. They are not a claim that every listed service is currently available.
 - Phase 1 links to quote, consultation, and support routes provide orientation only. They do not collect personal information yet.
 
 ## Next decisions
 
-Confirm priority services and exclusions, brand assets, contact details, service area and hours, public domain, approved content, and privacy/legal text before making enquiry flows live or enabling search indexing. Vendor choices stay open until the relevant flow is scoped.
+Confirm priority services and exclusions, contact details, service area and hours, public domain, approved content, booking and response terms, product operations, and privacy/legal text before making enquiry flows live or enabling search indexing. Vendor choices stay open until the relevant flow is scoped.
