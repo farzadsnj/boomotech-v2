@@ -10,3 +10,14 @@ export function getSiteUrl(): URL {
 export function isIndexingEnabled(): boolean {
   return process.env.SITE_INDEXING_ENABLED === "true" && getSiteUrl().protocol === "https:";
 }
+
+type IndexingRecord = { publication: "published" | "draft" | "unavailable"; indexable: boolean };
+
+export function isPageIndexable(page: IndexingRecord): boolean {
+  return isIndexingEnabled() && page.publication === "published" && page.indexable;
+}
+
+export function getRobotsPolicy(page: IndexingRecord) {
+  const allowed = isPageIndexable(page);
+  return { index: allowed, follow: allowed };
+}

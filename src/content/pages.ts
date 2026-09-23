@@ -1,11 +1,18 @@
 import type { HubPage, InfoPage } from "./types";
 
 export const hubPages: HubPage[] = [
-  { kind: "services-hub", path: "/services", eyebrow: "Services", title: "Start with the outcome you need", description: "Explore practical support, stronger foundations and focused digital work. Service boundaries are confirmed before any engagement begins.", metaDescription: "Explore BoomoTech IT support, cloud, cybersecurity, automation, web and digital services for Australian businesses and individuals." },
-  { kind: "solutions-hub", path: "/solutions", eyebrow: "Solutions", title: "Technology choices shaped around your situation", description: "Begin with the people, work and friction involved, then connect the services that can help.", metaDescription: "Explore technology solutions organised around small business, professional services, retail, home office and remote work needs." },
+  { kind: "services-hub", path: "/services", eyebrow: "Services", title: "Start with the outcome you need", description: "Explore practical support, stronger foundations and focused digital work. Service boundaries are confirmed before any engagement begins.", metaDescription: "Explore BoomoTech IT support, cloud, cybersecurity, automation, web and digital services for Australian businesses and individuals.", publication: "published", indexable: true },
+  { kind: "solutions-hub", path: "/solutions", eyebrow: "Solutions", title: "Technology choices shaped around your situation", description: "Begin with the people, work and friction involved, then connect the services that can help.", metaDescription: "Explore technology solutions organised around small business, professional services, retail, home office and remote work needs.", publication: "published", indexable: true },
 ];
 
-const info = (record: Omit<InfoPage, "kind"> & { kind?: InfoPage["kind"] }): InfoPage => ({ ...record, kind: record.kind ?? "info" });
+type InfoRecord = Omit<InfoPage, "kind" | "publication" | "indexable"> &
+  Partial<Pick<InfoPage, "kind" | "publication" | "indexable">>;
+
+const info = (record: InfoRecord): InfoPage => {
+  const kind = record.kind ?? "info";
+  const unavailable = kind === "support" || kind === "booking" || kind === "shop";
+  return { publication: unavailable ? "unavailable" : "draft", indexable: false, ...record, kind };
+};
 
 export const infoPages: InfoPage[] = [
   info({ kind: "support", path: "/support", eyebrow: "Support", title: "Choose a safe support starting point", description: "Understand the available support paths and what to prepare. Online ticket submission is not active yet.", metaDescription: "Explore safe remote and onsite IT support pathways and preparation guidance from BoomoTech.", notice: { tone: "info", title: "Support intake is not active", body: "Privacy, retention, response expectations, spam protection and notification handling must be approved before personal information can be collected." }, cards: [{ title: "Remote support", description: "Suitable when the issue can be described safely and the device can still connect." }, { title: "Onsite support", description: "Considered when physical equipment, cabling, coverage or hands-on diagnosis may be involved." }, { title: "Support safety", description: "Know what never to share and how to reduce risk before anyone accesses a device." }], sections: [{ title: "Useful information to prepare", items: ["What is affected and when the issue started", "Any error message in your own words or a safe screenshot", "Whether work can continue and how many people are affected", "Your general location and whether the device connects to the internet"] }], related: [{ label: "Remote support guidance", href: "/support/remote" }, { label: "Onsite support guidance", href: "/support/onsite" }, { label: "Safety guidance", href: "/support/safety" }] }),

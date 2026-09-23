@@ -10,8 +10,10 @@ Build authority around real services, locations, customer problems, and useful e
 - Unique, human-written title and meta description.
 - One canonical URL per indexable page.
 - Generate XML sitemap(s) and intentional robots rules.
+- Keep publication state and search indexability explicit in local page records. A route may be available for review while remaining outside the sitemap.
 - Use semantic headings, descriptive links, image dimensions, optimised formats and useful alt text.
 - Prevent indexing of cart, checkout, account, booking confirmation, support confirmation, search results, filters, previews and thin states.
+- Keep draft legal content and unavailable booking, support, contact and commerce flows `noindex` until their content and operations are approved.
 - Handle redirects and retired content deliberately.
 - Provide helpful 404 and unavailable-content pages.
 - Add Open Graph/social metadata.
@@ -96,6 +98,7 @@ Do not send support descriptions, names, emails, phone numbers, uploaded files, 
 - Validate sitemap and robots
 - Test metadata and structured data
 - Check indexability/noindex rules
+- Set `SITE_URL` to the approved HTTPS origin and enable `SITE_INDEXING_ENABLED` only after the published-route list is approved
 - Audit broken links and redirects
 - Test performance on representative mobile conditions
 - Configure privacy-safe analytics and consent

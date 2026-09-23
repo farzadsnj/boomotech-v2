@@ -1,6 +1,12 @@
 import type { SolutionRecord } from "./types";
 
-const solution = (record: Omit<SolutionRecord, "kind" | "eyebrow">): SolutionRecord => ({ ...record, kind: "solution", eyebrow: "Who we help" });
+const solution = (record: Omit<SolutionRecord, "kind" | "eyebrow" | "publication" | "indexable">): SolutionRecord => ({
+  ...record,
+  kind: "solution",
+  eyebrow: "Who we help",
+  publication: "published",
+  indexable: true,
+});
 
 export const solutions: SolutionRecord[] = [
   solution({ path: "/solutions/small-business", title: "Technology that supports a growing business", description: "Bring day-to-day support, safer foundations and practical improvement into one clearer plan.", metaDescription: "Practical technology solutions for Brisbane and Australian small businesses without a dedicated IT team.", audience: "Owners and growing teams balancing customer work with technology decisions, often without a dedicated IT function.", challenges: [{ title: "Daily interruptions", description: "Recurring device, account and network issues make focused work harder." }, { title: "Unclear ownership", description: "Nobody is sure who maintains systems, access, backups or supplier relationships." }, { title: "Growth friction", description: "Onboarding, collaboration and administration have not kept pace with the team." }], priorities: ["Stabilise the issues affecting work now", "Clarify access, backup and security foundations", "Document ownership and repeatable routines", "Create a realistic improvement roadmap"], approach: [{ number: "01", title: "Start with impact", description: "Identify what is interrupting work or creating avoidable risk." }, { number: "02", title: "Set practical priorities", description: "Separate urgent fixes from improvements that can be staged." }, { number: "03", title: "Build a workable plan", description: "Connect support, systems and future projects without unnecessary complexity." }], related: [{ label: "Managed IT", href: "/services/managed-it" }, { label: "Cybersecurity foundations", href: "/services/cybersecurity" }, { label: "Book a consultation", href: "/book/consultation" }] }),

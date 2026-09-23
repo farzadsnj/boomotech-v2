@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageRenderer } from "@/components/content/page-renderer";
 import { allPages, pageByPath } from "@/content/routes";
+import { getRobotsPolicy } from "@/lib/site-url";
 
 type Props = { params: Promise<{ segments: string[] }> };
+
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return allPages.map(({ path }) => ({ segments: path.slice(1).split("/") }));
@@ -19,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: page.metaDescription,
     alternates: { canonical: page.path },
     openGraph: { title: page.title, description: page.metaDescription, url: page.path },
-    robots: { index: false, follow: false },
+    robots: getRobotsPolicy(page),
   };
 }
 

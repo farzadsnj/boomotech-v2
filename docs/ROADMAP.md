@@ -137,6 +137,8 @@ Requirements:
 | Privacy/retention/policies | Before collecting data | TODO(owner/legal) |
 | Client portal necessity | Before Phase 4 | TODO(owner) |
 
+The specific inputs required before contact, consultation, quote, booking or support intake can be connected are recorded in `docs/OPERATIONAL-REQUIREMENTS.md`.
+
 ## Quality gates for every phase
 
 - scope and acceptance criteria approved;

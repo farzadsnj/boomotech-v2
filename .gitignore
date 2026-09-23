@@ -3,6 +3,10 @@ node_modules/
 out/
 build/
 coverage/
+playwright-report/
+test-results/
+docs/screenshots/*
+!docs/screenshots/*.jpg
 *.tsbuildinfo
 .env*
 !.env.example

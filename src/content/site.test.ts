@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allPages, intendedPublicRoutes } from "./routes";
+import { allPages, allRoutePaths, sitemapRoutes } from "./routes";
 import { services } from "./services";
 import { solutions } from "./solutions";
 import { homeContent, site } from "./site";
@@ -22,7 +22,20 @@ describe("local Phase 1 content", () => {
     const paths = allPages.map((page) => page.path);
     expect(new Set(paths).size).toBe(paths.length);
     expect(paths.sort()).toEqual([...requiredPaths].sort());
-    expect(intendedPublicRoutes).toHaveLength(requiredPaths.length + 1);
+    expect(allRoutePaths).toHaveLength(requiredPaths.length + 1);
+  });
+
+  it("publishes only complete informational routes for indexing", () => {
+    const publishedPages = allPages.filter((page) => page.publication === "published");
+    expect(publishedPages.every((page) => page.indexable)).toBe(true);
+    expect(sitemapRoutes).toEqual([
+      "/",
+      "/services",
+      "/solutions",
+      ...services.map((service) => service.path),
+      ...solutions.map((solution) => solution.path),
+    ]);
+    expect(allPages.filter((page) => page.publication !== "published").every((page) => !page.indexable)).toBe(true);
   });
 
   it("gives every service the required useful content", () => {
@@ -57,7 +70,7 @@ describe("local Phase 1 content", () => {
   });
 
   it("keeps homepage and navigation actions attached to known routes", () => {
-    const knownPaths = new Set(intendedPublicRoutes);
+    const knownPaths = new Set(allRoutePaths);
     const actionPaths = [homeContent.primaryAction.href, homeContent.secondaryAction.href,
       ...homeContent.pathways.map((pathway) => pathway.href),
       ...homeContent.serviceGroups.flatMap((group) => group.links.map((link) => link.href)),
