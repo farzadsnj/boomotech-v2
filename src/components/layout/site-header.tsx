@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { site } from "@/content/site";
 import { ArrowIcon } from "@/components/ui/arrow-icon";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { MobileNavigation } from "./mobile-navigation";
+import { NavigationLink } from "./navigation-link";
 
 export function SiteHeader() {
   return (
@@ -10,9 +10,9 @@ export function SiteHeader() {
       <div className="site-header__inner container">
         <BrandLogo />
         <nav aria-label="Primary" className="desktop-nav">
-          {site.navigation.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}
+          {site.navigation.map((item) => <NavigationLink key={item.href} href={item.href}>{item.label}</NavigationLink>)}
         </nav>
-        <Link className="header-cta" href="/book">Explore consultation <ArrowIcon diagonal /></Link>
+        <NavigationLink className="header-cta" href="/book">Explore consultation <ArrowIcon diagonal /></NavigationLink>
         <MobileNavigation />
       </div>
     </header>

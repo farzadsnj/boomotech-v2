@@ -2,6 +2,7 @@ export type SiteLink = { label: string; href: `/${string}` };
 export type Faq = { question: string; answer: string };
 export type ProcessStep = { number: string; title: string; description: string };
 export type Feature = { title: string; description: string };
+export type PublicationState = "published" | "draft" | "unavailable";
 
 export type PageBase = {
   path: `/${string}`;
@@ -9,6 +10,8 @@ export type PageBase = {
   title: string;
   description: string;
   metaDescription: string;
+  publication: PublicationState;
+  indexable: boolean;
 };
 
 export type ServiceRecord = PageBase & {

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import robots from "./robots";
 import sitemap from "./sitemap";
-import { intendedPublicRoutes } from "@/content/routes";
+import { sitemapRoutes } from "@/content/routes";
 
 const originalUrl = process.env.SITE_URL;
 const originalIndexing = process.env.SITE_INDEXING_ENABLED;
@@ -22,9 +22,11 @@ describe("search indexing", () => {
     process.env.SITE_URL = "https://boomotech.example";
     process.env.SITE_INDEXING_ENABLED = "true";
     const entries = sitemap();
-    expect(entries).toHaveLength(intendedPublicRoutes.length);
-    expect(entries.map((entry) => new URL(entry.url).pathname)).toEqual(intendedPublicRoutes);
-    expect(entries.some((entry) => entry.url.includes("checkout"))).toBe(false);
+    expect(entries).toHaveLength(sitemapRoutes.length);
+    expect(entries.map((entry) => new URL(entry.url).pathname)).toEqual(sitemapRoutes);
+    for (const excluded of ["/support", "/book", "/shop", "/privacy", "/terms", "/contact", "/blog"]) {
+      expect(entries.some((entry) => new URL(entry.url).pathname === excluded)).toBe(false);
+    }
     expect(robots()).toMatchObject({ rules: { userAgent: "*", allow: "/" } });
   });
 });

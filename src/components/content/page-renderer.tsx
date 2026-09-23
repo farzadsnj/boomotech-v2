@@ -64,7 +64,7 @@ function SolutionPage({ page }: { page: SolutionRecord }) {
 function HubPageView({ page }: { page: HubPage }) {
   const records = page.kind === "services-hub" ? services : solutions;
   return <><Hero page={page} /><Section eyebrow={page.kind === "services-hub" ? "SERVICE AREAS" : "SITUATIONS"} title={page.kind === "services-hub" ? "Choose a practical starting point" : "Find the path closest to your work"}>
-    <div className="catalogue-grid">{records.map((record, index) => <Link className="catalogue-card" href={record.path} key={record.path}><span>{String(index + 1).padStart(2, "0")}</span><h2>{record.title}</h2><p>{record.description}</p><strong>Explore <ArrowIcon diagonal /></strong></Link>)}</div>
+    <div className="catalogue-grid">{records.map((record, index) => <Link className="catalogue-card" href={record.path} key={record.path}><span>{String(index + 1).padStart(2, "0")}</span><h3>{record.title}</h3><p>{record.description}</p><strong>Explore <ArrowIcon diagonal /></strong></Link>)}</div>
   </Section><ClosingCta /></>;
 }
 

@@ -14,7 +14,6 @@ export function Reveal({ children, className = "", delay = 0 }: Props) {
       element.classList.add("is-visible");
       return;
     }
-    element.classList.add("motion-ready");
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
         element.classList.add("is-visible");
@@ -25,5 +24,5 @@ export function Reveal({ children, className = "", delay = 0 }: Props) {
     return () => observer.disconnect();
   }, []);
 
-  return <div className={`reveal reveal--delay-${delay} ${className}`.trim()} ref={ref}>{children}</div>;
+  return <div className={`reveal reveal--delay-${delay} ${className}`.trim()} data-reveal ref={ref}>{children}</div>;
 }
