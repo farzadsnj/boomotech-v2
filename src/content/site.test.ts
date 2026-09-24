@@ -3,6 +3,7 @@ import { allPages, intendedPublicRoutes } from "./routes";
 import { services } from "./services";
 import { solutions } from "./solutions";
 import { homeContent, site } from "./site";
+import { publishedArticles } from "./blog";
 
 const requiredPaths = [
   "/services", "/services/it-support", "/services/managed-it", "/services/microsoft-365",
@@ -22,7 +23,11 @@ describe("local Phase 1 content", () => {
     const paths = allPages.map((page) => page.path);
     expect(new Set(paths).size).toBe(paths.length);
     expect(paths.sort()).toEqual([...requiredPaths].sort());
-    expect(intendedPublicRoutes).toHaveLength(requiredPaths.length + 1);
+    expect(intendedPublicRoutes).toContain("/");
+    expect(intendedPublicRoutes).toContain("/services/it-support");
+    expect(intendedPublicRoutes).not.toContain("/privacy");
+    expect(intendedPublicRoutes).not.toContain("/shop");
+    expect(intendedPublicRoutes).toHaveLength(1 + 2 + services.length + solutions.length + 4 + publishedArticles.length);
   });
 
   it("gives every service the required useful content", () => {
@@ -57,7 +62,7 @@ describe("local Phase 1 content", () => {
   });
 
   it("keeps homepage and navigation actions attached to known routes", () => {
-    const knownPaths = new Set(intendedPublicRoutes);
+    const knownPaths = new Set(["/", "/booking", ...allPages.map(({ path }) => path)]);
     const actionPaths = [homeContent.primaryAction.href, homeContent.secondaryAction.href,
       ...homeContent.pathways.map((pathway) => pathway.href),
       ...homeContent.serviceGroups.flatMap((group) => group.links.map((link) => link.href)),
