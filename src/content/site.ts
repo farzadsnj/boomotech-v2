@@ -9,6 +9,7 @@ export const site = {
     { label: "Solutions", href: "/solutions" },
     { label: "Support", href: "/support" },
     { label: "Resources", href: "/resources" },
+    { label: "Blog", href: "/blog" },
     { label: "About", href: "/about" },
   ] satisfies SiteLink[],
   footer: [

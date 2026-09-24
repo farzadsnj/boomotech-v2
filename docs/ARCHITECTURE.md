@@ -25,3 +25,11 @@ The current slice is a responsive marketing shell, homepage and complete informa
 ## Next decisions
 
 Confirm priority services and exclusions, contact details, service area and hours, public domain, approved content, booking and response terms, product operations, and privacy/legal text before making enquiry flows live or enabling search indexing. Vendor choices stay open until the relevant flow is scoped.
+
+## Chat, booking and publishing extensions
+
+Published blog records live in `src/content/blog.ts` and generate the blog index, article routes, article metadata, structured data and sitemap paths. The canonical service catalogue in `src/content/services.ts` supplies service names, descriptions and links to the site, chatbot, matcher and booking form.
+
+The floating assistant is a client-side interface over approved local service content. Matching is deterministic and does not send visitor questions to an AI provider. A single progressive booking form is rendered both in the assistant and at `/booking`.
+
+`/api/booking` validates the request again, limits payload size, checks a honeypot and applies a per-instance rate limit. The notification adapter sends through Resend only when all server environment variables are configured. It stores no request database record and never reports success when notification delivery fails. A shared rate-limit store is required for a multi-instance production deployment.

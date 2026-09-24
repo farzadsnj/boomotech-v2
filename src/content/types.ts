@@ -13,6 +13,7 @@ export type PageBase = {
 
 export type ServiceRecord = PageBase & {
   kind: "service";
+  name: string;
   audience: string;
   signals: string[];
   inclusions: string[];

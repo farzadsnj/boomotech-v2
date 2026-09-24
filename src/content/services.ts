@@ -15,7 +15,7 @@ const service = (record: Omit<ServiceRecord, "kind" | "eyebrow" | "process">): S
 
 export const services: ServiceRecord[] = [
   service({
-    path: "/services/it-support", title: "IT support that starts with the problem", description: "Clear help for day-to-day technology issues, with the next step explained before work begins.", metaDescription: "Practical IT support information for Brisbane businesses, home offices and individuals, with remote options across Australia.",
+    path: "/services/it-support", name: "IT support", title: "IT support that starts with the problem", description: "Clear help for day-to-day technology issues, with the next step explained before work begins.", metaDescription: "Practical IT support information for Brisbane businesses, home offices and individuals, with remote options across Australia.",
     audience: "Small businesses, professionals, home offices and individuals who need practical help without a dedicated technical team.",
     signals: ["Devices, printers or accounts are disrupting work", "An issue keeps returning after temporary fixes", "You are unsure whether remote or onsite help is appropriate", "You need advice before replacing equipment"],
     inclusions: ["Initial issue clarification and safe triage", "Device, account and common software troubleshooting", "Network and peripheral checks", "Plain-language recommendations and next steps"],
@@ -25,7 +25,7 @@ export const services: ServiceRecord[] = [
     faqs: [{ question: "Should I send my password?", answer: "No. BoomoTech will never ask you to send a password, MFA code, recovery key or payment-card information through a support request." }, { question: "Is submitting a request an agreed response time?", answer: "No. Support hours and response commitments have not been approved. Any future request flow must state expectations before submission." }],
   }),
   service({
-    path: "/services/managed-it", title: "A steadier approach to everyday IT", description: "Explore repeatable support, maintenance and technology planning for a growing team.", metaDescription: "Managed IT planning for small and growing businesses seeking clearer ownership, maintenance and support routines.",
+    path: "/services/managed-it", name: "Managed IT", title: "A steadier approach to everyday IT", description: "Explore repeatable support, maintenance and technology planning for a growing team.", metaDescription: "Managed IT planning for small and growing businesses seeking clearer ownership, maintenance and support routines.",
     audience: "Growing organisations that need more consistent technology ownership but may not need a full internal IT function.",
     signals: ["Technology tasks depend on whoever has time", "Onboarding and offboarding are inconsistent", "Updates, backups and documentation lack ownership", "Recurring issues interrupt the team"],
     inclusions: ["Environment and support-needs review", "Documentation and responsibility planning", "Maintenance and lifecycle recommendations", "Support model and escalation design"],
@@ -35,7 +35,7 @@ export const services: ServiceRecord[] = [
     faqs: [{ question: "Are managed plans available now?", answer: "Plan structure, inclusions, support hours and pricing still require owner approval. This page describes the intended approach only." }],
   }),
   service({
-    path: "/services/microsoft-365", title: "Make Microsoft 365 easier to manage", description: "Structure accounts, collaboration and everyday administration around the way your team works.", metaDescription: "Microsoft 365 setup, administration and collaboration guidance for small Australian businesses.",
+    path: "/services/microsoft-365", name: "Microsoft 365", title: "Make Microsoft 365 easier to manage", description: "Structure accounts, collaboration and everyday administration around the way your team works.", metaDescription: "Microsoft 365 setup, administration and collaboration guidance for small Australian businesses.",
     audience: "Businesses using or preparing to use Microsoft 365 for email, files, meetings and team collaboration.",
     signals: ["Account access and ownership are unclear", "Files are difficult to find or share safely", "Joiners and leavers are handled manually", "Teams need clearer collaboration practices"],
     inclusions: ["Tenant and account-structure review", "Identity and multi-factor authentication guidance", "Collaboration and file-sharing recommendations", "Onboarding and offboarding process design"],
@@ -45,7 +45,7 @@ export const services: ServiceRecord[] = [
     faqs: [{ question: "Does this include Microsoft licensing?", answer: "No licensing resale or partnership is claimed. Licensing needs and responsibilities would be confirmed during scope." }],
   }),
   service({
-    path: "/services/cloud-infrastructure", title: "Cloud foundations shaped around real work", description: "Plan reliable, understandable systems without moving technology for its own sake.", metaDescription: "Cloud and infrastructure planning for Australian small businesses seeking reliable, maintainable systems.",
+    path: "/services/cloud-infrastructure", name: "Cloud and infrastructure", title: "Cloud foundations shaped around real work", description: "Plan reliable, understandable systems without moving technology for its own sake.", metaDescription: "Cloud and infrastructure planning for Australian small businesses seeking reliable, maintainable systems.",
     audience: "Teams reviewing hosting, storage, identity, remote access or the systems that support daily operations.",
     signals: ["Important systems have unclear ownership", "Remote access is difficult or inconsistent", "Infrastructure costs are hard to explain", "A migration or replacement decision is approaching"],
     inclusions: ["Current-state and dependency review", "Workload and access requirements", "Migration and rollback planning", "Documentation and operational handover"],
@@ -55,7 +55,7 @@ export const services: ServiceRecord[] = [
     faqs: [{ question: "Will everything be moved to the cloud?", answer: "Only when it suits the workload, risk and operating model. The goal is a better fit, not a predetermined platform." }],
   }),
   service({
-    path: "/services/network-wifi", title: "Reliable connections where work happens", description: "Understand coverage, performance and network setup before buying more equipment.", metaDescription: "Network and Wi-Fi assessment and improvement guidance for Brisbane businesses and home offices.",
+    path: "/services/network-wifi", name: "Network and Wi-Fi", title: "Reliable connections where work happens", description: "Understand coverage, performance and network setup before buying more equipment.", metaDescription: "Network and Wi-Fi assessment and improvement guidance for Brisbane businesses and home offices.",
     audience: "Small workplaces and home offices experiencing unreliable Wi-Fi, poor coverage or confusing network equipment.",
     signals: ["Video calls or cloud tools drop out", "Some rooms have weak or inconsistent coverage", "The network has grown without a clear design", "New equipment has not solved the underlying issue"],
     inclusions: ["Environment and symptom review", "Coverage and interference considerations", "Router, access point and cabling guidance", "Secure configuration and documentation recommendations"],
@@ -65,7 +65,7 @@ export const services: ServiceRecord[] = [
     faqs: [{ question: "Should I buy a mesh system first?", answer: "Not necessarily. Layout, interference, cabling, router placement and device behaviour should be considered before selecting equipment." }],
   }),
   service({
-    path: "/services/cybersecurity", title: "Practical cybersecurity foundations", description: "Reduce common risks through clear priorities, safer defaults and routines people can follow.", metaDescription: "Practical cybersecurity foundations for small Australian businesses, focused on identity, devices, backups and people.",
+    path: "/services/cybersecurity", name: "Cybersecurity", title: "Practical cybersecurity foundations", description: "Reduce common risks through clear priorities, safer defaults and routines people can follow.", metaDescription: "Practical cybersecurity foundations for small Australian businesses, focused on identity, devices, backups and people.",
     audience: "Small organisations that want sensible security improvements without fear-based language or unsupported guarantees.",
     signals: ["Multi-factor authentication is inconsistent", "Access is not removed promptly when people leave", "Backups exist but restores are untested", "Security responsibilities and incident steps are unclear"],
     inclusions: ["Identity and access baseline review", "Device, update and backup practices", "Human-friendly security guidance", "Prioritised risk and response actions"],
@@ -75,7 +75,7 @@ export const services: ServiceRecord[] = [
     faqs: [{ question: "Can security risk be eliminated?", answer: "No. Security work can reduce and manage risk, but it cannot guarantee that an incident will never happen." }],
   }),
   service({
-    path: "/services/backup-recovery", title: "Backups designed for recovery", description: "Move beyond having a backup to understanding what is protected and how restoration would work.", metaDescription: "Backup and recovery planning for small businesses and professionals who need clearer protection and restore practices.",
+    path: "/services/backup-recovery", name: "Backup and recovery", title: "Backups designed for recovery", description: "Move beyond having a backup to understanding what is protected and how restoration would work.", metaDescription: "Backup and recovery planning for small businesses and professionals who need clearer protection and restore practices.",
     audience: "Teams and individuals who rely on important files, cloud services or devices and need a clearer recovery plan.",
     signals: ["Nobody can explain what is backed up", "Restore tests have not been performed", "Important data exists in one place", "Recovery expectations are undocumented"],
     inclusions: ["Data and system priority review", "Backup coverage and retention considerations", "Restore-testing plan", "Recovery roles and documentation"],
@@ -85,7 +85,7 @@ export const services: ServiceRecord[] = [
     faqs: [{ question: "Is cloud storage the same as backup?", answer: "Not always. Sync, version history, retention and independent backup solve different problems and should be assessed separately." }],
   }),
   service({
-    path: "/services/ai-automation", title: "Automation with a useful job to do", description: "Identify repetitive work worth improving, then design controls that keep people accountable.", metaDescription: "Practical AI and workflow automation discovery for Australian small businesses, with human review and clear safeguards.",
+    path: "/services/ai-automation", name: "AI and automation", title: "Automation with a useful job to do", description: "Identify repetitive work worth improving, then design controls that keep people accountable.", metaDescription: "Practical AI and workflow automation discovery for Australian small businesses, with human review and clear safeguards.",
     audience: "Teams with repetitive administration, disconnected tools or an AI idea that needs a realistic use case and safety boundary.",
     signals: ["The same information is re-entered across systems", "Routine follow-up depends on memory", "A process has many manual hand-offs", "An AI idea lacks a clear measure of usefulness"],
     inclusions: ["Workflow and pain-point mapping", "Automation opportunity assessment", "Data, exception and human-review design", "Prototype or implementation roadmap"],
@@ -95,7 +95,7 @@ export const services: ServiceRecord[] = [
     faqs: [{ question: "Will AI run the process without people?", answer: "Not by default. Human review, escalation and fallback behaviour are part of the design, especially where mistakes could matter." }],
   }),
   service({
-    path: "/services/web-software", title: "Web and software built around a real need", description: "Turn a clear brief into an accessible website, application or internal tool.", metaDescription: "Web and software discovery and development for Australian businesses seeking accessible, maintainable digital products.",
+    path: "/services/web-software", name: "Web and software", title: "Web and software built around a real need", description: "Turn a clear brief into an accessible website, application or internal tool.", metaDescription: "Web and software discovery and development for Australian businesses seeking accessible, maintainable digital products.",
     audience: "Organisations planning a website rebuild, customer experience, internal tool or focused software product.",
     signals: ["The current website no longer supports the business", "A spreadsheet or manual process has outgrown its role", "Users struggle to complete an important task", "A product idea needs validation before a large build"],
     inclusions: ["Discovery and requirements shaping", "Information architecture and interaction design", "Accessible front-end and application development", "Testing, launch planning and handover"],
@@ -105,7 +105,7 @@ export const services: ServiceRecord[] = [
     faqs: [{ question: "Can you estimate before discovery?", answer: "A useful estimate depends on scope, content, integrations and acceptance criteria. Project discovery is designed to clarify those inputs." }],
   }),
   service({
-    path: "/services/digital-presence", title: "A clearer, more useful digital presence", description: "Connect your website, business information and customer pathways into a consistent experience.", metaDescription: "Digital presence planning for small businesses seeking clearer websites, listings, content and customer pathways.",
+    path: "/services/digital-presence", name: "Digital presence", title: "A clearer, more useful digital presence", description: "Connect your website, business information and customer pathways into a consistent experience.", metaDescription: "Digital presence planning for small businesses seeking clearer websites, listings, content and customer pathways.",
     audience: "Small businesses whose online information is inconsistent, dated or difficult for customers to act on.",
     signals: ["Business details differ between channels", "The website does not explain the next step", "Content is difficult to maintain", "Search and local visibility lack a clear foundation"],
     inclusions: ["Digital touchpoint review", "Message and customer-pathway planning", "Website and content recommendations", "Measurement and governance basics"],
@@ -115,7 +115,7 @@ export const services: ServiceRecord[] = [
     faqs: [{ question: "Does this guarantee search rankings?", answer: "No. The work creates a sound, useful foundation; rankings and platform outcomes cannot be guaranteed." }],
   }),
   service({
-    path: "/services/ui-ux-branding", title: "Design that helps people understand and act", description: "Create clearer interfaces and brand touchpoints around user needs and business goals.", metaDescription: "UI, UX and brand design support for Australian businesses creating clearer digital experiences.",
+    path: "/services/ui-ux-branding", name: "UI, UX and branding", title: "Design that helps people understand and act", description: "Create clearer interfaces and brand touchpoints around user needs and business goals.", metaDescription: "UI, UX and brand design support for Australian businesses creating clearer digital experiences.",
     audience: "Teams refining a digital product, service journey or visual identity and needing a coherent design direction.",
     signals: ["Users hesitate or get lost in an important flow", "Interfaces feel inconsistent across screens", "A new product lacks a visual system", "Brand assets do not work well in digital contexts"],
     inclusions: ["User journey and interface review", "Wireframes and interaction direction", "Accessible component and visual systems", "Digital brand asset guidance"],
