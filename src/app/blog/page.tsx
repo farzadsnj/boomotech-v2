@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { BlogCard } from "@/components/blog/blog-card";
 import { publishedArticles } from "@/content/blog";
 
-export const metadata: Metadata = { title: "Technology advice for small businesses", description: "Practical BoomoTech articles about IT support, networks, cybersecurity and useful business technology.", alternates: { canonical: "/blog" } };
+export const metadata: Metadata = { title: "Technology advice for small businesses", description: "Practical BoomoTech articles about IT support, networks, cybersecurity and useful business technology.", alternates: { canonical: "/blog" }, openGraph: { title: "Technology advice for small businesses", description: "Practical guidance for small business technology decisions.", images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "BoomoTech practical technology guidance" }] } };
 
 export default function BlogPage() {
   const [featured, ...articles] = publishedArticles;

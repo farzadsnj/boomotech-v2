@@ -20,7 +20,7 @@ The current slice is a responsive marketing shell, homepage and complete informa
 - Informational pages are complete enough for review, but all routes remain excluded from indexing until an approved public origin, content, contacts and policies are supplied.
 - `SITE_URL` provides the canonical origin when known; local development falls back to `http://localhost:3000`. `SITE_INDEXING_ENABLED` is explicitly set to `true` only after launch review.
 - The local route records describe possible services and useful preparation. They are not a claim that every listed service is currently available.
-- Phase 1 links to quote, consultation, and support routes provide orientation only. They do not collect personal information yet.
+- `/booking` is the single booking-request destination. It securely transmits the listed contact and request fields only when notification and production rate-limit configuration is complete; it does not confirm an appointment.
 
 ## Next decisions
 
@@ -32,4 +32,4 @@ Published blog records live in `src/content/blog.ts` and generate the blog index
 
 The floating assistant is a client-side interface over approved local service content. Matching is deterministic and does not send visitor questions to an AI provider. A single progressive booking form is rendered both in the assistant and at `/booking`.
 
-`/api/booking` validates the request again, limits payload size, checks a honeypot and applies a per-instance rate limit. The notification adapter sends through Resend only when all server environment variables are configured. It stores no request database record and never reports success when notification delivery fails. A shared rate-limit store is required for a multi-instance production deployment.
+`/api/booking` validates the request origin and body again, limits the decoded payload size, checks a honeypot and calls the `BookingRateLimiter` interface. Development uses a bounded, expiring in-memory fallback. Production fails closed unless an Upstash-compatible shared REST limiter and a deployment proxy that overwrites forwarded client addresses are configured. The notification adapter sends plain-text and escaped HTML through Resend with a timeout only when all server variables are configured. It stores no request database record and never reports success when notification delivery fails.

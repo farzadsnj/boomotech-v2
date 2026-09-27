@@ -25,8 +25,7 @@
 .delivery-note h3 { margin: 0; font-size: 1.1rem; }.delivery-note p { max-width: 700px; margin: 0; color: #d7e4e9; line-height: 1.7; }
 
 .content-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
-.content-card { min-height: 245px; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-medium); background: #fff; transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease; }
-.content-card:hover { transform: translateY(-3px); border-color: var(--color-primary); box-shadow: var(--shadow-card); }
+.content-card { min-height: 245px; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-medium); background: #fff; }
 .content-card__number { color: var(--color-primary-dark); font-size: .7rem; font-weight: 800; letter-spacing: .12em; }
 .content-card h3 { margin: 4rem 0 .8rem; font-size: 1.4rem; letter-spacing: -.035em; line-height: 1.2; }
 .content-card p { margin: 0; color: var(--color-ink-soft); font-size: .9rem; line-height: 1.65; }

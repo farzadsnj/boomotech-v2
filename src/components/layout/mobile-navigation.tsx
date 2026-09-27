@@ -6,6 +6,7 @@ import { ArrowIcon } from "@/components/ui/arrow-icon";
 import { site } from "@/content/site";
 import { ChatBookingButton } from "./chat-booking-button";
 import { NavigationLink } from "./navigation-link";
+import { ArticleIcon } from "@/components/ui/article-icon";
 
 export function MobileNavigation() {
   const detailsRef = useRef<HTMLDetailsElement>(null);
@@ -27,6 +28,12 @@ export function MobileNavigation() {
     return () => { document.removeEventListener("keydown", close); document.removeEventListener("pointerdown", close); };
   }, []);
 
+  useEffect(() => {
+    const closeForBooking = () => { if (detailsRef.current) detailsRef.current.open = false; };
+    window.addEventListener("boomotech:open-booking", closeForBooking);
+    return () => window.removeEventListener("boomotech:open-booking", closeForBooking);
+  }, []);
+
   return (
     <details className="mobile-nav" ref={detailsRef}>
       <summary aria-label="Toggle navigation">
@@ -34,7 +41,7 @@ export function MobileNavigation() {
         <span aria-hidden="true" className="menu-lines"><i /><i /></span>
       </summary>
       <nav aria-label="Mobile primary">
-        {site.navigation.map((item) => <NavigationLink key={item.href} href={item.href}>{item.label}<ArrowIcon diagonal /></NavigationLink>)}
+        {site.navigation.map((item) => <NavigationLink key={item.href} href={item.href}><span className="mobile-nav__link-label">{item.href === "/blog" ? <ArticleIcon /> : null}{item.label}</span><ArrowIcon diagonal /></NavigationLink>)}
         <ChatBookingButton mobile />
       </nav>
     </details>

@@ -37,8 +37,8 @@ function CardGrid({ items }: { items: { title: string; description: string }[] }
   return <div className="content-card-grid">{items.map((item, index) => <article className="content-card" key={item.title}><span className="content-card__number">{String(index + 1).padStart(2, "0")}</span><h3>{item.title}</h3><p>{item.description}</p></article>)}</div>;
 }
 
-function ClosingCta({ label = "Explore consultation", href = "/book", description = "Bring the situation in your own words. The next step starts with understanding the need and confirming scope." }: { label?: string; href?: string; description?: string }) {
-  return <section className="inner-cta"><div className="container inner-cta__grid"><div><p className="eyebrow"><span className="eyebrow-line" />NEXT STEP</p><h2>Start with a clear conversation.</h2><p>{description}</p></div><ButtonLink href={href} variant="light">{label}</ButtonLink></div></section>;
+function ClosingCta({ label = "Request a Consultation", href = "/booking", description = "Bring the situation in your own words. A request starts a conversation and does not confirm an appointment.", servicePath }: { label?: string; href?: string; description?: string; servicePath?: string }) {
+  return <section className="inner-cta"><div className="container inner-cta__grid"><div><p className="eyebrow"><span className="eyebrow-line" />NEXT STEP</p><h2>Start with a clear conversation.</h2><p>{description}</p></div><ButtonLink bookingService={servicePath} href={href} variant="light">{label}</ButtonLink></div></section>;
 }
 
 function ServicePage({ page }: { page: ServiceRecord }) {
@@ -49,7 +49,7 @@ function ServicePage({ page }: { page: ServiceRecord }) {
     <Section eyebrow="A SIMPLE PROCESS" title="Clear stages, visible decisions" muted><ProcessSteps steps={page.process} /></Section>
     {page.faqs.length ? <Section eyebrow="HELPFUL NOTES" title="Questions to consider"><FaqList items={page.faqs} /></Section> : null}
     <Section eyebrow="RELATED SERVICES" title="Continue exploring" muted><RelatedLinks links={page.related} /></Section>
-    <ClosingCta /></>;
+    <ClosingCta servicePath={page.path} /></>;
 }
 
 function SolutionPage({ page }: { page: SolutionRecord }) {

@@ -1,15 +1,15 @@
 export type BlogSection = { id: string; title: string; paragraphs: string[]; points?: string[] };
 export type BlogArticle = {
   slug: string; title: string; summary: string; excerpt: string; category: string; author: string;
-  published: string; updated: string; readingTime: string; relatedService: { label: string; href: `/${string}` };
+  published: string; updated: string; relatedService: { label: string; href: `/${string}` };
   sections: BlogSection[]; relatedSlugs: string[]; isPublished: boolean;
 };
 
-const common = { author: "BoomoTech Team", published: "2026-09-24", updated: "2026-09-24", isPublished: true } as const;
+const common = { author: "BoomoTech Team", published: "2026-09-24", updated: "2026-09-27", isPublished: true } as const;
 
 export const blogArticles: BlogArticle[] = [
   {
-    ...common, slug: "essential-it-support-checklist-small-business", category: "IT support", readingTime: "7 min read",
+    ...common, slug: "essential-it-support-checklist-small-business", category: "IT support",
     title: "Essential IT Support Checklist for Small Businesses",
     summary: "A practical checklist for keeping devices, accounts, backups, email and everyday technology dependable.",
     excerpt: "Use this checklist to review the technology foundations that support daily work and identify gaps before they become interruptions.",
@@ -24,7 +24,7 @@ export const blogArticles: BlogArticle[] = [
     ],
   },
   {
-    ...common, slug: "improve-small-business-wifi-network", category: "Networks", readingTime: "6 min read",
+    ...common, slug: "improve-small-business-wifi-network", category: "Networks",
     title: "How to Improve Your Small Business Wi-Fi and Network",
     summary: "Practical ways to improve coverage, reliability and security before buying more network equipment.",
     excerpt: "Start with placement, interference, cabling and secure configuration to find the real cause of unreliable workplace Wi-Fi.",
@@ -38,7 +38,7 @@ export const blogArticles: BlogArticle[] = [
     ],
   },
   {
-    ...common, slug: "practical-cybersecurity-steps-australian-small-businesses", category: "Cybersecurity", readingTime: "8 min read",
+    ...common, slug: "practical-cybersecurity-steps-australian-small-businesses", category: "Cybersecurity",
     title: "Practical Cybersecurity Steps for Australian Small Businesses",
     summary: "Straightforward security practices for accounts, devices, backups and incident preparation.",
     excerpt: "Strengthen everyday security with multi-factor authentication, safer account access, tested backups and a simple response plan.",
@@ -56,3 +56,11 @@ export const blogArticles: BlogArticle[] = [
 
 export const publishedArticles = blogArticles.filter((article) => article.isPublished);
 export const articleBySlug = new Map(blogArticles.map((article) => [article.slug, article]));
+
+export function calculateReadingTime(article: BlogArticle) {
+  const words = [article.title, article.summary, ...article.sections.flatMap((section) => [section.title, ...section.paragraphs, ...(section.points ?? [])])]
+    .join(" ")
+    .trim()
+    .split(/\s+/).length;
+  return `${Math.max(1, Math.ceil(words / 220))} min read`;
+}

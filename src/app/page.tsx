@@ -93,7 +93,7 @@ export default function HomePage() {
       <section className="closing-section section-space">
         <Reveal className="container closing-section__inner">
           <div><p className="eyebrow"><span className="eyebrow-line" />READY FOR THE NEXT STEP?</p><h2>Let’s make your technology easier to work with.</h2><p>Start with a support need or explore a conversation about what comes next.</p></div>
-          <div className="closing-section__actions"><ButtonLink href="/support">Get IT help</ButtonLink><ButtonLink href="/book" variant="secondary">Explore consultation</ButtonLink></div>
+          <div className="closing-section__actions"><ButtonLink href="/support">Get IT help</ButtonLink><ButtonLink href="/booking" variant="secondary">Book a Consultation</ButtonLink></div>
         </Reveal>
       </section>
     </>

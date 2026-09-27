@@ -14,9 +14,13 @@
 .chat-actions button { padding: .75rem; } .chat-actions .primary { border-color: var(--color-primary); background: var(--color-primary); color: white; }
 .chat-direct-link { display: inline-block; margin-top: 1rem; color: var(--color-primary-dark); font-weight: 700; text-decoration: underline; text-underline-offset: .2em; }
 .chat-back { margin-bottom: 1rem; padding: .5rem .75rem; }
-.chat-service-list { display: grid; gap: .8rem; } .chat-service-list article { padding: .9rem; border: 1px solid var(--color-border); border-radius: .65rem; } .chat-service-list h3 { margin: 0; font-size: 1rem; } .chat-service-list p { margin: .4rem 0 .75rem; color: var(--color-ink-soft); font-size: .88rem; line-height: 1.45; } .chat-service-list article div { display: flex; flex-wrap: wrap; gap: .6rem; } .chat-service-list a, .chat-service-list button, .chat-answer a, .chat-answer button { padding: .45rem .6rem; color: var(--color-primary-dark); font-size: .83rem; font-weight: 750; }
+.chat-service-list { display: grid; gap: .8rem; } .chat-service-list article { padding: .9rem; border: 1px solid var(--color-border); border-radius: .65rem; } .chat-service-list h4, .chat-answer h4 { margin: 0; font-size: 1rem; } .chat-service-list p { margin: .4rem 0 .75rem; color: var(--color-ink-soft); font-size: .88rem; line-height: 1.45; } .chat-service-list article div { display: flex; flex-wrap: wrap; gap: .6rem; } .chat-service-list a, .chat-service-list button, .chat-answer a, .chat-answer button { padding: .45rem .6rem; color: var(--color-primary-dark); font-size: .83rem; font-weight: 750; }
 .chat-question label, .booking-form label { display: grid; gap: .35rem; margin-bottom: .85rem; color: var(--color-ink); font-weight: 700; }
 .chat-question textarea, .booking-form input, .booking-form textarea, .booking-form select { width: 100%; padding: .72rem; border: 1px solid var(--color-border); border-radius: .45rem; background: white; color: var(--color-ink); font-weight: 400; }
+.booking-form [aria-invalid="true"] { border-color: var(--color-danger); box-shadow: 0 0 0 1px var(--color-danger); }
+.field-error { color: var(--color-danger); font-size: .82rem; font-weight: 700; line-height: 1.4; }
+.required-note { margin: 0 0 1rem; color: var(--color-ink-soft); font-size: .85rem; }
+.required-note span { color: var(--color-danger); }
 .chat-answer { margin-top: 1rem; padding: .9rem; border-radius: .65rem; background: var(--color-surface-muted); } .chat-answer a, .chat-answer button { display: block; margin-top: .4rem; }
 .booking-page { max-width: 900px; } .booking-page .section-heading h1 { font-size: clamp(2.5rem, 6vw, 5rem); letter-spacing: -.055em; line-height: 1; }
 .booking-form { margin-top: 2.5rem; padding: clamp(1rem, 4vw, 2.5rem); border: 1px solid var(--color-border); border-radius: var(--radius-large); background: white; } .booking-form--compact { margin-top: 0; padding: 0; border: 0; }
@@ -24,9 +28,19 @@
 .booking-form fieldset { margin: 0; padding: 0; border: 0; } .booking-form legend { margin-bottom: 1rem; font-size: 1.35rem; font-weight: 800; } .booking-consent { display: flex !important; grid-template-columns: 1.25rem 1fr; align-items: start; font-weight: 500 !important; line-height: 1.45; } .booking-consent input { width: 1.2rem; height: 1.2rem; margin: .1rem 0 0; }
 .booking-honeypot { position: absolute; left: -9999px; } .booking-actions { display: flex; justify-content: flex-end; gap: .7rem; margin-top: 1.2rem; } .booking-actions button { display: inline-flex; cursor: pointer; } .booking-actions button:disabled { cursor: not-allowed; opacity: .5; }
 .booking-review h2 { margin-top: 0; } .booking-review dl { display: grid; gap: .8rem; } .booking-review dl div { padding-bottom: .7rem; border-bottom: 1px solid var(--color-border); } .booking-review dt { color: var(--color-ink-soft); font-size: .78rem; font-weight: 800; text-transform: uppercase; } .booking-review dd { margin: .25rem 0 0; overflow-wrap: anywhere; white-space: pre-wrap; } .fine-print, .form-error { font-size: .9rem; line-height: 1.5; } .form-error { color: var(--color-danger); font-weight: 700; }
-.booking-success { padding: 1.25rem; border: 1px solid #8bcab5; border-radius: .7rem; background: #effaf6; } .booking-success h2 { margin-top: 0; }
+.booking-success { padding: 1.25rem; border: 1px solid #8bcab5; border-radius: .7rem; background: #effaf6; } .booking-success h2 { margin-top: 0; } .booking-success__actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1.2rem; } .booking-success__actions .button-link { display: inline-flex; }
 .header-cta.header-cta--primary { border-color: var(--color-primary); background: var(--color-primary); color: white; cursor: pointer; } .header-cta.header-cta--primary:hover { background: var(--color-primary-dark); color: white; }
 @keyframes chat-enter { from { opacity: 0; transform: translateY(.6rem) scale(.98); } to { opacity: 1; transform: none; } }
-@media (max-width: 600px) { .chat-launcher span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .chat-launcher { width: 3.5rem; justify-content: center; padding: 0; } .chat-panel { max-height: calc(100dvh - 5.5rem - env(safe-area-inset-bottom)); } }
-@media (max-width: 900px) { .mobile-booking-button { width: 100%; margin-top: .8rem; justify-content: center; padding: .75rem; border-color: var(--color-primary); background: var(--color-primary); color: white; text-align: center; } }
+@media (max-width: 600px) {
+  .chatbot { right: max(.5rem, env(safe-area-inset-right)); bottom: max(.5rem, env(safe-area-inset-bottom)); left: max(.5rem, env(safe-area-inset-left)); }
+  .chat-launcher span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .chat-launcher { width: 3.5rem; justify-content: center; padding: 0; }
+  .chatbot.is-open { inset: 0; display: block; padding: max(.5rem, env(safe-area-inset-top)) max(.5rem, env(safe-area-inset-right)) max(.5rem, env(safe-area-inset-bottom)) max(.5rem, env(safe-area-inset-left)); background: rgb(13 42 59 / 24%); }
+  .chatbot.is-open .chat-launcher { display: none; }
+  .chat-panel { display: grid; width: 100%; height: 100%; max-height: 100%; grid-template-rows: auto minmax(0, 1fr); border-radius: 1rem 1rem .25rem .25rem; }
+  .chat-body { max-height: none; min-height: 0; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); scroll-padding-bottom: 8rem; }
+  .booking-actions { position: sticky; bottom: calc(-1rem - env(safe-area-inset-bottom)); z-index: 2; margin-inline: -1rem; padding: .85rem 1rem calc(.85rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--color-border); background: white; }
+  .booking-actions .button-link { min-width: 0; }
+}
+@media (max-width: 1050px) { .mobile-booking-button { width: 100%; margin-top: .8rem; justify-content: center; padding: .75rem; border-color: var(--color-primary); background: var(--color-primary); color: white; text-align: center; } }
 @media (prefers-reduced-motion: reduce) { .chat-launcher, .chat-panel, .chat-welcome { animation: none; } }

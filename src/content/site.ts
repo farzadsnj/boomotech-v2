@@ -26,7 +26,7 @@ export const site = {
       title: "Get started",
       links: [
         { label: "IT support", href: "/support" },
-        { label: "Consultation", href: "/book" },
+        { label: "Book a consultation", href: "/booking" },
         { label: "Quote preparation", href: "/get-a-quote" },
         { label: "Contact", href: "/contact" },
       ],
@@ -50,12 +50,12 @@ export const homeContent = {
   introduction:
     "Brisbane-based assistance for day-to-day IT problems, cloud, security, websites, automation and AI — with remote options across Australia.",
   primaryAction: { label: "Get IT help", href: "/support" },
-  secondaryAction: { label: "Book a consultation", href: "/book" },
+  secondaryAction: { label: "Book a consultation", href: "/booking" },
   pathways: [
     { number: "01", title: "I need help with an IT problem", description: "Find a clear starting point for devices, accounts, networks and everyday tech issues.", href: "/support", action: "Explore support", icon: "support" },
     { number: "02", title: "I want to improve my business systems", description: "Explore practical ways to make work more reliable, secure and connected.", href: "/solutions", action: "See solutions", icon: "systems" },
     { number: "03", title: "I need a website, app or automation", description: "Turn an idea or repetitive process into a useful digital project.", href: "/services/web-software", action: "Explore digital services", icon: "build" },
-    { number: "04", title: "I want advice before buying technology", description: "Understand your options before choosing tools, devices or a new platform.", href: "/book", action: "Plan a consultation", icon: "advice" },
+    { number: "04", title: "I want advice before buying technology", description: "Understand your options before choosing tools, devices or a new platform.", href: "/booking", action: "Request a consultation", icon: "advice" },
   ],
   serviceGroups: [
     { number: "01 / SUPPORT", title: "Keep the essentials working", description: "Help with IT support, Microsoft 365, networks and the systems you depend on.", links: [

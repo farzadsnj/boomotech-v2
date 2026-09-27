@@ -8,13 +8,13 @@ export function Reveal({ children, className = "", delay = 0 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    document.documentElement.dataset.motionHydrated = "true";
     const element = ref.current;
     if (!element) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
       element.classList.add("is-visible");
       return;
     }
-    element.classList.add("motion-ready");
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
         element.classList.add("is-visible");

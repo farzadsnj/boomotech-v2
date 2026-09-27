@@ -4,7 +4,7 @@ BoomoTech V2 is the planned web platform for BoomoTech: practical IT support, cl
 
 This repository contains the product brief and the Phase 0 / initial Phase 1 application foundation for BoomoTech V2.
 
-The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local typed content, reusable page layouts and progressive accessible motion. Phase 1 informational routes are available for review. Public enquiry, support intake, booking and commerce operations remain unavailable until their privacy and operational requirements are approved.
+The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local typed content, reusable page layouts and progressive accessible motion. Phase 1 informational routes are available for review. The consultation form can securely email a booking request when its server configuration is complete. Support tickets, confirmed appointments, payments and commerce remain unavailable until their operational requirements are approved.
 
 ## Start here
 
@@ -36,7 +36,7 @@ The architecture and outstanding assumptions are in [docs/ARCHITECTURE.md](docs/
 
 The floating service assistant is implemented in `src/features/chat`. It reads service labels, descriptions and routes from `src/content/services.ts`; `service-matcher.ts` contains only deterministic keyword rules and returns those canonical records. Add or edit a service in the catalogue first, then add matching terms only if visitors use language that the catalogue does not already cover.
 
-The chatbot and `/booking` route render the same progressive `BookingForm`. Both client and server validate requests with the shared Zod schema. The `/api/booking` endpoint applies a request-size limit, a honeypot and a conservative in-memory rate limit, then hands delivery to the isolated Resend adapter. Personal information is not placed in URLs or browser storage and is not logged.
+The chatbot and `/booking` route render the same progressive `BookingForm`. Booking links retain a real `/booking` destination and open the assistant only when JavaScript enhancement is available. Both client and server validate requests with the shared Zod schema. The `/api/booking` endpoint validates the request origin, enforces the decoded request-size limit, checks a honeypot and uses a pluggable rate limiter before handing delivery to the isolated Resend adapter. Personal information is not placed in URLs or browser storage and is not logged.
 
 Configure these server-side variables before testing real delivery:
 
@@ -44,6 +44,9 @@ Configure these server-side variables before testing real delivery:
 BOOKING_NOTIFICATION_EMAIL=verified-destination@example.com
 BOOKING_FROM_EMAIL=BoomoTech <verified-sender@example.com>
 RESEND_API_KEY=re_...
+BOOKING_RATE_LIMIT_REST_URL=https://your-shared-limiter.example
+BOOKING_RATE_LIMIT_REST_TOKEN=...
+BOOKING_TRUST_PROXY=true
 ```
 
 If any variable is missing or Resend rejects delivery, the interface reports that the request was not delivered. A successful request remains a request rather than a confirmed appointment.
@@ -58,8 +61,9 @@ pnpm typecheck
 pnpm test
 pnpm build
 pnpm test:e2e
+pnpm audit --prod
 ```
 
 ### Remaining production configuration
 
-Before enabling the booking endpoint in production, the owner must confirm the verified recipient and sender domain, privacy and consent wording, retention and deletion rules, expected response language and hours, and the deployment environment. Replace the in-memory limiter with a shared deployment-compatible rate limiter when the site runs across multiple instances. The draft privacy notice and legal terms require owner and legal review. Search indexing remains controlled by `SITE_INDEXING_ENABLED` and an HTTPS `SITE_URL`.
+Before enabling the booking endpoint in production, the owner must confirm the verified recipient and sender domain, privacy and consent wording, retention and deletion rules, expected response language, and the deployment environment. Production requires the shared rate-limit REST URL and token plus a trusted proxy that overwrites client forwarding headers; the bounded in-memory fallback runs only outside production. The draft privacy notice and legal terms require owner and legal review. Search indexing remains controlled by `SITE_INDEXING_ENABLED` and an approved HTTPS `SITE_URL`.

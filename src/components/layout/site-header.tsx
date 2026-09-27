@@ -3,6 +3,7 @@ import { BrandLogo } from "@/components/brand/brand-logo";
 import { ChatBookingButton } from "./chat-booking-button";
 import { NavigationLink } from "./navigation-link";
 import { MobileNavigation } from "./mobile-navigation";
+import { ArticleIcon } from "@/components/ui/article-icon";
 
 export function SiteHeader() {
   return (
@@ -10,7 +11,7 @@ export function SiteHeader() {
       <div className="site-header__inner container">
         <BrandLogo />
         <nav aria-label="Primary" className="desktop-nav">
-          {site.navigation.map((item) => <NavigationLink key={item.href} href={item.href}>{item.label}</NavigationLink>)}
+          {site.navigation.map((item) => <NavigationLink key={item.href} href={item.href}>{item.href === "/blog" ? <ArticleIcon /> : null}<span>{item.label}</span></NavigationLink>)}
         </nav>
         <ChatBookingButton />
         <MobileNavigation />

@@ -8,6 +8,7 @@
 - Shop
 - Resources
 - About
+- Blog
 - Book a consultation
 
 Keep the header focused. Put secondary links, account access, policies, and detailed categories in menus or the footer.
@@ -20,7 +21,8 @@ Keep the header focused. Put secondary links, account access, policies, and deta
 - `/services` — Service finder and overview
 - `/solutions` — Outcome/industry-oriented solutions
 - `/support` — IT problem-solving entry point
-- `/book` — Consultation and service booking
+- `/booking` — Primary secure consultation request; a request does not confirm an appointment
+- `/book` — Consultation options and preparation guidance linking to `/booking`
 - `/shop` — Curated product catalogue
 - `/resources` — Blog, guides, FAQs and downloads
 - `/about`
@@ -80,7 +82,7 @@ Never request a password or secret. Show emergency/safety boundaries and clarify
 - `/book/remote-support`
 - `/book/onsite-support`
 - `/book/project-discovery`
-- `/book/confirmation`
+- `/booking` remains the single request form for all consultation types
 
 Appointment types, duration, price/deposit, availability, rescheduling, travel area, and cancellation rules are `TODO(owner)`.
 

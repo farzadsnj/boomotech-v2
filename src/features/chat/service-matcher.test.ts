@@ -15,4 +15,16 @@ describe("service matching", () => {
     expect(match.service.name).toBe("Cybersecurity");
     expect(match.service.path).toBe("/services/cybersecurity");
   });
+  it("does not match AI inside email", () => {
+    const paths = matchServices("My email is not working").map(({ service }) => service.path);
+    expect(paths).toContain("/services/microsoft-365");
+    expect(paths).not.toContain("/services/ai-automation");
+  });
+  it.each([
+    ["My LAPTOP is very slow", "/services/it-support"],
+    ["We need help with wi fi in a new office", "/services/network-wifi"],
+    ["I think an account was hacked after a phishing email", "/services/cybersecurity"],
+    ["Can you automate repetitive administration?", "/services/ai-automation"],
+    ["We need ongoing IT support", "/services/managed-it"],
+  ])("matches representative customer wording: %s", (question, expected) => expect(matchServices(question).map(({ service }) => service.path)).toContain(expected));
 });

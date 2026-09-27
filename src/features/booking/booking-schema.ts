@@ -21,6 +21,10 @@ export const bookingRequestSchema = z.object({
   website: z.string().max(0).optional().default(""),
 });
 
+export const bookingContactSchema = bookingRequestSchema.pick({ fullName: true, email: true, phone: true });
+export const bookingDetailsSchema = bookingRequestSchema.pick({ servicePath: true, message: true, consent: true });
+export type BookingField = keyof z.input<typeof bookingRequestSchema>;
+
 export type BookingRequest = z.infer<typeof bookingRequestSchema>;
 
 export function serviceLabel(value: string) {
