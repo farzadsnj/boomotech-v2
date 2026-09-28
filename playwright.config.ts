@@ -5,7 +5,7 @@ export default defineConfig({
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",
-  use: { baseURL: "http://127.0.0.1:3100", trace: "on-first-retry" },
-  webServer: { command: "pnpm start --port 3100", url: "http://127.0.0.1:3100", reuseExistingServer: !process.env.CI, timeout: 120_000 },
+  use: { baseURL: "http://localhost:3100", trace: "on-first-retry" },
+  webServer: { command: "pnpm start --hostname localhost --port 3100", url: "http://localhost:3100", reuseExistingServer: !process.env.CI, timeout: 120_000 },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 });

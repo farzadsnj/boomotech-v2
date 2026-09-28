@@ -4,7 +4,7 @@ import { POST } from "./route";
 
 const payload = { fullName: "Taylor Smith", email: "taylor@example.com", phone: "+61 400 000 000", servicePath: "/services/it-support", message: "We need help with several office computers.\nPlease contact us.", consent: true, website: "" };
 let client = 1;
-const request = (body: unknown, options: { origin?: string; userAgent?: string; raw?: string } = {}) => new Request("http://localhost/api/booking", { method: "POST", headers: { "content-type": "application/json", origin: options.origin ?? "http://localhost", "user-agent": options.userAgent ?? `booking-test-${client++}` }, body: options.raw ?? JSON.stringify(body) });
+const request = (body: unknown, options: { origin?: string; userAgent?: string; raw?: string; contentType?: string } = {}) => new Request("http://localhost/api/booking", { method: "POST", headers: { "content-type": options.contentType ?? "application/json", origin: options.origin ?? "http://localhost", "user-agent": options.userAgent ?? `booking-test-${client++}` }, body: options.raw ?? JSON.stringify(body) });
 
 describe("booking endpoint", () => {
   beforeEach(() => {
@@ -15,8 +15,15 @@ describe("booking endpoint", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it("rejects requests from an unapproved origin", async () => expect((await POST(request(payload, { origin: "https://attacker.example" }))).status).toBe(403));
+  it("rejects unsupported request content types", async () => expect((await POST(request(payload, { contentType: "text/plain" }))).status).toBe(415));
   it("rejects invalid server-side input", async () => expect((await POST(request({ ...payload, consent: false }))).status).toBe(400));
-  it("rejects an oversized body without relying on content-length", async () => expect((await POST(request(payload, { raw: JSON.stringify({ ...payload, message: "x".repeat(21_000) }) }))).status).toBe(413));
+  it("stops reading and rejects an oversized streamed body without content-length", async () => {
+    const encoder = new TextEncoder(); let index = 0; let cancelled = false;
+    const chunks = [encoder.encode("x".repeat(15_000)), encoder.encode("x".repeat(6_000)), encoder.encode("unread")];
+    const stream = new ReadableStream<Uint8Array>({ pull(controller) { controller.enqueue(chunks[index++]); if (index === chunks.length) controller.close(); }, cancel() { cancelled = true; } });
+    const streamed = new Request("http://localhost/api/booking", { method: "POST", headers: { "content-type": "application/json", origin: "http://localhost", "user-agent": "stream-test" }, body: stream, duplex: "half" } as RequestInit & { duplex: "half" });
+    expect((await POST(streamed)).status).toBe(413); expect(cancelled).toBe(true); expect(index).toBe(2);
+  });
   it("accepts honeypot submissions without contacting a provider", async () => { const fetch = vi.spyOn(globalThis, "fetch"); expect((await POST(request({ ...payload, website: "spam" }))).status).toBe(200); expect(fetch).not.toHaveBeenCalled(); });
   it("rate limits repeated attempts from the same development client", async () => {
     for (let attempt = 0; attempt < 5; attempt += 1) expect((await POST(request(payload, { userAgent: "same-client" }))).status).toBe(503);

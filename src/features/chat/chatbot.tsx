@@ -52,6 +52,12 @@ export function Chatbot() {
     return () => window.removeEventListener("keydown", escape);
   }, [open]);
   useEffect(() => {
+    if (!open || !window.matchMedia("(max-width: 600px)").matches) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [open]);
+  useEffect(() => {
     if (!open || view === "home" || view === "booking") return;
     requestAnimationFrame(() => viewHeading.current?.focus());
   }, [open, view, categoryId]);

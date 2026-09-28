@@ -92,7 +92,7 @@ svg { display: block; }
 .brand-mark i:first-child { transform: translateX(-.48rem) rotate(-22deg); background: var(--color-ink); }
 .brand-mark i:last-child { transform: translateX(.48rem) rotate(22deg); background: var(--color-accent); }
 .desktop-nav { display: flex; flex: 1; align-items: center; justify-content: center; gap: clamp(.8rem, 1.8vw, 1.9rem); }
-.desktop-nav a { position: relative; padding-block: .55rem; color: var(--color-ink-soft); font-size: .88rem; font-weight: 650; white-space: nowrap; transition: color .2s; }
+.desktop-nav a { position: relative; display: inline-flex; align-items: center; gap: .45rem; padding-block: .55rem; color: var(--color-ink-soft); font-size: .88rem; font-weight: 650; white-space: nowrap; transition: color .2s; }
 .desktop-nav a::after { position: absolute; right: 0; bottom: .25rem; left: 0; height: 2px; transform: scaleX(0); transform-origin: right; background: var(--color-primary); content: ""; transition: transform .22s ease; }
 .desktop-nav a:hover::after, .desktop-nav a:focus-visible::after, .desktop-nav a[aria-current="page"]::after { transform: scaleX(1); transform-origin: left; }
 .desktop-nav a:hover { color: var(--color-primary); }
@@ -237,7 +237,7 @@ svg { display: block; }
 }
 
 @media (max-width: 480px) {
-  .section-space { padding-block: 4.5rem; }.brand-logo { font-size: 1.35rem; }.brand-logo > img { width: 2rem; height: 2rem; }
+  .section-space { padding-block: 4.5rem; }.brand-logo { font-size: 1.35rem; }.brand-logo:not(.brand-logo--footer) > img { width: 2rem; height: 2rem; }
   .hero__grid { padding-block: 3.8rem 2.5rem; }.hero h1 { font-size: clamp(2.5rem, 10vw, 3.2rem); }.hero__lead { font-size: 1rem; }
   .hero__actions { flex-direction: column; }.hero__actions .button-link { width: 100%; }.hero-visual { min-height: 340px; }.hero-visual__core { min-width: 210px; box-shadow: 0 0 0 9px #15374a; }.hero-visual__chip { font-size: .56rem; }.hero-visual__chip--left { left: 0; }.hero-visual__chip--right { right: 0; }
   .pathway-grid { grid-template-columns: 1fr; }.pathway-card { min-height: 255px; }.pathway-card h3 { margin-top: 1.5rem; }

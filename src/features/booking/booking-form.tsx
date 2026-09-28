@@ -44,7 +44,14 @@ export function BookingForm({ initialService = "", compact = false, onClose }: {
 
   function update(field: keyof Fields, value: string | boolean) {
     setFields((current) => ({ ...current, [field]: value }));
-    if (errors[field]) setErrors((current) => ({ ...current, [field]: fieldError(field, value) }));
+    if (errors[field]) {
+      const nextErrors = { ...errors };
+      const nextError = fieldError(field, value);
+      if (nextError) nextErrors[field] = nextError;
+      else delete nextErrors[field];
+      setErrors(nextErrors);
+      if (!Object.values(nextErrors).some(Boolean)) setFormError("");
+    }
   }
 
   function focusFirstInvalid(nextErrors: FieldErrors) {

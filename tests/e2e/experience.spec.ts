@@ -65,7 +65,7 @@ test("booking field errors are specific and focus the first invalid field", asyn
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.getByText("Enter a valid email address.")).toBeVisible(); await expect(page.getByText("Enter a valid phone number.")).toBeVisible();
   await page.getByLabel(/Email address/).fill("taylor@example.com"); await expect(page.getByText("Enter a valid email address.")).toHaveCount(0);
-  await page.getByLabel(/Phone number/).fill("0400 000 000"); await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByLabel(/Phone number/).fill("0400 000 000"); await expect(page.locator(".form-error[role='alert']")).toHaveCount(0); await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.getByLabel(/Service required/)).toBeFocused(); await expect(page.getByText("Choose a service.")).toBeVisible(); await expect(page.getByText("Please add a little more detail.")).toBeVisible(); await expect(page.getByText("Consent is required before sending.")).toBeVisible();
 });
@@ -91,16 +91,37 @@ test("delivery failure preserves data and can be retried", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Request received" })).toBeVisible(); expect(calls).toBe(2);
 });
 
-test("mobile chatbot keeps booking fields and controls scrollable", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 800 }); await page.goto("/"); await page.getByRole("button", { name: "Chat with BoomoTech" }).click(); await page.getByRole("button", { name: "Book a consultation" }).click();
-  const panel = page.locator(".chat-panel"); await expect(panel).toBeVisible(); expect(await panel.evaluate((node) => node.scrollHeight <= node.clientHeight + 1)).toBe(true);
-  await expect(page.getByLabel(/Full name/)).toBeVisible(); await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
+test("mobile chatbot fits short menus and completes booking at compact sizes", async ({ page }) => {
+  await page.route("**/api/booking", (route) => route.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true}' }));
+  for (const viewport of [{ width: 320, height: 568 }, { width: 320, height: 800 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport); await page.goto("/"); await page.getByRole("button", { name: "Chat with BoomoTech" }).click();
+    const panel = page.locator(".chat-panel"); const box = await panel.boundingBox();
+    expect(box).not.toBeNull(); expect(box!.height).toBeLessThan(viewport.height - 16); expect(await page.locator("body").evaluate((node) => getComputedStyle(node).overflow)).toBe("hidden");
+    await page.getByRole("button", { name: "Book a consultation" }).click(); await fillContact(page);
+    await page.getByLabel(/Service required/).selectOption("/services/it-support"); await page.getByLabel(/Problem or requested work/).fill("Several office computers need practical troubleshooting support."); await page.getByLabel(/I agree/).check(); await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByRole("button", { name: "Send booking request" }).click(); await expect(page.getByRole("heading", { name: "Request received" })).toBeVisible();
+    await page.getByRole("button", { name: "Close assistant" }).click(); await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
+  }
 });
 
 test("skip link and desktop current-page marker are accessible", async ({ page }) => {
   await page.goto("/services"); await page.keyboard.press("Tab"); await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused(); await page.keyboard.press("Enter"); await expect(page.locator("#main-content")).toBeFocused();
   const current = page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Services" }); await expect(current).toHaveAttribute("aria-current", "page");
   expect(await current.evaluate((node) => getComputedStyle(node, "::after").transform)).not.toBe("none");
+  const blog = page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Blog" });
+  expect(await blog.evaluate((node) => ({ display: getComputedStyle(node).display, alignItems: getComputedStyle(node).alignItems }))).toEqual({ display: "flex", alignItems: "center" });
+});
+
+test("mobile navigation and footer branding remain aligned", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 }); await page.goto("/blog"); await page.locator("summary[aria-label='Toggle navigation']").click();
+  await expect(page.locator(".mobile-nav__link-label").filter({ hasText: "Blog" })).toHaveCSS("align-items", "center");
+  const footerLogo = page.locator(".brand-logo--footer img"); expect((await footerLogo.boundingBox())!.width).toBeGreaterThan(90);
+});
+
+test("same-origin browser requests reach the booking endpoint", async ({ page }) => {
+  await page.goto("/");
+  const status = await page.evaluate(async () => (await fetch("/api/booking", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ website: "automated-field" }) })).status);
+  expect(status).toBe(200);
 });
 
 test("blog articles expose canonical, Open Graph, updated and structured metadata", async ({ page, request }) => {
