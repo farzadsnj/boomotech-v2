@@ -62,6 +62,8 @@ Exit: tested end-to-end booking and support intake with documented operational o
 
 ## Phase 3 — Curated commerce
 
+The non-transactional catalogue, search and product-detail foundation has been brought forward for owner review. All records are clearly marked as samples. The operational work below still gates commerce.
+
 - Catalogue, categories, search/filter
 - Product detail and compatibility guidance
 - Cart and hosted checkout
@@ -74,6 +76,8 @@ Exit: tested end-to-end booking and support intake with documented operational o
 Exit: real orders can be accepted, fulfilled, refunded and supported under approved policies.
 
 ## Phase 4 — Client account and portal
+
+The credential, session, customer dashboard and administrator-list foundation has been brought forward. Recovery, verification, operational hardening and privacy approval still gate public account launch.
 
 - Authentication and account recovery
 - Bookings, orders and support history

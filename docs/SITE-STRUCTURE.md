@@ -89,8 +89,7 @@ Appointment types, duration, price/deposit, availability, rescheduling, travel a
 ### Commerce
 
 - `/shop`
-- `/shop/[category]`
-- `/product/[slug]`
+- `/shop/[slug]` — sample product detail
 - `/cart`
 - `/checkout`
 - `/order/confirmation`
@@ -109,9 +108,18 @@ Start with a small, service-relevant catalogue: approved networking, accessories
 
 Never invent case studies. An anonymised case study must still be factual and approved.
 
-### Account and portal — later phase
+### Account foundation
 
-- `/account`
+- `/register`
+- `/login`
+- `/dashboard`
+- `/admin/login`
+- `/admin`
+
+The first account slice includes registration, sign-in, a minimal protected customer dashboard and a role-protected customer list for the administrator. It does not make accounts a condition of browsing or booking. Account recovery, email verification and wider portal functions remain later work.
+
+### Portal — later phase
+
 - `/account/profile`
 - `/account/bookings`
 - `/account/orders`
