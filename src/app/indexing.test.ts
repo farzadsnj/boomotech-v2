@@ -25,6 +25,9 @@ describe("search indexing", () => {
     expect(entries).toHaveLength(intendedPublicRoutes.length);
     expect(entries.map((entry) => new URL(entry.url).pathname)).toEqual(intendedPublicRoutes);
     expect(entries.some((entry) => entry.url.includes("checkout"))).toBe(false);
+    for (const privatePath of ["/shop", "/register", "/login", "/dashboard", "/admin"]) {
+      expect(entries.some((entry) => new URL(entry.url).pathname === privatePath)).toBe(false);
+    }
     expect(robots()).toMatchObject({ rules: { userAgent: "*", allow: "/" } });
   });
 });
