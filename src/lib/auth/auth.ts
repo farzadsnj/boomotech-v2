@@ -1,0 +1,53 @@
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { admin, username } from "better-auth/plugins";
+import { db } from "@/db";
+import { authSchema } from "@/db/schema";
+import { getSiteUrl } from "@/lib/site-url";
+import { hashPassword, verifyPassword } from "./password";
+
+const siteOrigin = getSiteUrl().origin;
+const localOrigins = process.env.NODE_ENV === "production"
+  ? []
+  : ["http://localhost:3000", "http://localhost:3100", "http://127.0.0.1:3000", "http://127.0.0.1:3100"];
+
+export const auth = betterAuth({
+  appName: "BoomoTech",
+  baseURL: process.env.BETTER_AUTH_URL ?? siteOrigin,
+  secret: process.env.BETTER_AUTH_SECRET,
+  trustedOrigins: [...new Set([siteOrigin, ...localOrigins])],
+  database: drizzleAdapter(db, { provider: "pg", schema: authSchema }),
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 12,
+    maxPasswordLength: 128,
+    autoSignIn: true,
+    password: { hash: hashPassword, verify: verifyPassword },
+  },
+  session: {
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
+    cookieCache: { enabled: false },
+  },
+  rateLimit: {
+    enabled: true,
+    storage: "database",
+    window: 60,
+    max: 60,
+    customRules: {
+      "/sign-up/email": { window: 60 * 15, max: 5 },
+      "/sign-in/email": { window: 60 * 15, max: 10 },
+      "/sign-in/username": { window: 60 * 15, max: 10 },
+    },
+  },
+  plugins: [
+    username({ minUsernameLength: 3, maxUsernameLength: 32 }),
+    admin({ defaultRole: "user", adminRoles: ["admin"] }),
+  ],
+  advanced: {
+    useSecureCookies: process.env.NODE_ENV === "production",
+    database: { validateSchema: true },
+  },
+});
+
+export type AuthSession = typeof auth.$Infer.Session;

@@ -15,7 +15,7 @@ const requiredPaths = [
   "/support/remote", "/support/onsite", "/support/safety", "/book",
   "/book/consultation", "/book/remote-support", "/book/onsite-support",
   "/book/project-discovery", "/resources", "/faq", "/about", "/contact",
-  "/get-a-quote", "/shop", "/privacy", "/terms",
+  "/get-a-quote", "/privacy", "/terms",
 ];
 
 describe("local Phase 1 content", () => {
@@ -62,7 +62,7 @@ describe("local Phase 1 content", () => {
   });
 
   it("keeps homepage and navigation actions attached to known routes", () => {
-    const knownPaths = new Set(["/", "/booking", "/blog", ...allPages.map(({ path }) => path)]);
+    const knownPaths = new Set(["/", "/booking", "/blog", "/shop", "/login", ...allPages.map(({ path }) => path)]);
     const actionPaths = [homeContent.primaryAction.href, homeContent.secondaryAction.href,
       ...homeContent.pathways.map((pathway) => pathway.href),
       ...homeContent.serviceGroups.flatMap((group) => group.links.map((link) => link.href)),
@@ -73,6 +73,7 @@ describe("local Phase 1 content", () => {
 
   it("keeps the dedicated blog implementation out of catch-all page records", () => {
     expect(allPages.some(({ path }) => path === "/blog")).toBe(false);
+    expect(allPages.some(({ path }) => path === "/shop")).toBe(false);
   });
 
   it("does not contradict the enabled booking-request journey", () => {

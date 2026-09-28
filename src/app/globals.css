@@ -3,6 +3,8 @@
 @import "../styles/pages.css";
 @import "../styles/chatbot.css";
 @import "../styles/blog.css";
+@import "../styles/shop.css";
+@import "../styles/auth.css";
 
 :root {
   --color-ink: #1d3a49;

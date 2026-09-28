@@ -71,14 +71,14 @@ function HubPageView({ page }: { page: HubPage }) {
 function InfoPageView({ page }: { page: InfoPage }) {
   return <><Hero page={page} />
     {page.notice ? <div className="container notice-wrap"><Notice {...page.notice} /></div> : null}
-    {page.cards?.length ? <Section eyebrow="AT A GLANCE" title={page.kind === "shop" ? "Planned catalogue areas" : "Choose a useful starting point"}><CardGrid items={page.cards} /></Section> : null}
+    {page.cards?.length ? <Section eyebrow="AT A GLANCE" title="Choose a useful starting point"><CardGrid items={page.cards} /></Section> : null}
     {page.sections?.map((section, index) => <Section eyebrow={`${String(index + 1).padStart(2, "0")} / GUIDANCE`} key={section.title} muted={index % 2 === 0} title={section.title}>
       {section.description ? <p className="prose-lead">{section.description}</p> : null}{section.items ? <BulletGrid items={section.items} /> : null}
     </Section>)}
     {page.process?.length ? <Section eyebrow="HOW TO PREPARE" title="Build a useful brief" muted><ProcessSteps steps={page.process} /></Section> : null}
     {page.faqs?.length ? <Section eyebrow="QUESTIONS" title="Useful answers"><FaqList items={page.faqs} /></Section> : null}
     {page.related?.length ? <Section eyebrow="CONTINUE EXPLORING" title="Related information" muted><RelatedLinks links={page.related} /></Section> : null}
-    {page.cta ? <ClosingCta description={page.cta.description} href={page.cta.href} label={page.cta.label} /> : page.kind !== "legal" && page.kind !== "shop" ? <ClosingCta /> : null}
+    {page.cta ? <ClosingCta description={page.cta.description} href={page.cta.href} label={page.cta.label} /> : page.kind !== "legal" ? <ClosingCta /> : null}
   </>;
 }
 

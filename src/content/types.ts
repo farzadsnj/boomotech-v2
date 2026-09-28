@@ -40,7 +40,7 @@ export type InfoSection = {
 };
 
 export type InfoPage = PageBase & {
-  kind: "info" | "support" | "booking" | "legal" | "resource" | "shop";
+  kind: "info" | "support" | "booking" | "legal" | "resource";
   notice?: { tone: "info" | "safety" | "draft"; title: string; body: string };
   cards?: Feature[];
   sections?: InfoSection[];
