@@ -2,6 +2,7 @@
 .chat-launcher { display: inline-flex; min-height: 3.5rem; align-items: center; gap: .65rem; padding: .8rem 1rem; border: 0; border-radius: 999px; background: var(--color-primary-dark); box-shadow: 0 12px 35px rgb(0 63 104 / 25%); color: white; cursor: pointer; font-weight: 750; animation: chat-enter .35s ease both; }
 .chat-launcher:hover { background: var(--color-primary-dark); } .chat-launcher:active { transform: scale(.98); }
 .chat-launcher svg { width: 1.35rem; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.chat-launcher.needs-attention { animation: chat-enter .35s ease both, chat-attention 1.8s .4s ease-in-out 2; }
 body:has(.shop-hero, .product-hero, .auth-page, .account-dashboard, .admin-page) .chat-launcher { width: 3.5rem; justify-content: center; padding: 0; }
 body:has(.shop-hero, .product-hero, .auth-page, .account-dashboard, .admin-page) .chat-launcher span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 .chat-welcome { position: relative; width: min(20rem, calc(100vw - 2rem)); padding: 1rem 2.5rem 1rem 1rem; border: 1px solid var(--color-border); border-radius: 1rem 1rem .25rem 1rem; background: white; box-shadow: var(--shadow-card); animation: chat-enter .25s ease both; }
@@ -10,6 +11,8 @@ body:has(.shop-hero, .product-hero, .auth-page, .account-dashboard, .admin-page)
 .chat-panel > header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.1rem; background: var(--color-ink); color: white; }
 .chat-panel header p, .chat-panel header h2 { margin: 0; } .chat-panel header p { color: var(--color-accent); font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; } .chat-panel header h2 { font-size: 1.1rem; }
 .chat-close { width: 2.75rem; height: 2.75rem; border: 1px solid #ffffff55; border-radius: 50%; background: transparent; color: white; cursor: pointer; font-size: 1.5rem; }
+.chat-header-actions { display: flex; align-items: center; gap: .5rem; }
+.chat-sound { min-height: 2.75rem; padding: .55rem .7rem; border: 1px solid #ffffff55; border-radius: 999px; background: transparent; color: white; cursor: pointer; font-size: .72rem; font-weight: 750; }
 .chat-body { max-height: calc(min(43rem, 100dvh - 6rem) - 5rem); overflow-y: auto; padding: 1rem; overscroll-behavior: contain; }
 .chat-body > p { margin-top: 0; color: var(--color-ink-soft); line-height: 1.55; }
 .chat-actions { display: grid; gap: .65rem; } .chat-actions button, .chat-service-list button, .chat-answer button, .chat-back, .mobile-booking-button { min-height: 2.75rem; border: 1px solid var(--color-border); border-radius: .55rem; background: white; color: var(--color-ink); cursor: pointer; font-weight: 700; text-align: left; }
@@ -33,6 +36,7 @@ body:has(.shop-hero, .product-hero, .auth-page, .account-dashboard, .admin-page)
 .booking-success { padding: 1.25rem; border: 1px solid #8bcab5; border-radius: .7rem; background: #effaf6; } .booking-success h2 { margin-top: 0; } .booking-success__actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1.2rem; } .booking-success__actions .button-link { display: inline-flex; }
 .header-cta.header-cta--primary { border-color: var(--color-primary); background: var(--color-primary); color: white; cursor: pointer; } .header-cta.header-cta--primary:hover { background: var(--color-primary-dark); color: white; }
 @keyframes chat-enter { from { opacity: 0; transform: translateY(.6rem) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes chat-attention { 0%, 100% { box-shadow: 0 12px 35px rgb(0 63 104 / 25%); } 50% { box-shadow: 0 12px 35px rgb(0 63 104 / 25%), 0 0 0 8px rgb(120 200 232 / 18%); } }
 @media (max-width: 600px) {
   .chatbot { right: max(.5rem, env(safe-area-inset-right)); bottom: max(.5rem, env(safe-area-inset-bottom)); left: max(.5rem, env(safe-area-inset-left)); }
   .chat-launcher span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

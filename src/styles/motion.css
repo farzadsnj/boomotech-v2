@@ -8,7 +8,7 @@
 .hero-stagger--5 { animation-delay: .36s; }
 
 .hero-visual { animation: hero-visual-enter .85s .18s cubic-bezier(.2,.7,.2,1) both; }
-.hero-visual__core { animation: subtle-float 7s 1.2s ease-in-out infinite; }
+.hero-visual__core { will-change: transform; }
 .hero-visual__orbit--one { animation: orbit-pulse 4.5s ease-in-out infinite; }
 .hero-visual__orbit--two { animation: orbit-pulse 4.5s 1.2s ease-in-out infinite; }
 
@@ -25,9 +25,8 @@
 @keyframes page-enter { from { opacity: .01; } to { opacity: 1; } }
 @keyframes hero-enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes hero-visual-enter { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
-@keyframes subtle-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
 @keyframes orbit-pulse { 0%, 100% { opacity: .65; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.12); } }
-@keyframes menu-open { from { opacity: 0; transform: translateY(-7px) scaleY(.98); } to { opacity: 1; transform: none; } }
+@keyframes menu-open { from { opacity: 0; transform: scaleY(.98); } to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

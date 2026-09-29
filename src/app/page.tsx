@@ -1,11 +1,11 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ButtonLink } from "@/components/ui/button-link";
 import { ArrowIcon } from "@/components/ui/arrow-icon";
 import { PathwayIcon } from "@/components/ui/pathway-icon";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { homeContent } from "@/content/site";
 import { Reveal } from "@/components/motion/reveal";
+import { HeroVisual } from "@/components/home/hero-visual";
 
 export default function HomePage() {
   return (
@@ -22,20 +22,9 @@ export default function HomePage() {
             </div>
             <p className="hero__note hero-stagger hero-stagger--5"><span aria-hidden="true" className="status-dot" />Clear next steps for real technology challenges.</p>
           </div>
-          <div aria-hidden="true" className="hero-visual">
-            <div className="hero-visual__orbit hero-visual__orbit--one" />
-            <div className="hero-visual__orbit hero-visual__orbit--two" />
-            <div className="hero-visual__top"><span className="visual-symbol">B<span>.</span></span><span>CONNECTED THINKING</span></div>
-            <div className="hero-visual__core">
-              <Image alt="" className="hero-visual__brand-mark" height={512} src="/brand/boomotech-mark.png" width={512} />
-              <p>Make technology<br /><strong>work better.</strong></p>
-            </div>
-            <div className="hero-visual__chip hero-visual__chip--top"><span className="chip-icon chip-icon--blue" />SUPPORT</div>
-            <div className="hero-visual__chip hero-visual__chip--left"><span className="chip-icon chip-icon--teal" />IMPROVE</div>
-            <div className="hero-visual__chip hero-visual__chip--right"><span className="chip-icon chip-icon--orange" />CREATE</div>
-            <div className="hero-visual__bottom"><span>01 / PRACTICAL HELP</span><span>02 / SMARTER SYSTEMS</span></div>
-          </div>
+          <HeroVisual />
         </div>
+        <div className="hero-trust container" aria-label="Service context"><span>Brisbane based</span><span>Remote support across Australia</span><span>Clear scope before work begins</span></div>
       </section>
 
       <section aria-labelledby="pathways-title" className="pathways section-space">

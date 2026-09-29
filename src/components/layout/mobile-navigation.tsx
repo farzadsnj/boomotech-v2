@@ -8,6 +8,10 @@ import { ChatBookingButton } from "./chat-booking-button";
 import { NavigationLink } from "./navigation-link";
 import { ArticleIcon } from "@/components/ui/article-icon";
 
+function AccountIcon() {
+  return <svg aria-hidden="true" className="account-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6" /></svg>;
+}
+
 export function MobileNavigation() {
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
@@ -42,6 +46,7 @@ export function MobileNavigation() {
       </summary>
       <nav aria-label="Mobile primary">
         {site.navigation.map((item) => <NavigationLink key={item.href} href={item.href}><span className="mobile-nav__link-label">{item.href === "/blog" ? <ArticleIcon /> : null}{item.label}</span><ArrowIcon diagonal /></NavigationLink>)}
+        <NavigationLink href="/login"><span className="mobile-nav__link-label"><AccountIcon />Account</span><ArrowIcon diagonal /></NavigationLink>
         <ChatBookingButton mobile />
       </nav>
     </details>

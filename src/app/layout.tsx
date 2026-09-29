@@ -1,11 +1,26 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
+import { Inter, Manrope } from "next/font/google";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { PageTransition } from "@/components/motion/page-transition";
 import { Chatbot } from "@/features/chat/chatbot";
+import { ScrollToTop } from "@/components/layout/scroll-to-top";
 import { site } from "@/content/site";
 import { getSiteUrl, isIndexingEnabled } from "@/lib/site-url";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-manrope",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: getSiteUrl(),
@@ -29,11 +44,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <script dangerouslySetInnerHTML={{ __html: "const root=document.documentElement;root.classList.add('motion-enabled');setTimeout(()=>{if(!root.dataset.motionHydrated)root.classList.remove('motion-enabled')},1500)" }} />
         <noscript><style>{`.reveal{opacity:1!important;transform:none!important}`}</style></noscript>
       </head>
-      <body>
+      <body className={`${inter.variable} ${manrope.variable}`} style={{ "--font-body": inter.style.fontFamily, "--font-display": manrope.style.fontFamily } as CSSProperties}>
         <a className="skip-link" href="#main-content">Skip to content</a>
         <SiteHeader />
         <main id="main-content" tabIndex={-1}><PageTransition>{children}</PageTransition></main>
         <SiteFooter />
+        <ScrollToTop />
         <Chatbot />
       </body>
     </html>

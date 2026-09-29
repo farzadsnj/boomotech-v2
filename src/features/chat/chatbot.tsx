@@ -7,6 +7,8 @@ import { BookingForm } from "@/features/booking/booking-form";
 import { serviceGuidance, type ServiceMatch } from "./service-matcher";
 
 const SESSION_KEY = "boomotech-welcome-seen";
+const SOUND_KEY = "boomotech-chat-sound";
+const SOUND_SESSION_KEY = "boomotech-chat-sound-played";
 type View = "home" | "categories" | "category" | "question" | "booking";
 const categories = [
   { id: "fix", label: "Fix an IT problem", paths: ["/services/it-support", "/services/microsoft-365", "/services/managed-it"] },
@@ -19,6 +21,8 @@ const categories = [
 export function Chatbot() {
   const [open, setOpen] = useState(false);
   const [welcome, setWelcome] = useState(false);
+  const [attention, setAttention] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const [view, setView] = useState<View>("home");
   const [categoryId, setCategoryId] = useState("");
   const [selectedService, setSelectedService] = useState("");
@@ -31,15 +35,16 @@ export function Chatbot() {
   const opener = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    const preferenceTimer = window.setTimeout(() => setSoundEnabled(localStorage.getItem(SOUND_KEY) === "on"), 0);
     if (sessionStorage.getItem(SESSION_KEY)) return;
-    const timer = window.setTimeout(() => { setWelcome(true); sessionStorage.setItem(SESSION_KEY, "true"); }, 2400);
-    return () => window.clearTimeout(timer);
+    const timer = window.setTimeout(() => { setWelcome(true); setAttention(true); sessionStorage.setItem(SESSION_KEY, "true"); }, 2800);
+    return () => { window.clearTimeout(preferenceTimer); window.clearTimeout(timer); };
   }, []);
   useEffect(() => {
     const booking = (event: Event) => {
       const detail = (event as CustomEvent<{ servicePath?: string; trigger?: HTMLElement }>).detail;
       opener.current = detail?.trigger ?? document.activeElement as HTMLElement;
-      setSelectedService(detail?.servicePath ?? ""); setView("booking"); setWelcome(false); setOpen(true);
+      setSelectedService(detail?.servicePath ?? ""); setView("booking"); setWelcome(false); setAttention(false); setOpen(true);
     };
     window.addEventListener("boomotech:open-booking", booking);
     return () => window.removeEventListener("boomotech:open-booking", booking);
@@ -66,6 +71,29 @@ export function Chatbot() {
     setOpen(false);
     requestAnimationFrame(() => (opener.current ?? launcher.current)?.focus());
   }
+  function playChime(force = false) {
+    if ((!soundEnabled && !force) || document.hidden || navigator.webdriver || sessionStorage.getItem(SOUND_SESSION_KEY)) return;
+    try {
+      const context = new AudioContext();
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(660, context.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(880, context.currentTime + .12);
+      gain.gain.setValueAtTime(.025, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.001, context.currentTime + .18);
+      oscillator.connect(gain).connect(context.destination);
+      oscillator.start(); oscillator.stop(context.currentTime + .18);
+      oscillator.addEventListener("ended", () => void context.close());
+      sessionStorage.setItem(SOUND_SESSION_KEY, "true");
+    } catch { /* Audio is an optional enhancement. */ }
+  }
+  function toggleSound() {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    localStorage.setItem(SOUND_KEY, next ? "on" : "off");
+    if (next) playChime(true);
+  }
   function book(path = "") { setSelectedService(path); setView("booking"); }
   function chooseCategory(id: string) { setCategoryId(id); setView("category"); }
   function ask(event: FormEvent) { event.preventDefault(); setAnswer(serviceGuidance(question)); }
@@ -73,9 +101,9 @@ export function Chatbot() {
   const categoryServices = category?.paths.map((path) => serviceByPath.get(path)).filter(Boolean) ?? [];
 
   return <aside className={`chatbot${open ? " is-open" : ""}`} aria-label="BoomoTech service assistant">
-    {welcome && !open && <div className="chat-welcome"><p role="status">Hi! How can we help with your technology today?</p><button aria-label="Dismiss welcome message" onClick={() => setWelcome(false)}>×</button></div>}
+    {welcome && !open && <div className="chat-welcome"><p role="status">Need help choosing a service? Tell us what you’re trying to fix or improve.</p><button aria-label="Dismiss welcome message" onClick={() => { setWelcome(false); setAttention(false); }}>×</button></div>}
     {open && <div className="chat-panel" ref={panel} role="dialog" aria-modal="false" aria-labelledby="chat-title">
-      <header><div><p>BoomoTech</p><h2 id="chat-title" ref={title} tabIndex={-1}>Service assistant</h2></div><button className="chat-close" onClick={close} aria-label="Close service assistant">×</button></header>
+      <header><div><p>BoomoTech</p><h2 id="chat-title" ref={title} tabIndex={-1}>Service assistant</h2></div><div className="chat-header-actions"><button aria-label={`Turn notification sound ${soundEnabled ? "off" : "on"}`} aria-pressed={soundEnabled} className="chat-sound" onClick={toggleSound} type="button">{soundEnabled ? "Sound on" : "Sound off"}</button><button className="chat-close" onClick={close} aria-label="Close service assistant">×</button></div></header>
       <div className="chat-body">
         {view !== "home" && <button className="chat-back" onClick={() => setView(view === "category" ? "categories" : "home")}>← {view === "category" ? "Service needs" : "Main menu"}</button>}
         {view === "home" && <><p>Choose a starting point. Suggestions use BoomoTech’s approved service content.</p><div className="chat-actions"><button onClick={() => setView("categories")}>Explore our services</button><button className="primary" onClick={() => book()}>Book a consultation</button><button onClick={() => setView("question")}>Ask a service question</button></div><Link className="chat-direct-link" href="/booking" onClick={close}>Open the full booking page</Link></>}
@@ -85,6 +113,6 @@ export function Chatbot() {
         {view === "booking" && <BookingForm key={selectedService} initialService={selectedService} compact onClose={close} />}
       </div>
     </div>}
-    <button ref={launcher} className="chat-launcher" aria-label={open ? "Close BoomoTech chat" : "Chat with BoomoTech"} aria-expanded={open} onClick={() => { setWelcome(false); if (open) close(); else { opener.current = launcher.current; setOpen(true); } }}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4V4Zm4 5h8M8 12h5" /></svg><span>Chat with BoomoTech</span></button>
+    <button ref={launcher} className={`chat-launcher${attention ? " needs-attention" : ""}`} aria-label={open ? "Close BoomoTech chat" : "Chat with BoomoTech"} aria-expanded={open} onClick={() => { setWelcome(false); setAttention(false); if (open) close(); else { opener.current = launcher.current; setOpen(true); playChime(); } }}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4V4Zm4 5h8M8 12h5" /></svg><span>Chat with BoomoTech</span></button>
   </aside>;
 }
