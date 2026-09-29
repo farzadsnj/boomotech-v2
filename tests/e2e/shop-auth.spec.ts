@@ -46,6 +46,24 @@ test.describe("shop catalogue", () => {
     await page.screenshot({ path: `${screenshots}/product-detail.png`, fullPage: true });
   });
 
+  test("product rows do not overlap, controls move the row and all-products view is real", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 }); await page.goto("/shop");
+    const row = page.getByTestId("product-row").nth(1); const cards = row.locator(".product-card");
+    const boxes = await cards.evaluateAll((nodes) => nodes.map((node) => { const box = node.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top, bottom: box.bottom }; }));
+    for (let index = 1; index < boxes.length; index += 1) expect(boxes[index].left).toBeGreaterThanOrEqual(boxes[index - 1].right - 1);
+    const before = await row.evaluate((node) => node.scrollLeft); await page.getByRole("button", { name: /Next Latest product concepts/ }).click(); await expect.poll(() => row.evaluate((node) => node.scrollLeft)).toBeGreaterThan(before);
+    await page.screenshot({ path: `${screenshots}/shop-product-row-scrolled.png`, fullPage: true });
+    await page.getByRole("link", { name: "View all products" }).first().click(); await expect(page).toHaveURL(/view=all/); await expect(page.locator(".product-grid .product-card")).toHaveCount(12);
+  });
+
+  test("mobile product rows keep touch-sized snap tracks", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 }); await page.goto("/shop");
+    const row = page.getByTestId("product-row").first();
+    expect(await row.evaluate((node) => getComputedStyle(node).scrollSnapType)).toMatch(/(x|inline) mandatory/);
+    const rowBox = await row.boundingBox(); const cardBox = await row.locator(".product-card").first().boundingBox();
+    expect(cardBox!.width).toBeGreaterThan(250); expect(cardBox!.width).toBeLessThan(rowBox!.width);
+  });
+
   test("shop works at mobile widths without serious accessibility issues or overflow", async ({ page }) => {
     for (const viewport of [{ width: 320, height: 800 }, { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1280, height: 800 }]) {
       await page.setViewportSize(viewport);

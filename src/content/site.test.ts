@@ -33,6 +33,8 @@ describe("local Phase 1 content", () => {
   it("gives every service the required useful content", () => {
     expect(services).toHaveLength(11);
     for (const service of services) {
+      expect(service.visual.src).toMatch(/^\/visuals\/services\/.+\.svg$/);
+      expect(service.visual.alt.length).toBeGreaterThan(15);
       expect(service.audience.length).toBeGreaterThan(20);
       expect(service.signals.length).toBeGreaterThanOrEqual(3);
       expect(service.inclusions.length).toBeGreaterThanOrEqual(3);
@@ -54,11 +56,23 @@ describe("local Phase 1 content", () => {
   it("organises solutions around audiences, problems and priorities", () => {
     expect(solutions).toHaveLength(5);
     for (const solution of solutions) {
+      expect(solution.visual.src).toMatch(/^\/visuals\/solutions\/.+\.svg$/);
+      expect(solution.visual.alt.length).toBeGreaterThan(15);
       expect(solution.audience).toBeTruthy();
       expect(solution.challenges.length).toBeGreaterThanOrEqual(3);
       expect(solution.priorities.length).toBeGreaterThanOrEqual(3);
       expect(solution.approach.length).toBeGreaterThanOrEqual(3);
     }
+  });
+
+  it("provides practical support, resources and verified founder content", () => {
+    const support = allPages.find(({ path }) => path === "/support");
+    const resources = allPages.find(({ path }) => path === "/resources");
+    const about = allPages.find(({ path }) => path === "/about");
+    expect(support && "faqs" in support ? support.faqs : []).toHaveLength(10);
+    expect(resources && "resources" in resources ? resources.resources : []).toHaveLength(10);
+    expect(JSON.stringify(about)).toContain("Farzad Sanjarani");
+    expect(JSON.stringify(about)).toContain("QUT");
   });
 
   it("keeps homepage and navigation actions attached to known routes", () => {
