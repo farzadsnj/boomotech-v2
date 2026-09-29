@@ -1,6 +1,14 @@
-import type { SolutionRecord } from "./types";
+import type { SolutionRecord, VisualAsset } from "./types";
 
-const solution = (record: Omit<SolutionRecord, "kind" | "eyebrow">): SolutionRecord => ({ ...record, kind: "solution", eyebrow: "Who we help" });
+const solutionVisuals: Record<SolutionRecord["path"], VisualAsset> = {
+  "/solutions/small-business": { src: "/visuals/solutions/small-business.svg", alt: "A small business workspace with connected technology" },
+  "/solutions/professional-services": { src: "/visuals/solutions/professional-services.svg", alt: "A professional team sharing organised information" },
+  "/solutions/retail": { src: "/visuals/solutions/retail.svg", alt: "A connected customer-facing retail workspace" },
+  "/solutions/home-office-individuals": { src: "/visuals/solutions/home-office.svg", alt: "A reliable home-office setup" },
+  "/solutions/remote-work": { src: "/visuals/solutions/remote-work.svg", alt: "A remote team connected across locations" },
+};
+
+const solution = (record: Omit<SolutionRecord, "kind" | "eyebrow" | "visual">): SolutionRecord => ({ ...record, kind: "solution", eyebrow: "Who we help", visual: solutionVisuals[record.path] });
 
 export const solutions: SolutionRecord[] = [
   solution({ path: "/solutions/small-business", title: "Technology that supports a growing business", description: "Bring day-to-day support, safer foundations and practical improvement into one clearer plan.", metaDescription: "Practical technology solutions for Brisbane and Australian small businesses without a dedicated IT team.", audience: "Owners and growing teams balancing customer work with technology decisions, often without a dedicated IT function.", challenges: [{ title: "Daily interruptions", description: "Recurring device, account and network issues make focused work harder." }, { title: "Unclear ownership", description: "Nobody is sure who maintains systems, access, backups or supplier relationships." }, { title: "Growth friction", description: "Onboarding, collaboration and administration have not kept pace with the team." }], priorities: ["Stabilise the issues affecting work now", "Clarify access, backup and security foundations", "Document ownership and repeatable routines", "Create a realistic improvement roadmap"], approach: [{ number: "01", title: "Start with impact", description: "Identify what is interrupting work or creating avoidable risk." }, { number: "02", title: "Set practical priorities", description: "Separate urgent fixes from improvements that can be staged." }, { number: "03", title: "Build a workable plan", description: "Connect support, systems and future projects without unnecessary complexity." }], related: [{ label: "Managed IT", href: "/services/managed-it" }, { label: "Cybersecurity foundations", href: "/services/cybersecurity" }, { label: "Book a consultation", href: "/book/consultation" }] }),

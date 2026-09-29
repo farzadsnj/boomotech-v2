@@ -1,7 +1,9 @@
 export type SiteLink = { label: string; href: `/${string}` };
 export type Faq = { question: string; answer: string };
 export type ProcessStep = { number: string; title: string; description: string };
-export type Feature = { title: string; description: string };
+export type Feature = { title: string; description: string; href?: `/${string}`; action?: string };
+export type ResourceCard = Feature & { href: `/${string}`; action: string; topic: string; format: string; readTime: string; relatedService: string; featured?: boolean };
+export type VisualAsset = { src: string; alt: string };
 
 export type PageBase = {
   path: `/${string}`;
@@ -14,6 +16,7 @@ export type PageBase = {
 export type ServiceRecord = PageBase & {
   kind: "service";
   name: string;
+  visual: VisualAsset;
   audience: string;
   signals: string[];
   inclusions: string[];
@@ -26,6 +29,7 @@ export type ServiceRecord = PageBase & {
 
 export type SolutionRecord = PageBase & {
   kind: "solution";
+  visual: VisualAsset;
   audience: string;
   challenges: Feature[];
   priorities: string[];
@@ -43,6 +47,7 @@ export type InfoPage = PageBase & {
   kind: "info" | "support" | "booking" | "legal" | "resource";
   notice?: { tone: "info" | "safety" | "draft"; title: string; body: string };
   cards?: Feature[];
+  resources?: ResourceCard[];
   sections?: InfoSection[];
   process?: ProcessStep[];
   faqs?: Faq[];

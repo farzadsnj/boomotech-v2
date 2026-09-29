@@ -1,4 +1,18 @@
-import type { ProcessStep, ServiceRecord } from "./types";
+import type { ProcessStep, ServiceRecord, VisualAsset } from "./types";
+
+const serviceVisuals: Record<ServiceRecord["path"], VisualAsset> = {
+  "/services/it-support": { src: "/visuals/services/it-support.svg", alt: "A computer with a practical support toolkit" },
+  "/services/managed-it": { src: "/visuals/services/managed-it.svg", alt: "Connected systems being monitored" },
+  "/services/microsoft-365": { src: "/visuals/services/microsoft-365.svg", alt: "A connected collaborative workspace" },
+  "/services/cloud-infrastructure": { src: "/visuals/services/cloud-infrastructure.svg", alt: "Cloud services connected to business systems" },
+  "/services/network-wifi": { src: "/visuals/services/network-wifi.svg", alt: "Network nodes connected through reliable Wi-Fi" },
+  "/services/cybersecurity": { src: "/visuals/services/cybersecurity.svg", alt: "A shield protecting a business account" },
+  "/services/backup-recovery": { src: "/visuals/services/backup-recovery.svg", alt: "Protected data with a recovery path" },
+  "/services/ai-automation": { src: "/visuals/services/ai-automation.svg", alt: "A controlled workflow connecting repeatable tasks" },
+  "/services/web-software": { src: "/visuals/services/web-software.svg", alt: "A structured website and software interface" },
+  "/services/digital-presence": { src: "/visuals/services/digital-presence.svg", alt: "Connected web and communication touchpoints" },
+  "/services/ui-ux-branding": { src: "/visuals/services/ui-ux-branding.svg", alt: "Interface and brand design components" },
+};
 
 const serviceProcess: ProcessStep[] = [
   { number: "01", title: "Understand", description: "Start with the problem, the people affected and the outcome you need." },
@@ -6,11 +20,12 @@ const serviceProcess: ProcessStep[] = [
   { number: "03", title: "Improve", description: "Complete the agreed work, explain the result and identify useful next steps." },
 ];
 
-const service = (record: Omit<ServiceRecord, "kind" | "eyebrow" | "process">): ServiceRecord => ({
+const service = (record: Omit<ServiceRecord, "kind" | "eyebrow" | "process" | "visual">): ServiceRecord => ({
   ...record,
   kind: "service",
   eyebrow: "BoomoTech service",
   process: serviceProcess,
+  visual: serviceVisuals[record.path],
 });
 
 export const services: ServiceRecord[] = [

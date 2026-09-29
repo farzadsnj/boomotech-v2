@@ -1,6 +1,7 @@
 export type BlogSection = { id: string; title: string; paragraphs: string[]; points?: string[] };
 export type BlogArticle = {
   slug: string; title: string; summary: string; excerpt: string; category: string; author: string;
+  heroImage: string; heroImageAlt: string; visualTheme: "support" | "network" | "security";
   published: string; updated: string; relatedService: { label: string; href: `/${string}` };
   sections: BlogSection[]; relatedSlugs: string[]; isPublished: boolean;
 };
@@ -10,6 +11,7 @@ const common = { author: "BoomoTech Team", published: "2026-09-24", updated: "20
 export const blogArticles: BlogArticle[] = [
   {
     ...common, slug: "essential-it-support-checklist-small-business", category: "IT support",
+    heroImage: "/visuals/blog/it-support-checklist.svg", heroImageAlt: "A practical small-business IT checklist covering devices, accounts, backups and networks", visualTheme: "support",
     title: "Essential IT Support Checklist for Small Businesses",
     summary: "A practical checklist for keeping devices, accounts, backups, email and everyday technology dependable.",
     excerpt: "Use this checklist to review the technology foundations that support daily work and identify gaps before they become interruptions.",
@@ -25,6 +27,7 @@ export const blogArticles: BlogArticle[] = [
   },
   {
     ...common, slug: "improve-small-business-wifi-network", category: "Networks",
+    heroImage: "/visuals/blog/business-wifi-network.svg", heroImageAlt: "A business workspace connected through well-placed Wi-Fi access points", visualTheme: "network",
     title: "How to Improve Your Small Business Wi-Fi and Network",
     summary: "Practical ways to improve coverage, reliability and security before buying more network equipment.",
     excerpt: "Start with placement, interference, cabling and secure configuration to find the real cause of unreliable workplace Wi-Fi.",
@@ -39,6 +42,7 @@ export const blogArticles: BlogArticle[] = [
   },
   {
     ...common, slug: "practical-cybersecurity-steps-australian-small-businesses", category: "Cybersecurity",
+    heroImage: "/visuals/blog/cybersecurity-steps.svg", heroImageAlt: "A security shield protecting business accounts, devices and backups", visualTheme: "security",
     title: "Practical Cybersecurity Steps for Australian Small Businesses",
     summary: "Straightforward security practices for accounts, devices, backups and incident preparation.",
     excerpt: "Strengthen everyday security with multi-factor authentication, safer account access, tested backups and a simple response plan.",

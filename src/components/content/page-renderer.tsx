@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowIcon } from "@/components/ui/arrow-icon";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Reveal } from "@/components/motion/reveal";
@@ -33,8 +34,14 @@ function BulletGrid({ items }: { items: string[] }) {
   return <ul className="bullet-grid">{items.map((item) => <li key={item}><span aria-hidden="true">✓</span>{item}</li>)}</ul>;
 }
 
-function CardGrid({ items }: { items: { title: string; description: string }[] }) {
-  return <div className="content-card-grid">{items.map((item, index) => <article className="content-card" key={item.title}><span className="content-card__number">{String(index + 1).padStart(2, "0")}</span><h3>{item.title}</h3><p>{item.description}</p></article>)}</div>;
+function CardGrid({ items }: { items: { title: string; description: string; href?: `/${string}`; action?: string }[] }) {
+  return <div className="content-card-grid">{items.map((item, index) => item.href ? <Link className="content-card content-card--link" href={item.href} key={item.title}><span className="content-card__number">{String(index + 1).padStart(2, "0")}</span><h3>{item.title}</h3><p>{item.description}</p><strong>{item.action ?? "Explore"} <ArrowIcon diagonal /></strong></Link> : <article className="content-card" key={item.title}><span className="content-card__number">{String(index + 1).padStart(2, "0")}</span><h3>{item.title}</h3><p>{item.description}</p></article>)}</div>;
+}
+
+function Resources({ page }: { page: InfoPage }) {
+  const resources = page.resources ?? [];
+  const featured = resources.find((item) => item.featured);
+  return <>{featured ? <Section eyebrow="FEATURED RESOURCE" title="A practical place to begin"><Link className="resource-feature" href={featured.href}><div><span>{featured.topic} · {featured.format}</span><h3>{featured.title}</h3><p>{featured.description}</p></div><div><small>{featured.readTime} · {featured.relatedService}</small><strong>{featured.action} <ArrowIcon diagonal /></strong></div></Link></Section> : null}<Section eyebrow="PRACTICAL LIBRARY" title="Guidance for the next step" muted><div className="resource-grid">{resources.filter((item) => !item.featured).map((item) => <Link className="resource-card" href={item.href} key={item.title}><span>{item.topic} · {item.format}</span><h3>{item.title}</h3><p>{item.description}</p><small>{item.readTime} · {item.relatedService}</small><strong>{item.action} <ArrowIcon diagonal /></strong></Link>)}</div></Section></>;
 }
 
 function ClosingCta({ label = "Request a Consultation", href = "/booking", description = "Bring the situation in your own words. A request starts a conversation and does not confirm an appointment.", servicePath }: { label?: string; href?: string; description?: string; servicePath?: string }) {
@@ -64,13 +71,14 @@ function SolutionPage({ page }: { page: SolutionRecord }) {
 function HubPageView({ page }: { page: HubPage }) {
   const records = page.kind === "services-hub" ? services : solutions;
   return <><Hero page={page} /><Section eyebrow={page.kind === "services-hub" ? "SERVICE AREAS" : "SITUATIONS"} title={page.kind === "services-hub" ? "Choose a practical starting point" : "Find the path closest to your work"}>
-    <div className="catalogue-grid">{records.map((record, index) => <Link className="catalogue-card" href={record.path} key={record.path}><span>{String(index + 1).padStart(2, "0")}</span><h2>{record.title}</h2><p>{record.description}</p><strong>Explore <ArrowIcon diagonal /></strong></Link>)}</div>
+    <div className="catalogue-grid">{records.map((record, index) => <Link aria-label={`Explore ${record.title}`} className="catalogue-card" href={record.path} key={record.path}><div className="catalogue-card__visual"><Image alt={record.visual.alt} fill sizes="(max-width: 560px) 92vw, (max-width: 900px) 46vw, 390px" src={record.visual.src} /><span>{String(index + 1).padStart(2, "0")}</span></div><div className="catalogue-card__body"><h2>{record.title}</h2><p>{record.description}</p><strong>Explore {page.kind === "services-hub" ? "service" : "solution"} <ArrowIcon diagonal /></strong></div></Link>)}</div>
   </Section><ClosingCta /></>;
 }
 
 function InfoPageView({ page }: { page: InfoPage }) {
   return <><Hero page={page} />
     {page.notice ? <div className="container notice-wrap"><Notice {...page.notice} /></div> : null}
+    {page.resources?.length ? <Resources page={page} /> : null}
     {page.cards?.length ? <Section eyebrow="AT A GLANCE" title="Choose a useful starting point"><CardGrid items={page.cards} /></Section> : null}
     {page.sections?.map((section, index) => <Section eyebrow={`${String(index + 1).padStart(2, "0")} / GUIDANCE`} key={section.title} muted={index % 2 === 0} title={section.title}>
       {section.description ? <p className="prose-lead">{section.description}</p> : null}{section.items ? <BulletGrid items={section.items} /> : null}

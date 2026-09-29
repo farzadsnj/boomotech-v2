@@ -29,6 +29,27 @@
 .content-card__number { color: var(--color-primary-dark); font-size: .7rem; font-weight: 800; letter-spacing: .12em; }
 .content-card h3 { margin: 4rem 0 .8rem; font-size: 1.4rem; letter-spacing: -.035em; line-height: 1.2; }
 .content-card p { margin: 0; color: var(--color-ink-soft); font-size: .9rem; line-height: 1.65; }
+.content-card--link { display: flex; flex-direction: column; transition: transform .2s, border-color .2s, box-shadow .2s; }
+.content-card--link:hover, .content-card--link:focus-visible { transform: translateY(-3px); border-color: var(--color-primary); box-shadow: var(--shadow-card); }
+.content-card--link strong { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: auto; padding-top: 1.25rem; color: var(--color-primary-dark); font-size: .84rem; }
+.content-card--link svg { width: 1rem; }
+
+.resource-feature { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 2rem; padding: clamp(1.5rem, 4vw, 3rem); border-radius: var(--radius-large); background: var(--color-ink); color: white; }
+.resource-feature span, .resource-card > span { color: var(--color-accent); font-size: .75rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.resource-feature h3 { max-width: 760px; margin: .8rem 0; font-size: clamp(2rem, 4vw, 3.6rem); letter-spacing: -.05em; line-height: 1.08; }
+.resource-feature p { max-width: 700px; margin: 0; color: #d4e3e8; line-height: 1.7; }
+.resource-feature > div:last-child { display: grid; min-width: 180px; gap: 1rem; }
+.resource-feature small, .resource-card small { color: #bcd2dc; line-height: 1.5; }
+.resource-feature strong, .resource-card strong { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.resource-feature svg, .resource-card svg { width: 1.05rem; }
+.resource-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.resource-card { display: flex; min-height: 310px; flex-direction: column; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-medium); background: white; transition: transform .2s, border-color .2s, box-shadow .2s; }
+.resource-card:hover, .resource-card:focus-visible { transform: translateY(-3px); border-color: var(--color-primary); box-shadow: var(--shadow-card); }
+.resource-card > span { color: var(--color-primary-dark); }
+.resource-card h3 { margin: 2.2rem 0 .8rem; font-size: 1.35rem; line-height: 1.22; }
+.resource-card p { margin: 0; color: var(--color-ink-soft); font-size: .92rem; line-height: 1.65; }
+.resource-card small { margin-top: auto; padding-top: 1.5rem; color: var(--color-ink-soft); }
+.resource-card strong { padding-top: 1rem; color: var(--color-primary-dark); font-size: .84rem; }
 
 .inner-process { margin: 0; padding: 0; border-top: 1px solid var(--color-border); list-style: none; }
 .inner-process li { display: grid; grid-template-columns: minmax(90px, .3fr) 1fr; gap: 2rem; padding: 2rem 0; border-bottom: 1px solid var(--color-border); }
@@ -50,6 +71,14 @@
 .catalogue-card:hover { transform: translateY(-4px); border-color: var(--color-primary); box-shadow: var(--shadow-card); }
 .catalogue-card > span { color: var(--color-primary-dark); font-size: .72rem; font-weight: 800; letter-spacing: .12em; }.catalogue-card h2 { margin: 4.5rem 0 .8rem; font-size: 1.6rem; letter-spacing: -.04em; line-height: 1.18; }.catalogue-card p { margin: 0; color: var(--color-ink-soft); font-size: .9rem; line-height: 1.65; }.catalogue-card strong { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 1.5rem; color: var(--color-primary-dark); font-size: .83rem; }.catalogue-card svg { width: 1.05rem; transition: transform .2s; }.catalogue-card:hover svg { transform: translate(2px, -2px); }
 
+.catalogue-card { min-height: 0; overflow: hidden; padding: 0; }
+.catalogue-card__visual { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--color-surface-muted); }
+.catalogue-card__visual img { object-fit: cover; transition: transform .3s ease; }
+.catalogue-card:hover .catalogue-card__visual img { transform: scale(1.025); }
+.catalogue-card__visual > span { position: absolute; z-index: 1; top: 1rem; left: 1rem; display: grid; width: 2.6rem; height: 2.6rem; place-items: center; border-radius: 50%; background: var(--color-ink); color: white; font-size: .75rem; font-weight: 850; letter-spacing: .08em; }
+.catalogue-card__body { display: flex; min-height: 250px; flex: 1; flex-direction: column; padding: 1.4rem; }
+.catalogue-card__body h2 { margin: 0 0 .8rem; }
+
 .notice-wrap { margin-top: clamp(2.2rem, 5vw, 4rem); }
 .notice { display: grid; grid-template-columns: 2rem 1fr; gap: 1rem; padding: 1.3rem 1.5rem; border: 1px solid #9dc9df; border-radius: var(--radius-medium); background: #eaf5fb; }
 .notice--safety { border-color: #e5b46a; background: #fff8e9; }.notice--draft { border-color: #c8bdac; background: #f6f1e8; }
@@ -66,12 +95,14 @@
   .inner-hero__grid { grid-template-columns: 1fr; gap: 2rem; }.inner-hero__summary { max-width: 650px; }
   .inner-section__heading { grid-template-columns: 1fr; gap: 1rem; }
   .content-card-grid, .catalogue-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.resource-feature { grid-template-columns: 1fr; align-items: start; }
   .related-grid { grid-template-columns: 1fr 1fr; }.inner-cta__grid { grid-template-columns: 1fr; align-items: start; }
 }
 
 @media (max-width: 560px) {
   .inner-hero { padding-block: 1.5rem 4rem; }.breadcrumbs { margin-bottom: 3.2rem; }.inner-hero h1 { font-size: clamp(2.55rem, 13vw, 4rem); }
   .bullet-grid, .content-card-grid, .catalogue-grid, .related-grid { grid-template-columns: 1fr; }
-  .delivery-note, .inner-process li { grid-template-columns: 1fr; gap: .8rem; }.content-card, .catalogue-card { min-height: 255px; }.content-card h3, .catalogue-card h2 { margin-top: 3rem; }
+  .resource-grid { grid-template-columns: 1fr; }
+  .delivery-note, .inner-process li { grid-template-columns: 1fr; gap: .8rem; }.content-card { min-height: 255px; }.content-card h3 { margin-top: 3rem; }
   .notice { grid-template-columns: 1fr; }.inner-cta .button-link { width: 100%; min-width: 0; }
 }
