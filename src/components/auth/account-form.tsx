@@ -62,6 +62,7 @@ export function AccountForm({ mode }: { mode: Mode }) {
   }
 
   function clearFieldError(name: string, value: string) {
+    if (formError) setFormError("");
     if (!errors[name]) return;
     const form = formRef.current;
     if (!form) return;

@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { authSchema } from "@/db/schema";
 import { getSiteUrl } from "@/lib/site-url";
 import { hashPassword, verifyPassword } from "./password";
+import { requireBetterAuthSecret } from "./auth-env";
 
 const siteOrigin = getSiteUrl().origin;
 const localOrigins = process.env.NODE_ENV === "production"
@@ -14,7 +15,7 @@ const localOrigins = process.env.NODE_ENV === "production"
 export const auth = betterAuth({
   appName: "BoomoTech",
   baseURL: process.env.BETTER_AUTH_URL ?? siteOrigin,
-  secret: process.env.BETTER_AUTH_SECRET,
+  secret: requireBetterAuthSecret(),
   trustedOrigins: [...new Set([siteOrigin, ...localOrigins])],
   database: drizzleAdapter(db, { provider: "pg", schema: authSchema }),
   emailAndPassword: {

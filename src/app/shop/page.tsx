@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ProductCard } from "@/components/shop/product-card";
+import { ProductRow } from "@/components/shop/product-row";
 import { ShopSearch } from "@/components/shop/shop-search";
 import { productCategories, products, searchProducts } from "@/content/products";
 
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type Props = { searchParams: Promise<{ q?: string | string[]; category?: string | string[] }> };
+type Props = { searchParams: Promise<{ q?: string | string[]; category?: string | string[]; view?: string | string[] }> };
 
 function valueOf(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] ?? "" : value ?? ""; }
 
@@ -22,7 +23,8 @@ export default async function ShopPage({ searchParams }: Props) {
   const requestedCategory = valueOf(params.category);
   const category = productCategories.some(({ slug }) => slug === requestedCategory) ? requestedCategory : "all";
   const results = searchProducts(query, category);
-  const filtered = Boolean(query || category !== "all");
+  const viewAll = valueOf(params.view) === "all";
+  const filtered = Boolean(query || category !== "all" || viewAll);
   const featured = products.filter(({ featured }) => featured);
   const newest = products.filter(({ isNew }) => isNew);
   const recommended = products.filter(({ recommended }) => recommended);
@@ -43,7 +45,7 @@ export default async function ShopPage({ searchParams }: Props) {
     <div className="shop-main container">
       <div className="catalogue-notice" role="note"><strong>Sample catalogue</strong><span>Products, prices and availability are placeholders for layout review. Online ordering is not available.</span></div>
       {filtered ? <section className="shop-section" aria-labelledby="search-results-title">
-        <div className="shop-section__heading"><div><p className="eyebrow"><span className="eyebrow-line" />Search results</p><h2 id="search-results-title">{results.length ? `${results.length} product${results.length === 1 ? "" : "s"} found` : "No matching products"}</h2></div></div>
+        <div className="shop-section__heading"><div><p className="eyebrow"><span className="eyebrow-line" />{viewAll && !query && category === "all" ? "All sample products" : "Search results"}</p><h2 id="search-results-title">{results.length ? `${results.length} product${results.length === 1 ? "" : "s"} found` : "No matching products"}</h2><p className="shop-filter-summary">{query ? `Search: “${query}”` : "All search terms"} · {category === "all" ? "All categories" : productCategories.find((item) => item.slug === category)?.name}</p></div>{filtered ? <Link href="/shop">Clear active filters</Link> : null}</div>
         {results.length ? <div className="product-grid">{results.map((product) => <ProductCard key={product.slug} product={product} />)}</div> : <div className="shop-empty"><h3>Try a broader search</h3><p>Check the spelling, use fewer words or explore all product categories.</p><Link className="button-link button-link--primary inline-flex items-center" href="/shop">Clear active search</Link></div>}
       </section> : <>
         <section className="shop-section" aria-labelledby="categories-title">
@@ -56,8 +58,4 @@ export default async function ShopPage({ searchParams }: Props) {
       </>}
     </div>
   </>;
-}
-
-function ProductRow({ eyebrow, id, products: items, title }: { eyebrow: string; id: string; products: typeof products; title: string }) {
-  return <section className="shop-section" aria-labelledby={id}><div className="shop-section__heading"><div><p className="eyebrow"><span className="eyebrow-line" />{eyebrow}</p><h2 id={id}>{title}</h2></div><Link href="/shop?category=all">View all products</Link></div><div className="product-row">{items.map((product) => <ProductCard key={product.slug} product={product} />)}</div></section>;
 }

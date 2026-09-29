@@ -21,7 +21,7 @@ export default async function ProductPage({ params }: Props) {
   const product = productBySlug.get((await params).slug);
   if (!product) notFound();
   const category = categoryBySlug.get(product.category)!;
-  const related = products.filter((item) => item.category === product.category && item.slug !== product.slug).slice(0, 3);
+  const related = [...products.filter((item) => item.category === product.category && item.slug !== product.slug), ...products.filter((item) => item.category !== product.category && item.slug !== product.slug)].slice(0, 4);
   return <>
     <header className="product-hero"><div className="container"><Breadcrumbs path={`/shop/${product.slug}`} title={product.name} /><div className="product-hero__grid">
       <div className="product-gallery"><Image alt={`${product.name} sample catalogue illustration`} fill priority sizes="(max-width: 760px) 92vw, 560px" src={product.image} /></div>
