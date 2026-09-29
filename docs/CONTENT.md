@@ -57,6 +57,7 @@ Each service record should include:
 - published and updated dates
 - factual sources where appropriate
 - cover image and alt text
+- local branded hero image, meaningful alt text and optional visual theme/focal treatment
 - body with table of contents for long pieces
 - related service and next action
 - tags/categories
@@ -127,3 +128,9 @@ Each page should offer one context-matched next action. Educational content can 
 - Product catalogue, suppliers, inventory and fulfilment model
 - Existing logo/brand assets
 - Final policy text
+
+## Current practical resource model
+
+The resources hub groups real routes by customer need. Each card records a topic, format, approximate reading time, related service and clear action. A resource must resolve to an existing reviewed article, service, support guide, booking preparation page or the explicitly labelled sample catalogue; unfinished downloads are not presented as available.
+
+Verified founder copy may state that Farzad Sanjarani is a Brisbane-based IT professional with a Master of Information Technology in Software Development from QUT and practical experience across IT support, endpoint deployment, networking, Microsoft 365, cloud, websites, software and automation. Employer names, client names, tenure, awards and unverified credentials remain excluded.

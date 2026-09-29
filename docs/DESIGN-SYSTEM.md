@@ -27,7 +27,7 @@ Define colours as semantic tokens, not raw values in components. Verify WCAG AA 
 
 ## Typography
 
-Choose one highly readable variable sans family with excellent Latin support. A restrained display face may be used only if performance and readability remain strong. Use fluid type scales with comfortable line length (roughly 60–75 characters for body copy).
+Manrope is the display face for headings and identity moments; Inter is the body and interface face. Both variable fonts are self-hosted by `next/font` with swap behaviour and CSS variables `--font-display` and `--font-body`. No runtime font provider request is permitted. Use fluid type scales with comfortable line length (roughly 60–75 characters for body copy). Small labels remain at least readable interface text with deliberate weight and spacing.
 
 ## Layout
 
@@ -65,6 +65,14 @@ Choose one highly readable variable sans family with excellent Latin support. A 
 Motion communicates hierarchy and state. Keep transitions roughly 150–300 ms. Respect `prefers-reduced-motion`. Avoid scroll hijacking, autoplay background video, cursor effects, parallax-heavy pages, and animations that delay a task.
 
 The implemented motion layer lives in `src/styles/motion.css` and uses CSS for page entry, hero sequencing, interactive feedback and mobile navigation. A small Intersection Observer component adds section reveals only after JavaScript is available; content remains visible when JavaScript fails. Reduced-motion mode removes movement and leaves all content visible.
+
+The sticky header adds depth only after scrolling. The homepage illustration permits a restrained 6–14 px pointer response through requestAnimationFrame on fine pointers; it resets on leave and is disabled for coarse pointers and reduced motion. The scroll-to-top control appears only on long pages after meaningful scrolling and uses instant scrolling when reduced motion is requested.
+
+Chat notification audio is optional, quiet and off until enabled by the visitor. It uses a short local Web Audio tone after a valid interaction, never runs in automated browsers, plays at most once per session and fails without affecting the visual assistant.
+
+## Content visuals
+
+Service, solution and article data owns a local visual path and meaningful alternative text. Use lightweight branded SVGs with a consistent aspect ratio, no essential text inside the image and no third-party brand artwork. `next/image` supplies sizing and layout stability. Article checklist diagrams may supplement the hero image but cannot replace it.
 
 ## Accessibility
 

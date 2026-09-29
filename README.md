@@ -32,11 +32,21 @@ Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` before proposin
 
 The architecture and outstanding assumptions are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Search indexing stays disabled until `SITE_URL` is an approved HTTPS origin and `SITE_INDEXING_ENABLED=true` is set after launch review.
 
+## Interface and content system
+
+The global shell self-hosts the variable Manrope display face and Inter body face through `next/font`; browsers make no runtime Google Fonts request. The header becomes sticky and gains restrained backdrop depth after scrolling. Long pages expose a reduced-motion-aware “Back to top” control. The homepage technical visual uses a small requestAnimationFrame pointer transform on fine pointers only and keeps all text and controls outside the transformed decoration.
+
+Service and solution records own their visual source and alternative text in `src/content/services.ts` and `src/content/solutions.ts`. Add the local SVG under `public/visuals`, then update the record rather than embedding asset choices in a page component. Blog records similarly require `heroImage`, `heroImageAlt` and a visual theme. Local SVGs are displayed with `next/image` at fixed aspect ratios.
+
+The chat welcome appears once per browser session after a short delay. Notification sound is off until the visitor turns it on inside the assistant. The preference is stored locally as `boomotech-chat-sound`; the short Web Audio chime plays at most once per session after a valid interaction and remains independent from reduced-motion settings. Turn it off with the same “Sound on/off” control.
+
 ## Shop catalogue
 
 Product records live in `src/content/products.ts` and are validated by Zod when loaded. Add a category to `productCategories`, then add products with unique slugs, local visuals, searchable keywords, features and specifications. `/shop` reads `q` and `category` URL parameters, and `/shop/[slug]` is generated from the same records.
 
 Every current product, price and availability label is sample content for interface review. Checkout, cart, inventory reservation, shipping and payment are intentionally absent. Replace each placeholder record with verified supplier, model, price, stock, warranty, tax and fulfilment information before making the catalogue indexable.
+
+Product collections use an accessible horizontal `ProductRow`: desktop shows complete cards with previous/next controls only when content overflows, while small screens use touch-friendly 86vw scroll-snap tracks. `/shop?view=all` renders the full sample catalogue as a responsive grid. Search and category filters continue to use URL parameters.
 
 ## Customer accounts and PostgreSQL
 
@@ -59,6 +69,8 @@ DATABASE_URL=postgres://boomotech:boomotech@localhost:5433/boomotech
 BETTER_AUTH_SECRET=<at-least-32-random-bytes>
 BETTER_AUTH_URL=http://localhost:3000
 ```
+
+`BETTER_AUTH_SECRET` is validated before the authentication configuration is created. Missing or short values produce one actionable configuration error; production never continues with Better Auth’s default secret. Tests and CI must provide a clearly labelled test-only value explicitly.
 
 ### Create the initial administrator
 

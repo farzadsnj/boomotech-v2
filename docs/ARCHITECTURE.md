@@ -13,6 +13,7 @@ The current slice is a responsive marketing shell, complete informational Phase 
 - `src/lib/auth/` contains Better Auth configuration, Argon2id password hashing, client integration, schemas, authorization helpers and safe customer projections.
 - `src/lib/` also holds URL and metadata helpers. Marketing, article and catalogue data stays local until an approved content management approach exists.
 - `src/app/globals.css` defines semantic colour, typography, spacing, focus, and shared shell styles. Page and motion rules are split into `src/styles/pages.css` and `src/styles/motion.css`.
+- The root layout loads self-hosted Manrope and Inter variable fonts through `next/font`. Small client components own scroll-aware header state, the long-page scroll-to-top control and fine-pointer hero transforms without making the root layout request-bound.
 - Vitest checks content, metadata, product search, authorization, hashing and database-backed authentication. Playwright covers browsers. GitHub Actions applies migrations to PostgreSQL, then runs lint, type-check, tests, a production build and browser checks.
 
 ## Assumptions pending owner decisions
@@ -42,7 +43,11 @@ The floating assistant is a client-side interface over approved local service co
 
 `src/content/products.ts` is the single catalogue source. Search is deterministic and covers product names, categories, descriptions, keywords, features and specification values. Query and category state stay in the URL. All current product records are marked `placeholder: true` and remain outside the sitemap.
 
+`ProductRow` owns horizontal catalogue behaviour and end-state controls. It uses complete-card tracks on desktop and inline mandatory scroll snapping on mobile; `/shop?view=all` provides the non-carousel full grid. Service, solution and blog records own their local visual assets and alternative text, keeping image choice out of page templates.
+
 Better Auth is mounted at `/api/auth/[...all]` with the Drizzle PostgreSQL adapter, username and admin plugins, origin validation, HTTP-only cookies and database-backed rate limits. Customer email login and administrator username login use the same credential store. Argon2id parameters are defined centrally in `src/lib/auth/password.ts`. Only the administrator seed command can assign the `admin` role.
+
+`src/lib/auth/auth-env.ts` validates `BETTER_AUTH_SECRET` before Better Auth is instantiated. Every build, start, test and CI environment must provide at least 32 private characters explicitly; there is no production default.
 
 The initial administrator is created with `pnpm admin:seed` from untracked environment variables. The script creates or updates the administrator and revokes existing sessions. The `/admin` Server Component checks the session role before selecting a bounded customer projection containing only name, email and creation date.
 

@@ -29,6 +29,8 @@ Keep the header focused. Put secondary links, account access, policies, and deta
 - `/contact`
 - `/get-a-quote`
 
+`/resources` currently links practical preparation cards to real support guidance, reviewed articles, service pages, project preparation and the sample catalogue. It does not advertise unfinished downloads. `/about` includes the verified founder background and a direct consultation path.
+
 ### Service pages
 
 - `/services/it-support`
@@ -136,6 +138,8 @@ Use role-based access and strong authentication. Decide whether customers actual
 - `/service-terms`
 - `/returns-refunds`
 - `/shipping`
+
+The current `/shop` preview supports `q`, `category` and `view=all` query parameters. Landing-page product rows remain horizontally scannable on mobile and expose controls on desktop only when more complete cards are outside the viewport.
 - `/cancellations`
 - `/accessibility`
 
