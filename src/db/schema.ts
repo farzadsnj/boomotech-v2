@@ -71,4 +71,42 @@ export const rateLimit = pgTable("rate_limit", {
   lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 }, (table) => [uniqueIndex("rate_limit_key_unique").on(table.key)]);
 
+export const bookingRequest = pgTable("booking_request", {
+  id: text("id").primaryKey(),
+  reference: text("reference").notNull(),
+  userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+  fullName: text("full_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  servicePath: text("service_path").notNull(),
+  message: text("message").notNull(),
+  source: text("source").default("booking-page").notNull(),
+  status: text("status").default("new").notNull(),
+  consentVersion: text("consent_version").notNull(),
+  consentedAt: timestamp("consented_at", { withTimezone: true }).defaultNow().notNull(),
+  notificationStatus: text("notification_status").default("pending").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("booking_request_reference_unique").on(table.reference),
+  index("booking_request_user_id_idx").on(table.userId),
+  index("booking_request_status_idx").on(table.status),
+  index("booking_request_created_at_idx").on(table.createdAt),
+]);
+
+export const notificationOutbox = pgTable("notification_outbox", {
+  id: text("id").primaryKey(),
+  bookingId: text("booking_id").notNull().references(() => bookingRequest.id, { onDelete: "cascade" }),
+  kind: text("kind").default("booking-created").notNull(),
+  status: text("status").default("pending").notNull(),
+  attempts: integer("attempts").default(0).notNull(),
+  lastError: text("last_error"),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("notification_outbox_booking_kind_unique").on(table.bookingId, table.kind),
+  index("notification_outbox_status_idx").on(table.status),
+]);
+
 export const authSchema = { user, session, account, verification, rateLimit };

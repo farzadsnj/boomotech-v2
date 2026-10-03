@@ -84,13 +84,17 @@ ADMIN_TEMP_PASSWORD=<strong-temporary-password>
 
 Run `pnpm admin:seed`. The command hashes the password, creates or updates the `admin` role, invalidates prior sessions and never prints the password. Remove `ADMIN_TEMP_PASSWORD` immediately afterwards. Replace the temporary password with a strong private password before any public deployment; a password-change and recovery workflow is still a launch blocker.
 
-Database backups must be encrypted, access controlled, tested for restoration and covered by an owner-approved retention/deletion policy. The database contains customer names, normalized email addresses, password hashes, session data and timestamps. Privacy and legal text still requires owner/legal approval.
+After registration, customers are signed in and redirected to `/dashboard`. Administrators sign in with their seeded username at `/admin/login` and are redirected to `/admin`. Both destinations enforce the session and role again on the server.
+
+Database backups must be encrypted, access controlled, tested for restoration and covered by an owner-approved retention/deletion policy. The database contains customer names, normalized email addresses, password hashes, session data, booking contact details and timestamps. Privacy and legal text still requires owner/legal approval.
 
 ## Chatbot, booking requests and blog
 
 The floating service assistant is implemented in `src/features/chat`. It reads service labels, descriptions and routes from `src/content/services.ts`; `service-matcher.ts` contains only deterministic keyword rules and returns those canonical records. Add or edit a service in the catalogue first, then add matching terms only if visitors use language that the catalogue does not already cover.
 
-The chatbot and `/booking` route render the same progressive `BookingForm`. Booking links retain a real `/booking` destination and open the assistant only when JavaScript enhancement is available. Both client and server validate requests with the shared Zod schema. The `/api/booking` endpoint validates the request origin, enforces the decoded request-size limit, checks a honeypot and uses a pluggable rate limiter before handing delivery to the isolated Resend adapter. Personal information is not placed in URLs or browser storage and is not logged.
+The chatbot and `/booking` route render the same progressive `BookingForm`. Booking links retain a real `/booking` destination and open the assistant only when JavaScript enhancement is available. Both client and server validate requests with the shared Zod schema. The `/api/booking` endpoint validates the request origin, enforces the decoded request-size limit, checks a honeypot and applies a pluggable rate limiter before storing the request and its notification outbox record in one database transaction. Personal information is not placed in URLs or browser storage and is not logged.
+
+Every saved request receives a public `BT-...` reference. Requests submitted with a valid customer session are linked to that account and appear in its dashboard; guest requests remain unlinked. All requests appear in the role-protected administrator dashboard. A notification failure is recorded but does not delete or reject a successfully stored booking.
 
 Configure these server-side variables before testing real delivery:
 
@@ -98,12 +102,13 @@ Configure these server-side variables before testing real delivery:
 BOOKING_NOTIFICATION_EMAIL=verified-destination@example.com
 BOOKING_FROM_EMAIL=BoomoTech <verified-sender@example.com>
 RESEND_API_KEY=re_...
+# Optional for multi-instance deployments:
 BOOKING_RATE_LIMIT_REST_URL=https://your-shared-limiter.example
 BOOKING_RATE_LIMIT_REST_TOKEN=...
 BOOKING_TRUST_PROXY=true
 ```
 
-If any variable is missing or Resend rejects delivery, the interface reports that the request was not delivered. A successful request remains a request rather than a confirmed appointment.
+If notification variables are missing or Resend rejects delivery, the database record remains available to the administrator and its notification state is marked failed for operational follow-up. A successful submission remains a request rather than a confirmed appointment.
 
 Blog records live in `src/content/blog.ts`. To publish another article, add a unique typed record with `isPublished: true`, complete metadata, structured sections, a related service and related slugs. Published records automatically generate `/blog/[slug]` pages and sitemap entries. Draft records remain outside both.
 
@@ -122,4 +127,4 @@ Browser tests prepare an isolated PGlite database under ignored `.test-db/`; app
 
 ### Remaining production configuration
 
-Before enabling the booking endpoint in production, the owner must confirm the verified recipient and sender domain, privacy and consent wording, retention and deletion rules, expected response language, and the deployment environment. Production requires the shared booking rate-limit REST URL and token plus a trusted proxy that overwrites client forwarding headers; the bounded booking fallback runs only outside production. Account launch additionally requires managed PostgreSQL, encrypted backups, TLS, secret rotation, password recovery, verified admin email, monitoring and an incident process. The draft privacy notice and legal terms require owner and legal review. Search indexing remains controlled by `SITE_INDEXING_ENABLED` and an approved HTTPS `SITE_URL`.
+Before enabling the booking endpoint in production, run `pnpm db:migrate` against the intended database and confirm the verified recipient and sender domain, privacy and consent wording, retention and deletion rules, expected response language, and deployment environment. Production uses PostgreSQL for booking rate limits by default; the optional REST URL and token switch it to a shared external limiter for multi-instance scaling. A trusted proxy must overwrite client forwarding headers before `BOOKING_TRUST_PROXY=true` is enabled. Account launch additionally requires managed PostgreSQL, encrypted backups, TLS, secret rotation, password recovery, verified admin email, monitoring and an incident process. The draft privacy notice and legal terms require owner and legal review. Search indexing remains controlled by `SITE_INDEXING_ENABLED` and an approved HTTPS `SITE_URL`.

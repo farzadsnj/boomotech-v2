@@ -22,6 +22,7 @@ export function BookingForm({ initialService = "", compact = false, onClose }: {
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [formError, setFormError] = useState("");
+  const [reference, setReference] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const stepHeadingRef = useRef<HTMLElement>(null);
   const firstRender = useRef(true);
@@ -73,7 +74,7 @@ export function BookingForm({ initialService = "", compact = false, onClose }: {
     event.preventDefault();
     setFormError("");
     if (step < 2) { if (validateStep(step)) setStep(step + 1); return; }
-    const parsed = bookingRequestSchema.safeParse(fields);
+    const parsed = bookingRequestSchema.safeParse({ ...fields, source: compact ? "chatbot" : "booking-page" });
     if (!parsed.success) {
       const nextErrors = issuesToErrors(parsed.error.issues);
       setErrors(nextErrors);
@@ -84,8 +85,9 @@ export function BookingForm({ initialService = "", compact = false, onClose }: {
     setStatus("sending");
     try {
       const response = await fetch("/api/booking", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(parsed.data) });
-      const result = await response.json() as { error?: string };
+      const result = await response.json() as { error?: string; reference?: string };
       if (!response.ok) throw new Error(result.error ?? "We could not deliver your request.");
+      if (result.reference) setReference(result.reference);
       setStatus("success");
     } catch (cause) {
       setStatus("error");
@@ -98,7 +100,8 @@ export function BookingForm({ initialService = "", compact = false, onClose }: {
 
   if (status === "success") return <section className="booking-success" aria-labelledby={`${id}-success-title`} role="status">
     <h2 id={`${id}-success-title`} ref={stepHeadingRef as React.RefObject<HTMLHeadingElement>} tabIndex={-1}>Request received</h2>
-    <p>Thank you. Your booking request has been received. This is not yet a confirmed appointment. The BoomoTech team will contact you to discuss availability and next steps.</p>
+    <p>Thank you. Your booking request has been saved. This is not yet a confirmed appointment. The BoomoTech team will contact you to discuss availability and next steps.</p>
+    {reference ? <p><strong>Your reference:</strong> {reference}</p> : null}
     <div className="booking-success__actions">{onClose ? <button className="button-link button-link--primary" onClick={onClose}>Close assistant</button> : null}<Link className="button-link button-link--secondary" href="/">Return home</Link><Link className="button-link button-link--secondary" href="/services">Explore services</Link></div>
   </section>;
 
