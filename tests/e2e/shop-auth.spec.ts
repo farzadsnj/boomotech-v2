@@ -91,7 +91,13 @@ test.describe("shop catalogue", () => {
 
 test.describe("database-backed accounts", () => {
   test.describe.configure({ mode: "serial" });
-  const customer = { name: "Casey Test", email: "casey@example.test", password: "CustomerPassword9" };
+  // Each Playwright worker (including retries) needs a fresh address because the
+  // database intentionally persists accounts across the serial test group.
+  const customer = {
+    name: "Casey Test",
+    email: `casey-${process.pid}-${Date.now()}@example.test`,
+    password: "CustomerPassword9",
+  };
 
   test("registers a customer, protects the dashboard and invalidates the session", async ({ page }) => {
     await page.goto("/register");
@@ -143,7 +149,8 @@ test.describe("database-backed accounts", () => {
     await page.getByLabel("Password").fill("SyntheticAdminPassword9");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/admin$/);
-    await expect(page.getByRole("heading", { name: "Customer accounts" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Operations dashboard" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Registered customers" })).toBeVisible();
     await expect(page.getByRole("cell", { name: customer.email })).toBeVisible();
     await expect(page.locator("table")).not.toContainText("Password");
     await page.waitForTimeout(900);
