@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { PGlite } from "@electric-sql/pglite";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type * as Repository from "./repository";
 
 const databasePath = path.resolve(process.cwd(), ".test-db", `bookings-${randomUUID()}`);
@@ -48,5 +48,21 @@ describe("booking repository", () => {
     const result = await repository.listAdminBookings(1);
     expect(result.total).toBe(1);
     expect(result.records[0]).toMatchObject({ reference: stored.reference, source: "chatbot", status: "new" });
+  });
+
+  it("applies the PostgreSQL booking limit in production", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    delete process.env.BOOKING_RATE_LIMIT_REST_URL;
+    delete process.env.BOOKING_RATE_LIMIT_REST_TOKEN;
+    try {
+      const { getBookingRateLimiter } = await import("./rate-limiter");
+      const limiter = getBookingRateLimiter();
+      const results = [];
+      for (let attempt = 0; attempt < 6; attempt += 1) results.push(await limiter.check("integration-client"));
+      expect(results.slice(0, 5).every(({ allowed }) => allowed)).toBe(true);
+      expect(results[5].allowed).toBe(false);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

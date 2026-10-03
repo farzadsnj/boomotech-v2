@@ -37,7 +37,7 @@ Published blog records live in `src/content/blog.ts` and generate the blog index
 
 The floating assistant is a client-side interface over approved local service content. Matching is deterministic and does not send visitor questions to an AI provider. A single progressive booking form is rendered both in the assistant and at `/booking`.
 
-`/api/booking` validates the request origin and body again, limits the decoded payload size, checks a honeypot and calls the `BookingRateLimiter` interface. Development uses a bounded, expiring in-memory fallback. Production fails closed unless an Upstash-compatible shared REST limiter and a deployment proxy that overwrites forwarded client addresses are configured. Valid requests and their notification outbox entry are committed together. The notification adapter then sends plain-text and escaped HTML through Resend with a timeout. Delivery state is recorded separately, so a notification outage does not discard a booking.
+`/api/booking` validates the request origin and body again, limits the decoded payload size, checks a honeypot and calls the `BookingRateLimiter` interface. Development uses a bounded, expiring in-memory fallback. Production uses an atomic PostgreSQL limiter by default and can switch to the Upstash-compatible REST adapter when multiple application instances require shared external state. Production client identification still fails closed unless a deployment proxy overwrites forwarded client addresses. Valid requests and their notification outbox entry are committed together. The notification adapter then sends plain-text and escaped HTML through Resend with a timeout. Delivery state is recorded separately, so a notification outage does not discard a booking.
 
 ## Shop and account extensions
 

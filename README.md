@@ -102,6 +102,7 @@ Configure these server-side variables before testing real delivery:
 BOOKING_NOTIFICATION_EMAIL=verified-destination@example.com
 BOOKING_FROM_EMAIL=BoomoTech <verified-sender@example.com>
 RESEND_API_KEY=re_...
+# Optional for multi-instance deployments:
 BOOKING_RATE_LIMIT_REST_URL=https://your-shared-limiter.example
 BOOKING_RATE_LIMIT_REST_TOKEN=...
 BOOKING_TRUST_PROXY=true
@@ -126,4 +127,4 @@ Browser tests prepare an isolated PGlite database under ignored `.test-db/`; app
 
 ### Remaining production configuration
 
-Before enabling the booking endpoint in production, run `pnpm db:migrate` against the intended database and confirm the verified recipient and sender domain, privacy and consent wording, retention and deletion rules, expected response language, and deployment environment. Production requires the shared booking rate-limit REST URL and token plus a trusted proxy that overwrites client forwarding headers; the bounded booking fallback runs only outside production. Account launch additionally requires managed PostgreSQL, encrypted backups, TLS, secret rotation, password recovery, verified admin email, monitoring and an incident process. The draft privacy notice and legal terms require owner and legal review. Search indexing remains controlled by `SITE_INDEXING_ENABLED` and an approved HTTPS `SITE_URL`.
+Before enabling the booking endpoint in production, run `pnpm db:migrate` against the intended database and confirm the verified recipient and sender domain, privacy and consent wording, retention and deletion rules, expected response language, and deployment environment. Production uses PostgreSQL for booking rate limits by default; the optional REST URL and token switch it to a shared external limiter for multi-instance scaling. A trusted proxy must overwrite client forwarding headers before `BOOKING_TRUST_PROXY=true` is enabled. Account launch additionally requires managed PostgreSQL, encrypted backups, TLS, secret rotation, password recovery, verified admin email, monitoring and an incident process. The draft privacy notice and legal terms require owner and legal review. Search indexing remains controlled by `SITE_INDEXING_ENABLED` and an approved HTTPS `SITE_URL`.
