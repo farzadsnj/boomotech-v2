@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { bookingRequestSchema } from "@/features/booking/booking-schema";
 import { NotificationConfigurationError, sendBookingNotification } from "@/features/booking/notification";
 import { getBookingClientKey, getBookingRateLimiter, RateLimitConfigurationError } from "@/features/booking/rate-limiter";
+import { recordBookingNotification, storeBookingRequest } from "@/features/booking/repository";
 
 const MAX_BODY_BYTES = 20_000;
 class BodyTooLargeError extends Error {}
@@ -37,6 +38,14 @@ async function readRequestBody(request: Request) {
   return new TextDecoder().decode(bytes);
 }
 
+async function getAuthenticatedUserId(request: Request) {
+  const cookie = request.headers.get("cookie") ?? "";
+  if (!/(?:^|;\s*)(?:__Secure-)?better-auth\.session_token=/.test(cookie)) return null;
+  const { auth } = await import("@/lib/auth/auth");
+  const session = await auth.api.getSession({ headers: request.headers });
+  return session?.user.id ?? null;
+}
+
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
   if (!origin || origin !== approvedOrigin(request)) return NextResponse.json({ error: "This request did not come from the approved website." }, { status: 403 });
@@ -66,11 +75,25 @@ export async function POST(request: Request) {
 
   const parsed = bookingRequestSchema.safeParse(payload);
   if (!parsed.success) return NextResponse.json({ error: "Please check the highlighted information.", issues: parsed.error.flatten().fieldErrors }, { status: 400 });
+
+  let stored: Awaited<ReturnType<typeof storeBookingRequest>>;
+  try {
+    stored = await storeBookingRequest(parsed.data, await getAuthenticatedUserId(request));
+  } catch {
+    return NextResponse.json({ error: "We could not save your request. Please try again later." }, { status: 503 });
+  }
+
   try {
     await sendBookingNotification(parsed.data);
-    return NextResponse.json({ ok: true });
+    await recordBookingNotification(stored.id, stored.outboxId, "sent");
   } catch (error) {
-    const status = error instanceof NotificationConfigurationError ? 503 : 502;
-    return NextResponse.json({ error: "We could not deliver your request. Your information has not been stored. Please try again later." }, { status });
+    await recordBookingNotification(
+      stored.id,
+      stored.outboxId,
+      "failed",
+      error instanceof NotificationConfigurationError ? "configuration" : "delivery",
+    ).catch(() => undefined);
   }
+
+  return NextResponse.json({ ok: true, reference: stored.reference }, { status: 201 });
 }

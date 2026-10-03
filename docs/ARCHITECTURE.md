@@ -23,7 +23,7 @@ The current slice is a responsive marketing shell, complete informational Phase 
 - Informational pages are complete enough for review, but all routes remain excluded from indexing until an approved public origin, content, contacts and policies are supplied.
 - `SITE_URL` provides the canonical origin when known; local development falls back to `http://localhost:3000`. `SITE_INDEXING_ENABLED` is explicitly set to `true` only after launch review.
 - The local route records describe possible services and useful preparation. They are not a claim that every listed service is currently available.
-- `/booking` is the single booking-request destination. It securely transmits the listed contact and request fields only when notification and production rate-limit configuration is complete; it does not confirm an appointment.
+- `/booking` is the single booking-request destination. It stores validated contact and request fields in PostgreSQL and creates a notification outbox record; it does not confirm an appointment.
 - `/shop` and `/shop/[slug]` are non-indexed catalogue previews. Current products, prices and availability are explicitly marked samples; there is no cart, checkout or order API.
 - `/register`, `/login` and `/dashboard` use database-backed sessions. `/admin/login` and `/admin` use the same authentication system with server-side role checks. Public registration cannot set the `admin` role.
 
@@ -37,7 +37,7 @@ Published blog records live in `src/content/blog.ts` and generate the blog index
 
 The floating assistant is a client-side interface over approved local service content. Matching is deterministic and does not send visitor questions to an AI provider. A single progressive booking form is rendered both in the assistant and at `/booking`.
 
-`/api/booking` validates the request origin and body again, limits the decoded payload size, checks a honeypot and calls the `BookingRateLimiter` interface. Development uses a bounded, expiring in-memory fallback. Production fails closed unless an Upstash-compatible shared REST limiter and a deployment proxy that overwrites forwarded client addresses are configured. The notification adapter sends plain-text and escaped HTML through Resend with a timeout only when all server variables are configured. It stores no request database record and never reports success when notification delivery fails.
+`/api/booking` validates the request origin and body again, limits the decoded payload size, checks a honeypot and calls the `BookingRateLimiter` interface. Development uses a bounded, expiring in-memory fallback. Production fails closed unless an Upstash-compatible shared REST limiter and a deployment proxy that overwrites forwarded client addresses are configured. Valid requests and their notification outbox entry are committed together. The notification adapter then sends plain-text and escaped HTML through Resend with a timeout. Delivery state is recorded separately, so a notification outage does not discard a booking.
 
 ## Shop and account extensions
 
@@ -49,6 +49,6 @@ Better Auth is mounted at `/api/auth/[...all]` with the Drizzle PostgreSQL adapt
 
 `src/lib/auth/auth-env.ts` validates `BETTER_AUTH_SECRET` before Better Auth is instantiated. Every build, start, test and CI environment must provide at least 32 private characters explicitly; there is no production default.
 
-The initial administrator is created with `pnpm admin:seed` from untracked environment variables. The script creates or updates the administrator and revokes existing sessions. The `/admin` Server Component checks the session role before selecting a bounded customer projection containing only name, email and creation date.
+The initial administrator is created with `pnpm admin:seed` from untracked environment variables. The script creates or updates the administrator and revokes existing sessions. The `/admin` Server Component checks the session role before selecting bounded customer and booking projections. The customer dashboard selects bookings only by the authenticated user's immutable ID; guest bookings are never claimed by matching an email address.
 
 Production requires a managed PostgreSQL service with TLS, restricted network access, encrypted backups, restore testing and an approved retention/deletion process. Authentication secrets must come from the deployment secret manager and support rotation. Password recovery, email verification, audit logging and an administrator password-change runbook are outstanding launch controls.

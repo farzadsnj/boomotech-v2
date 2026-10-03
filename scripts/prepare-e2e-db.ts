@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { hashPassword } from "../src/lib/auth/password";
@@ -10,8 +10,12 @@ await rm(databasePath, { recursive: true, force: true });
 await mkdir(path.dirname(databasePath), { recursive: true });
 
 const client = new PGlite(databasePath);
-const migration = await readFile(path.resolve(workspace, "drizzle", "0000_auth_foundation.sql"), "utf8");
-for (const statement of migration.split("--> statement-breakpoint").map((value) => value.trim()).filter(Boolean)) await client.exec(statement);
+const migrationDirectory = path.resolve(workspace, "drizzle");
+const migrations = (await readdir(migrationDirectory)).filter((name) => name.endsWith(".sql")).sort();
+for (const name of migrations) {
+  const migration = await readFile(path.join(migrationDirectory, name), "utf8");
+  for (const statement of migration.split("--> statement-breakpoint").map((value) => value.trim()).filter(Boolean)) await client.exec(statement);
+}
 
 const adminId = crypto.randomUUID();
 const passwordHash = await hashPassword(process.env.E2E_ADMIN_PASSWORD ?? "SyntheticAdminPassword9");
