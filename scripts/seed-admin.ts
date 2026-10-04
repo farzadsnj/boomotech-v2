@@ -1,6 +1,7 @@
-import { loadEnvConfig } from "@next/env";
+import nextEnv from "@next/env";
 import { and, eq, or } from "drizzle-orm";
 
+const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
 
 const username = process.env.ADMIN_USERNAME?.trim().toLocaleLowerCase("en-AU");
