@@ -47,7 +47,7 @@ describe("booking repository", () => {
     expect(stored.reference).toMatch(/^BT-[A-F0-9]{10}$/);
     const result = await repository.listAdminBookings(1);
     expect(result.total).toBe(1);
-    expect(result.records[0]).toMatchObject({ reference: stored.reference, source: "chatbot", status: "new" });
+    expect(result.records[0]).toMatchObject({ reference: stored.reference, source: "chatbot", status: "NEW", priority: "MEDIUM" });
   });
 
   it("applies the PostgreSQL booking limit in production", async () => {

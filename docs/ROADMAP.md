@@ -77,13 +77,13 @@ Exit: real orders can be accepted, fulfilled, refunded and supported under appro
 
 ## Phase 4 — Client account and portal
 
-The credential, session, customer dashboard and administrator-list foundation has been brought forward. Recovery, verification, operational hardening and privacy approval still gate public account launch.
+The credential, session, verified-email, request conversation, customer dashboard and administrator workflow foundations have been brought forward. Recovery, notification operations, monitoring, operational hardening and privacy approval still gate public account launch.
 
 - Authentication and account recovery
 - Bookings, orders and support history
 - Ticket updates and safe messaging
 - Project status/documents if operationally useful
-- Role-based access and audit logging
+- Role-based access and request audit logging (request workflow complete; broader account audit pending)
 - Data export/deletion process
 - Security and privacy review
 

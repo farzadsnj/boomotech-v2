@@ -39,13 +39,19 @@ export function AccountForm({ mode }: { mode: Mode }) {
     try {
       if (mode === "register") {
         const parsed = registrationSchema.parse(values);
-        const result = await authClient.signUp.email({ name: parsed.name, email: parsed.email, password: parsed.password });
+        const result = await authClient.signUp.email({ name: parsed.name, email: parsed.email, password: parsed.password, callbackURL: "/dashboard?verified=true" });
         if (result.error) throw new Error("registration");
-        router.push("/dashboard");
+        router.push("/check-email");
       } else if (mode === "admin") {
         const parsed = adminLoginSchema.parse(values);
         const result = await authClient.signIn.username({ username: parsed.username, password: parsed.password });
-        if (result.error) throw new Error("login");
+        if (result.error) {
+          if (result.error.status === 403) {
+            router.push("/check-email");
+            return;
+          }
+          throw new Error("login");
+        }
         router.push("/admin");
       } else {
         const parsed = loginSchema.parse(values);

@@ -4,6 +4,8 @@ import { admin, username } from "better-auth/plugins";
 import { db } from "@/db";
 import { authSchema } from "@/db/schema";
 import { getSiteUrl } from "@/lib/site-url";
+import { sendAccountVerificationEmail } from "@/features/email-verification/send";
+import { verificationTtlMinutes } from "@/features/email-verification/grants";
 import { hashPassword, verifyPassword } from "./password";
 import { requireBetterAuthSecret } from "./auth-env";
 
@@ -20,11 +22,27 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema: authSchema }),
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
     minPasswordLength: 12,
     maxPasswordLength: 128,
-    autoSignIn: true,
+    autoSignIn: false,
     password: { hash: hashPassword, verify: verifyPassword },
   },
+  emailVerification: {
+    sendOnSignUp: true,
+    sendOnSignIn: false,
+    autoSignInAfterVerification: true,
+    expiresIn: verificationTtlMinutes() * 60,
+    sendVerificationEmail: async ({ user, token }) => {
+      try {
+        await sendAccountVerificationEmail({ user: { id: user.id, email: user.email, name: user.name }, token });
+      } catch (error) {
+        const category = error instanceof Error && error.name.includes("Configuration") ? "configuration" : "delivery";
+        console.error(`Authentication email ${category} error. Check the server-only email settings and provider status.`);
+      }
+    },
+  },
+  verification: { storeIdentifier: "hashed" },
   session: {
     expiresIn: 60 * 60 * 24 * 7,
     updateAge: 60 * 60 * 24,
@@ -39,6 +57,7 @@ export const auth = betterAuth({
       "/sign-up/email": { window: 60 * 15, max: 5 },
       "/sign-in/email": { window: 60 * 15, max: 10 },
       "/sign-in/username": { window: 60 * 15, max: 10 },
+      "/send-verification-email": { window: 60 * 15, max: 3 },
     },
   },
   plugins: [

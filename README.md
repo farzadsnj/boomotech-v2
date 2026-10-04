@@ -69,6 +69,9 @@ Required account variables:
 DATABASE_URL=postgres://boomotech:boomotech@localhost:5433/boomotech
 BETTER_AUTH_SECRET=<at-least-32-random-bytes>
 BETTER_AUTH_URL=http://localhost:3000
+AUTH_FROM_EMAIL=<verified-authentication-sender>
+RESEND_API_KEY=<server-only-api-key>
+EMAIL_VERIFICATION_TTL_MINUTES=60
 ```
 
 `BETTER_AUTH_SECRET` is validated before the authentication configuration is created. Missing or short values produce one actionable configuration error; production never continues with Better Auth’s default secret. Tests and CI must provide a clearly labelled test-only value explicitly.
@@ -85,7 +88,9 @@ ADMIN_TEMP_PASSWORD=<strong-temporary-password>
 
 Run `pnpm admin:seed`. The command hashes the password, creates or updates the `admin` role, invalidates prior sessions and never prints the password. Remove `ADMIN_TEMP_PASSWORD` immediately afterwards. Replace the temporary password with a strong private password before any public deployment; a password-change and recovery workflow is still a launch blocker.
 
-After registration, customers are signed in and redirected to `/dashboard`. Administrators sign in with their seeded username at `/admin/login` and are redirected to `/admin`. Both destinations enforce the session and role again on the server.
+After registration, customers are sent to `/check-email`. Better Auth creates a signed expiring token, while BoomoTech stores only its SHA-256 digest in a single-use grant. The public `/verify-email` route consumes that grant before Better Auth marks the email verified. Direct access to Better Auth's verification endpoint is blocked so the one-time check cannot be bypassed. Unverified customers cannot sign in or enter `/dashboard`. Resend requests are rate-limited and use generic responses to reduce account enumeration. Existing accounts present when migration `0002` is applied are marked verified so the migration does not lock out current development users.
+
+Administrators sign in with their seeded username at `/admin/login` and are redirected to `/admin`. Both destinations enforce the session and role again on the server. Tests use an isolated capture adapter through `AUTH_EMAIL_CAPTURE_PATH`; never configure that test-only path in production.
 
 Database backups must be encrypted, access controlled, tested for restoration and covered by an owner-approved retention/deletion policy. The database contains customer names, normalized email addresses, password hashes, session data, booking contact details and timestamps. Privacy and legal text still requires owner/legal approval.
 
@@ -95,7 +100,9 @@ The floating service assistant is implemented in `src/features/chat`. It reads s
 
 The chatbot and `/booking` route render the same progressive `BookingForm`. Booking links retain a real `/booking` destination and open the assistant only when JavaScript enhancement is available. Both client and server validate requests with the shared Zod schema. The `/api/booking` endpoint validates the request origin, enforces the decoded request-size limit, checks a honeypot and applies a pluggable rate limiter before storing the request and its notification outbox record in one database transaction. Personal information is not placed in URLs or browser storage and is not logged.
 
-Every saved request receives a public `BT-...` reference. Requests submitted with a valid customer session are linked to that account and appear in its dashboard; guest requests remain unlinked. All requests appear in the role-protected administrator dashboard. A notification failure is recorded but does not delete or reject a successfully stored booking.
+Every saved request receives a public `BT-...` reference. Requests submitted with a verified customer session are linked to that account and appear in its dashboard; guest requests remain unlinked. Customers can edit or withdraw only unread `NEW` requests. Explicit administrator processing locks the original description. Stored messages, statuses, priorities and audit events support an authorised request conversation without matching ownership by email.
+
+Administrators can filter and page requests, explicitly start processing, reply, resolve or reopen within the approved transition map, and assign `HIGH`, `MEDIUM` or `LOW` priority. Customer replies move `AWAITING_USER` requests back to `IN_PROGRESS`. Notification outbox rows are committed with message actions; production delivery workers and retry monitoring remain an operational requirement.
 
 Configure these server-side variables before testing real delivery:
 

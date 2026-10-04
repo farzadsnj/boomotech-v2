@@ -24,7 +24,7 @@ The planned public domain is:
 https://boomotech.com.au
 ```
 
-The website currently includes real database-backed accounts and booking-request storage, but several commercial and production operations are intentionally unfinished. A booking is a request, not a confirmed appointment. Shop products are examples, not purchasable stock. Checkout, payments, password recovery, email verification and support-ticket storage are not ready.
+The website includes database-backed verified customer accounts, booking-request storage and an authorised customer-admin request conversation. A booking is a request, not a confirmed appointment. Shop products are examples, not purchasable stock. Checkout, payments, password recovery and support-ticket attachments are not ready.
 
 Never put passwords, API keys, database credentials, private keys or customer information into GitHub, screenshots, this handbook or chat messages.
 
@@ -46,6 +46,10 @@ Never put passwords, API keys, database credentials, private keys or customer in
 - Customer dashboard showing bookings linked to the authenticated user ID.
 - Administrator username login and role-protected dashboard.
 - Administrator dashboard listing registered customers and booking requests.
+- Single-use, expiring customer email verification with a replaceable Resend adapter.
+- Customer request editing and withdrawal before processing starts.
+- Stored customer-admin request conversations, status, priority and audit history.
+- Administrator filters, pagination and dedicated request response pages.
 - Better Auth database sessions, HTTP-only cookies, Argon2id password hashing and server-side role checks.
 - PostgreSQL-backed authentication and production booking rate limits.
 - Drizzle database migrations.
@@ -75,9 +79,9 @@ Never put passwords, API keys, database credentials, private keys or customer in
 - Configure production PostgreSQL credentials, TLS, backup and restore procedures.
 - Configure a verified Resend sender domain and booking destination.
 - Approve privacy, terms, cancellation, retention and deletion policies.
-- Add customer password recovery and email verification.
+- Add customer password recovery.
 - Add administrator password-change and recovery procedures.
-- Add audit logging and production monitoring.
+- Extend audit logging beyond requests and add production monitoring.
 - Replace every sample product, price and availability statement with verified data.
 - Build cart, checkout, payment, shipping, stock and fulfilment only after business rules are approved.
 - Build structured support tickets and attachments only after security and retention requirements are approved.
@@ -420,10 +424,13 @@ Running the seed command again updates the administrator and invalidates previou
 
 ### Customer login
 
-1. The customer opens `/login`.
-2. They sign in with email and password.
-3. Valid customers are redirected to `/dashboard`.
-4. Invalid credentials return a generic error that does not reveal whether an email exists.
+1. Registration creates an unverified account and sends an expiring, single-use link through the authentication email adapter.
+2. The customer opens the link, which consumes its hashed database grant before Better Auth marks the email verified.
+3. The customer opens `/login` and signs in with email and password.
+4. Only verified customers are redirected to `/dashboard`.
+5. Invalid credentials and resend requests use generic language that does not reveal whether an email exists.
+
+Existing development accounts are marked verified by migration `0002` to prevent an upgrade lockout. To test a fresh unverified account, register it after applying the migration. Do not manually update production verification state without an approved identity-recovery procedure.
 
 ### Administrator login
 
@@ -463,7 +470,31 @@ The server process is:
 
 Guest requests remain unlinked. The system must never attach a guest request to an account merely because the email addresses match.
 
-The customer dashboard shows only requests linked to that customer's ID. The admin dashboard shows all booking requests. A stored request is not a confirmed booking and must not be presented as one.
+The customer dashboard shows only requests linked to that customer's immutable ID. It includes the full original description and chronological messages. A customer can edit or withdraw only while a request is unread and `NEW`; the server applies this rule atomically. Customer replies are permitted for `IN_PROGRESS` and `AWAITING_USER` requests. Resolved and withdrawn requests remain read-only.
+
+The admin dashboard shows all booking requests with server-side status, priority, service and customer/reference filters. Opening a detail page does not lock the request. `Start processing` or the first administrator reply sets the read fields and locks customer editing. The allowed status transitions are:
+
+```text
+NEW -> IN_PROGRESS | RESOLVED
+IN_PROGRESS -> AWAITING_USER | RESOLVED
+AWAITING_USER -> IN_PROGRESS | RESOLVED
+RESOLVED -> IN_PROGRESS
+WITHDRAWN -> terminal
+```
+
+Priorities are `HIGH`, `MEDIUM` and `LOW`; new and migrated requests default to `MEDIUM`. Priority is an internal ordering aid and is not an SLA. Every edit, withdrawal, read lock, reply, status change and priority change writes an audit event. A stored request remains a request rather than a confirmed booking.
+
+### Customer verification email configuration
+
+Configure these server-only values with a Resend sender that has been verified for authentication email:
+
+```env
+AUTH_FROM_EMAIL=BoomoTech <verified-sender@boomotech.com.au>
+RESEND_API_KEY=re_replace_with_real_key
+EMAIL_VERIFICATION_TTL_MINUTES=60
+```
+
+`AUTH_FROM_EMAIL` is logically separate from `BOOKING_FROM_EMAIL`. The same Resend API key may be used, but sender permissions and templates remain isolated in code. Never configure `AUTH_EMAIL_CAPTURE_PATH` in production; that variable exists only for automated tests. Confirm signup, expiry, reuse rejection, resend cooldown and dashboard blocking before launch.
 
 ## 13. Booking email configuration
 
@@ -1049,6 +1080,16 @@ If any answer is unclear, stop and review this handbook, `README.md`, `AGENTS.md
 - Fixed retry-safe browser authentication tests.
 - Fixed Next.js 16 environment loading in the administrator seed script.
 
+### Verified accounts and request communication
+
+- Required verified email before customer sign-in and dashboard access.
+- Added hashed, expiring, single-use verification grants and safe resend behaviour.
+- Added request status, priority, read, resolution, withdrawal and concurrency fields.
+- Added stored request messages and audit events.
+- Added atomic customer edit and withdrawal rules.
+- Added administrator filtering, explicit processing locks, replies, status transitions and priorities.
+- Added responsive customer and administrator request interfaces.
+
 ### Server preparation
 
 - Selected Ubuntu Server 24.04 LTS on the Dell server.
@@ -1058,7 +1099,7 @@ If any answer is unclear, stop and review this handbook, `README.md`, `AGENTS.md
 
 ## 25. Next milestone
 
-The next milestone is the first controlled production release at `boomotech.com.au`.
+The next milestone is production operational approval and the first controlled release at `boomotech.com.au`.
 
 The launch session must update this handbook with:
 
