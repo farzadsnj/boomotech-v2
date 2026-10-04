@@ -418,9 +418,9 @@ Running the seed command again updates the administrator and invalidates previou
 2. The form validates name, email, password and confirmation.
 3. Better Auth creates the account with role `user`.
 4. Argon2id hashes the password.
-5. The session is stored in PostgreSQL.
-6. The browser receives an HTTP-only session cookie.
-7. The customer is redirected to `/dashboard`.
+5. The account remains signed out and unverified.
+6. The customer is redirected to `/check-email` and receives a single-use verification link when email delivery is configured.
+7. Opening the valid link verifies the account, creates the session and redirects the customer to `/dashboard`.
 
 ### Customer login
 

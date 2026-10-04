@@ -42,7 +42,7 @@ export function CustomerRequestList({ requests }: { requests: CustomerRequest[] 
   if (!requests.length) return <div className="request-empty"><h3>No booking requests yet</h3><p>Requests submitted while you are signed in will appear here.</p></div>;
 
   return <div className="customer-request-list">
-    <p className="sr-only" aria-live="polite">{notice}</p>
+    {notice ? <p className="request-notice" role="status">{notice}</p> : <p className="sr-only" aria-live="polite">Request actions are ready.</p>}
     {requests.map((request) => {
       const canEdit = request.status === "NEW" && !request.readAt && !request.withdrawnAt;
       const canReply = request.status === "IN_PROGRESS" || request.status === "AWAITING_USER";

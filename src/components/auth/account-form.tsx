@@ -56,6 +56,10 @@ export function AccountForm({ mode }: { mode: Mode }) {
       } else {
         const parsed = loginSchema.parse(values);
         const result = await authClient.signIn.email({ email: parsed.email, password: parsed.password });
+        if (result.error?.status === 403) {
+          router.push("/check-email");
+          return;
+        }
         if (result.error) throw new Error("login");
         router.push("/dashboard");
       }

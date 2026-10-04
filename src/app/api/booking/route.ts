@@ -43,7 +43,7 @@ async function getAuthenticatedUserId(request: Request) {
   if (!/(?:^|;\s*)(?:__Secure-)?better-auth\.session_token=/.test(cookie)) return null;
   const { auth } = await import("@/lib/auth/auth");
   const session = await auth.api.getSession({ headers: request.headers });
-  return session?.user.id ?? null;
+  return session?.user.emailVerified && session.user.role !== "admin" ? session.user.id : null;
 }
 
 export async function POST(request: Request) {
