@@ -21,6 +21,7 @@ The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local 
 - [Content strategy](docs/CONTENT.md)
 - [SEO strategy](docs/SEO.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Operations handbook](docs/OPERATIONS-HANDBOOK.md)
 
 No production claims, prices, policies, testimonials, credentials or case studies should be added unless verified by the owner.
 
