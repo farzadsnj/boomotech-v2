@@ -10,6 +10,8 @@ export const requestMessageSchema = z.string().trim()
   .min(2, "Enter a message.")
   .max(4000, "Use no more than 4,000 characters.");
 
+export const internalNotesSchema = z.string().trim().max(5000, "Use no more than 5,000 characters.");
+
 export const customerRequestActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("edit"), description: requestDescriptionSchema }),
   z.object({ action: z.literal("withdraw") }),
@@ -21,6 +23,7 @@ export const adminRequestActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("reply"), message: requestMessageSchema, resolve: z.boolean().optional().default(false) }),
   z.object({ action: z.literal("status"), status: requestStatusSchema }),
   z.object({ action: z.literal("priority"), priority: requestPrioritySchema }),
+  z.object({ action: z.literal("notes"), notes: internalNotesSchema }),
 ]);
 
 const serviceValues = new Set(bookingOptions.map(({ value }) => value));

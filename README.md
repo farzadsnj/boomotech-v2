@@ -27,7 +27,7 @@ No production claims, prices, policies, testimonials, credentials or case studie
 
 ## Run locally
 
-Use Node.js 24 and pnpm 11. Run `pnpm install`. Copy `.env.example` to `.env.local`, generate a private `BETTER_AUTH_SECRET` of at least 32 random bytes, and follow the database setup below before testing account routes. Marketing, catalogue and blog pages can otherwise run with `pnpm dev`.
+Use Node.js 22 and pnpm 11.19.0. Run `pnpm install`. Copy `.env.example` to `.env.local`, change the public URLs to the local origin, generate a private `BETTER_AUTH_SECRET` of at least 32 random bytes, and follow the database setup below before testing account routes. Marketing, catalogue and blog pages can otherwise run with `pnpm dev`.
 
 Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` before proposing changes. The same checks run in GitHub Actions.
 
@@ -61,20 +61,21 @@ pnpm db:migrate
 pnpm dev
 ```
 
-The Compose database listens on `localhost:5433`; its local-only credentials match `.env.example`. For a non-Compose PostgreSQL instance, set `DATABASE_URL` and run `pnpm db:migrate`. Never point development migrations or tests at production data.
+The Compose database listens on `localhost:5433`. Development falls back to the Compose-only connection when `DATABASE_URL` is absent; production has no database fallback. For any other PostgreSQL instance, set `DATABASE_URL` and run `pnpm db:migrate`. Never point development migrations or tests at production data.
 
 Required account variables:
 
 ```env
-DATABASE_URL=postgres://boomotech:boomotech@localhost:5433/boomotech
+DATABASE_URL=postgresql://<user>:<password>@<private-database-host>:5432/boomotech
 BETTER_AUTH_SECRET=<at-least-32-random-bytes>
-BETTER_AUTH_URL=http://localhost:3000
-AUTH_FROM_EMAIL=<verified-authentication-sender>
+BETTER_AUTH_URL=https://boomotech.com.au
+AUTH_FROM_EMAIL=BoomoTech <noreply@send.boomotech.com.au>
 RESEND_API_KEY=<server-only-api-key>
 EMAIL_VERIFICATION_TTL_MINUTES=60
+PASSWORD_RESET_TTL_MINUTES=60
 ```
 
-`BETTER_AUTH_SECRET` is validated before the authentication configuration is created. Missing or short values produce one actionable configuration error; production never continues with Better Auth’s default secret. Tests and CI must provide a clearly labelled test-only value explicitly.
+`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` and `DATABASE_URL` are validated before their production services are created. Missing values produce actionable configuration errors; production never continues with Better Auth or PostgreSQL defaults. Run `pnpm prod:check` before each production build to verify the approved origin and required server-only mail settings without printing their values.
 
 ### Create the initial administrator
 
@@ -86,9 +87,11 @@ ADMIN_EMAIL=<approved-administrator-email>
 ADMIN_TEMP_PASSWORD=<strong-temporary-password>
 ```
 
-Run `pnpm admin:seed`. The command hashes the password, creates or updates the `admin` role, invalidates prior sessions and never prints the password. Remove `ADMIN_TEMP_PASSWORD` immediately afterwards. Replace the temporary password with a strong private password before any public deployment; a password-change and recovery workflow is still a launch blocker.
+Run `pnpm admin:seed`. The command hashes the password, creates or updates the `admin` role, invalidates prior sessions and never prints the password. Remove `ADMIN_TEMP_PASSWORD` immediately afterwards. Re-run the seed with a new strong private password if a temporary or previously shared value was used, then remove it again before `pnpm prod:check`.
 
 After registration, customers are sent to `/check-email`. Better Auth creates a signed expiring token, while BoomoTech stores only its SHA-256 digest in a single-use grant. The public `/verify-email` route consumes that grant before Better Auth marks the email verified. Direct access to Better Auth's verification endpoint is blocked so the one-time check cannot be bypassed. Unverified customers cannot sign in or enter `/dashboard`. Resend requests are rate-limited and use generic responses to reduce account enumeration. Existing accounts present when migration `0002` is applied are marked verified so the migration does not lock out current development users.
+
+`/forgot-password` and `/reset-password` use Better Auth's expiring, single-use reset records and the same isolated authentication-email adapter. Reset responses are generic, delivery is server-only, and a successful reset revokes existing sessions. Invalid, expired and reused links show a safe recovery path.
 
 Administrators sign in with their seeded username at `/admin/login` and are redirected to `/admin`. Both destinations enforce the session and role again on the server. Tests use an isolated capture adapter through `AUTH_EMAIL_CAPTURE_PATH`; never configure that test-only path in production.
 
@@ -102,7 +105,7 @@ The chatbot and `/booking` route render the same progressive `BookingForm`. Book
 
 Every saved request receives a public `BT-...` reference. Requests submitted with a verified customer session are linked to that account and appear in its dashboard; guest requests remain unlinked. Customers can edit or withdraw only unread `NEW` requests. Explicit administrator processing locks the original description. Stored messages, statuses, priorities and audit events support an authorised request conversation without matching ownership by email.
 
-Administrators can filter and page requests, explicitly start processing, reply, resolve or reopen within the approved transition map, and assign `HIGH`, `MEDIUM` or `LOW` priority. Customer replies move `AWAITING_USER` requests back to `IN_PROGRESS`. Notification outbox rows are committed with message actions; production delivery workers and retry monitoring remain an operational requirement.
+Administrators can filter and page requests, explicitly start processing, reply, resolve or reopen within the approved transition map, assign `HIGH`, `MEDIUM` or `LOW` priority, and maintain private internal notes. Internal notes are selected only for the authorised administrator detail view and never enter customer projections. Customer replies move `AWAITING_USER` requests back to `IN_PROGRESS`. Notification outbox rows are committed with message actions; production delivery workers and retry monitoring remain an operational requirement.
 
 Configure these server-side variables before testing real delivery:
 
@@ -135,4 +138,4 @@ Browser tests prepare an isolated PGlite database under ignored `.test-db/`; app
 
 ### Remaining production configuration
 
-Before enabling the booking endpoint in production, run `pnpm db:migrate` against the intended database and confirm the verified recipient and sender domain, privacy and consent wording, retention and deletion rules, expected response language, and deployment environment. Production uses PostgreSQL for booking rate limits by default; the optional REST URL and token switch it to a shared external limiter for multi-instance scaling. A trusted proxy must overwrite client forwarding headers before `BOOKING_TRUST_PROXY=true` is enabled. Account launch additionally requires managed PostgreSQL, encrypted backups, TLS, secret rotation, password recovery, verified admin email, monitoring and an incident process. The draft privacy notice and legal terms require owner and legal review. Search indexing remains controlled by `SITE_INDEXING_ENABLED` and an approved HTTPS `SITE_URL`.
+Before enabling the booking endpoint in production, run `pnpm prod:check` and `pnpm db:migrate` against the intended database, then confirm the verified recipient and sender domain, privacy and consent wording, retention and deletion rules, expected response language, and deployment environment. Production uses PostgreSQL for booking rate limits by default; the optional REST URL and token switch it to a shared external limiter for multi-instance scaling. A trusted Nginx proxy must overwrite client forwarding headers before `BOOKING_TRUST_PROXY=true` is enabled. Account launch additionally requires managed PostgreSQL, encrypted backups, TLS, rotation of every previously used secret, verified password-reset delivery, monitoring and an incident process. The draft privacy notice and legal terms require owner and legal review. Search indexing remains controlled by `SITE_INDEXING_ENABLED` and an approved HTTPS `SITE_URL`.

@@ -7,7 +7,7 @@ const screenshots = "artifacts/screenshots";
 
 test.describe("shop catalogue", () => {
   test("keeps catalogue and account routes out of search indexing", async ({ page }) => {
-    for (const route of ["/shop", "/register", "/login", "/check-email", "/email-verification-result", "/admin/login"]) {
+    for (const route of ["/shop", "/register", "/login", "/forgot-password", "/reset-password", "/check-email", "/email-verification-result", "/admin/login"]) {
       await page.goto(route);
       await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
     }
@@ -190,6 +190,9 @@ test.describe("database-backed accounts", () => {
     await expect(page.getByLabel("Status: In progress")).toBeVisible();
     await page.getByLabel("Priority", { exact: true }).selectOption("HIGH");
     await expect(page.getByLabel("Priority: High")).toBeVisible();
+    await page.getByLabel("Internal notes").fill("Customer confirmed that the affected devices share the office network.");
+    await page.getByRole("button", { name: "Save internal notes" }).click();
+    await expect(page.getByText("Request updated.")).toBeVisible();
     await page.getByLabel("Response to customer").fill("Please confirm whether all affected computers use the same office network.");
     await page.getByRole("button", { name: "Send response", exact: true }).click();
     await expect(page.getByLabel("Status: Waiting for you")).toBeVisible();
@@ -209,6 +212,7 @@ test.describe("database-backed accounts", () => {
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByLabel("Status: In progress")).toBeVisible();
     await expect(page.getByText(/affected computers all use/)).toBeVisible();
+    await expect(page.getByText(/Customer confirmed that the affected devices/)).toHaveCount(0);
     expect(await page.evaluate(() => (window as typeof window & { __storedXss?: boolean }).__storedXss)).toBeUndefined();
     await page.screenshot({ path: `${screenshots}/customer-request-conversation.png`, fullPage: true });
   });
@@ -246,8 +250,38 @@ test.describe("database-backed accounts", () => {
     expect(adminAxe.violations.filter(({ impact }) => impact === "critical" || impact === "serious")).toEqual([]);
   });
 
+  test("resets a customer password through the captured single-use email link", async ({ page }) => {
+    const replacementPassword = "ReplacementPassword8";
+    await page.goto("/forgot-password");
+    await page.getByLabel("Email address").fill(customer.email);
+    await page.getByRole("button", { name: "Send reset instructions" }).click();
+    await expect(page.getByText(/If an account matches that address/)).toBeVisible();
+    const capturePath = path.resolve(process.cwd(), ".test-db", "verification-emails.jsonl");
+    await expect.poll(async () => {
+      const captures = (await readFile(capturePath, "utf8")).trim().split("\n").map((line) => JSON.parse(line) as { kind?: string; to?: string });
+      return captures.filter(({ kind, to }) => kind === "password-reset" && to === customer.email).length;
+    }).toBeGreaterThan(0);
+    const captures = (await readFile(capturePath, "utf8")).trim().split("\n").map((line) => JSON.parse(line) as { kind?: string; to?: string; resetUrl?: string });
+    const reset = captures.findLast(({ kind, to }) => kind === "password-reset" && to === customer.email);
+    await page.goto(reset!.resetUrl!);
+    await expect(page).toHaveURL(/\/reset-password\?token=/);
+    await page.getByRole("textbox", { name: /^New password/ }).fill(replacementPassword);
+    await page.getByRole("textbox", { name: /^Confirm new password/ }).fill(replacementPassword);
+    await page.getByRole("button", { name: "Set new password" }).click();
+    await expect(page.getByText(/password has been changed/)).toBeVisible();
+    await page.getByRole("link", { name: "Sign in with the new password" }).click();
+    await page.getByLabel("Email address").fill(customer.email);
+    await page.getByLabel("Password").fill(customer.password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.locator(".auth-form__error[role='alert']")).toBeVisible();
+    await page.getByLabel("Password").fill(replacementPassword);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    customer.password = replacementPassword;
+  });
+
   test("account screens have no serious accessibility violations", async ({ page }) => {
-    for (const route of ["/register", "/login", "/admin/login"]) {
+    for (const route of ["/register", "/login", "/forgot-password", "/reset-password", "/admin/login"]) {
       await page.goto(route);
       await page.waitForTimeout(900);
       const results = await new AxeBuilder({ page }).analyze();
