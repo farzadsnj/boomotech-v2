@@ -31,17 +31,19 @@ cd "$PROJECT_DIR"
 [[ -r "$ENV_FILE" ]] || fail "Production environment file is not readable: $ENV_FILE"
 [[ -z "$(git status --porcelain)" ]] || fail "The working tree is not clean. Commit or remove local changes first."
 [[ "$(git branch --show-current)" == "main" ]] || fail "Production deployment must run from the main branch."
-for command_name in git pnpm curl flock sudo; do require_command "$command_name"; done
+for command_name in git pnpm curl flock sudo env; do require_command "$command_name"; done
 
-set -a
-# shellcheck disable=SC1090
-source "$ENV_FILE"
-set +a
-required_variables=(SITE_URL DATABASE_URL BETTER_AUTH_SECRET BETTER_AUTH_URL BOOKING_NOTIFICATION_EMAIL BOOKING_FROM_EMAIL RESEND_API_KEY OPENAI_API_KEY)
-for variable in "${required_variables[@]}"; do [[ -n "${!variable:-}" ]] || fail "$variable is missing from $ENV_FILE"; done
-[[ "$SITE_URL" =~ ^https:// ]] || fail "SITE_URL must be the approved HTTPS production origin."
-[[ "$BETTER_AUTH_URL" == "$SITE_URL" ]] || fail "BETTER_AUTH_URL must exactly match SITE_URL."
-[[ "${BOOKING_TRUST_PROXY:-false}" == "true" ]] || fail "BOOKING_TRUST_PROXY must be true behind the approved production proxy."
+(
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+  required_variables=(SITE_URL DATABASE_URL BETTER_AUTH_SECRET BETTER_AUTH_URL BOOKING_NOTIFICATION_EMAIL BOOKING_FROM_EMAIL RESEND_API_KEY OPENAI_API_KEY)
+  for variable in "${required_variables[@]}"; do [[ -n "${!variable:-}" ]] || fail "$variable is missing from $ENV_FILE"; done
+  [[ "$SITE_URL" =~ ^https:// ]] || fail "SITE_URL must be the approved HTTPS production origin."
+  [[ "$BETTER_AUTH_URL" == "$SITE_URL" ]] || fail "BETTER_AUTH_URL must exactly match SITE_URL."
+  [[ "${BOOKING_TRUST_PROXY:-false}" == "true" ]] || fail "BOOKING_TRUST_PROXY must be true behind the approved production proxy."
+)
 
 if [[ "$DRY_RUN" == true ]]; then
   log "Dry run passed read-only preflight checks."
@@ -65,15 +67,47 @@ git pull --ff-only origin main
 log "Installing dependencies from the lockfile."
 pnpm install --frozen-lockfile
 log "Validating the complete production environment."
-pnpm prod:check
+(
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+  pnpm prod:check
+)
 if [[ "$FAST" == false ]]; then
   log "Running lint, type-check and unit tests."
   pnpm lint
   pnpm typecheck
-  pnpm test
+  log "Running unit tests with production credentials and origins isolated."
+  env \
+    -u SITE_URL \
+    -u SITE_INDEXING_ENABLED \
+    -u DATABASE_URL \
+    -u BETTER_AUTH_URL \
+    -u BETTER_AUTH_SECRET \
+    -u RESEND_API_KEY \
+    -u AUTH_FROM_EMAIL \
+    -u BOOKING_NOTIFICATION_EMAIL \
+    -u BOOKING_FROM_EMAIL \
+    -u BOOKING_RATE_LIMIT_REST_URL \
+    -u BOOKING_RATE_LIMIT_REST_TOKEN \
+    -u BOOKING_TRUST_PROXY \
+    -u OPENAI_API_KEY \
+    -u OPENAI_CHAT_MODEL \
+    -u ADMIN_USERNAME \
+    -u ADMIN_EMAIL \
+    -u ADMIN_TEMP_PASSWORD \
+    -u AUTH_EMAIL_CAPTURE_PATH \
+    -u AUTH_EMAIL_CAPTURE_MODE \
+    NODE_ENV=test pnpm test
 else
   log "Fast mode: lint, type-check and unit tests were explicitly skipped."
 fi
+
+set -a
+# shellcheck disable=SC1090
+source "$ENV_FILE"
+set +a
 
 log "Applying committed database migrations."
 pnpm db:migrate
