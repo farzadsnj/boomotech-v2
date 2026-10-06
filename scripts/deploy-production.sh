@@ -37,7 +37,7 @@ set -a
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 set +a
-required_variables=(SITE_URL DATABASE_URL BETTER_AUTH_SECRET BETTER_AUTH_URL BOOKING_NOTIFICATION_EMAIL BOOKING_FROM_EMAIL RESEND_API_KEY BOOKING_RATE_LIMIT_REST_URL BOOKING_RATE_LIMIT_REST_TOKEN OPENAI_API_KEY)
+required_variables=(SITE_URL DATABASE_URL BETTER_AUTH_SECRET BETTER_AUTH_URL BOOKING_NOTIFICATION_EMAIL BOOKING_FROM_EMAIL RESEND_API_KEY OPENAI_API_KEY)
 for variable in "${required_variables[@]}"; do [[ -n "${!variable:-}" ]] || fail "$variable is missing from $ENV_FILE"; done
 [[ "$SITE_URL" =~ ^https:// ]] || fail "SITE_URL must be the approved HTTPS production origin."
 [[ "$BETTER_AUTH_URL" == "$SITE_URL" ]] || fail "BETTER_AUTH_URL must exactly match SITE_URL."
