@@ -62,6 +62,20 @@ describe("server operations scripts", () => {
     }
   });
 
+  it("isolates production credentials and origins from deployment unit tests", () => {
+    const script = read("scripts/deploy-production.sh");
+    for (const variable of [
+      "SITE_URL", "DATABASE_URL", "BETTER_AUTH_URL", "BETTER_AUTH_SECRET",
+      "RESEND_API_KEY", "AUTH_FROM_EMAIL", "BOOKING_NOTIFICATION_EMAIL", "BOOKING_FROM_EMAIL",
+      "BOOKING_TRUST_PROXY", "OPENAI_API_KEY", "OPENAI_CHAT_MODEL",
+    ]) {
+      expect(script).toContain(`-u ${variable}`);
+    }
+    expect(script).toContain("NODE_ENV=test pnpm test");
+    expect(script.indexOf("NODE_ENV=test pnpm test")).toBeLessThan(script.lastIndexOf('source "$ENV_FILE"'));
+    expect(script.lastIndexOf('source "$ENV_FILE"')).toBeLessThan(script.indexOf("pnpm db:migrate"));
+  });
+
   it("installs persistent nightly backup and daily monitoring timers", () => {
     const backupTimer = read("scripts/server/systemd/boomotech-backup.timer");
     const monitorTimer = read("scripts/server/systemd/boomotech-monitor.timer");
