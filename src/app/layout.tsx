@@ -51,7 +51,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <main id="main-content" tabIndex={-1}><PageTransition>{children}</PageTransition></main>
         <SiteFooter />
         <ScrollToTop />
-        <Chatbot />
+        <Chatbot aiEnabled={process.env.OPENAI_CHAT_ENABLED === "true"} />
         <CookieNotice />
       </body>
     </html>
