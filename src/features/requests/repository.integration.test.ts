@@ -59,6 +59,15 @@ describe("authorised request workflow", () => {
     expect(records.every(({ userId }) => userId === customerOne)).toBe(true);
     expect(records.map(({ message }) => message).join(" ")).toContain("detailed help");
     expect(records.map(({ message }) => message).join(" ")).not.toContain("guest used");
+    expect(records[0]).not.toHaveProperty("internalNotes");
+  });
+
+  it("stores administrator notes privately and records an audit event", async () => {
+    await repository.updateRequestInternalNotes(firstReference, adminId, "Internal diagnostic context for authorised staff only.");
+    const adminRecord = await repository.getAdminRequest(firstReference);
+    expect(adminRecord.internalNotes).toBe("Internal diagnostic context for authorised staff only.");
+    expect(adminRecord.events.some(({ eventType }) => eventType === "ADMIN_UPDATED_INTERNAL_NOTES")).toBe(true);
+    expect(await repository.getCustomerRequest(firstReference, customerOne)).not.toHaveProperty("internalNotes");
   });
 
   it("edits an unread NEW request and blocks cross-customer edits", async () => {

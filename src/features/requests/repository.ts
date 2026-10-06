@@ -36,6 +36,11 @@ const requestProjection = {
   version: bookingRequest.version,
 };
 
+const adminRequestProjection = {
+  ...requestProjection,
+  internalNotes: bookingRequest.internalNotes,
+};
+
 function statusOf(value: string) { return value as RequestStatus; }
 function priorityOf(value: string) { return value as RequestPriority; }
 
@@ -187,7 +192,7 @@ export async function listAdminRequests(filters: AdminFilters) {
 }
 
 export async function getAdminRequest(reference: string) {
-  const [record] = await db.select(requestProjection).from(bookingRequest).where(eq(bookingRequest.reference, reference)).limit(1);
+  const [record] = await db.select(adminRequestProjection).from(bookingRequest).where(eq(bookingRequest.reference, reference)).limit(1);
   if (!record) throw new RequestWorkflowError("not-found");
   const [messages, events] = await Promise.all([
     selectMessages([record.id]),
@@ -195,6 +200,25 @@ export async function getAdminRequest(reference: string) {
       .from(bookingRequestEvent).where(eq(bookingRequestEvent.bookingRequestId, record.id)).orderBy(asc(bookingRequestEvent.createdAt), asc(bookingRequestEvent.id)),
   ]);
   return { ...record, status: statusOf(record.status), priority: priorityOf(record.priority), messages, events };
+}
+
+export async function updateRequestInternalNotes(reference: string, adminUserId: string, notes: string) {
+  return db.transaction(async (transaction) => {
+    const [record] = await transaction.select({ id: bookingRequest.id, version: bookingRequest.version }).from(bookingRequest)
+      .where(eq(bookingRequest.reference, reference)).limit(1);
+    if (!record) throw new RequestWorkflowError("not-found");
+    const [updated] = await transaction.update(bookingRequest).set({
+      internalNotes: notes || null,
+      updatedAt: new Date(),
+      version: sql`${bookingRequest.version} + 1`,
+    }).where(and(eq(bookingRequest.id, record.id), eq(bookingRequest.version, record.version))).returning({ id: bookingRequest.id });
+    if (!updated) throw new RequestWorkflowError("conflict");
+    await transaction.insert(bookingRequestEvent).values({
+      id: randomUUID(), bookingRequestId: record.id, actorUserId: adminUserId,
+      actorRole: "admin", eventType: "ADMIN_UPDATED_INTERNAL_NOTES",
+    });
+    return { reference };
+  });
 }
 
 export async function markRequestRead(reference: string, adminUserId: string) {

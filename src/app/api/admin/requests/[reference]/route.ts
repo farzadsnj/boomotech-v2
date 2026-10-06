@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth/auth";
 import { hasApprovedMutationOrigin } from "@/lib/security/origin";
 import { readLimitedJson, RequestBodyError } from "@/lib/security/json-body";
 import { adminRequestActionSchema } from "@/features/requests/schemas";
-import { addAdminMessage, changeRequestPriority, changeRequestStatus, markRequestRead, RequestWorkflowError } from "@/features/requests/repository";
+import { addAdminMessage, changeRequestPriority, changeRequestStatus, markRequestRead, RequestWorkflowError, updateRequestInternalNotes } from "@/features/requests/repository";
 
 function safeError(error: unknown) {
   if (error instanceof RequestWorkflowError) {
@@ -31,7 +31,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ ref
     const result = action.action === "start" ? await markRequestRead(reference, session.user.id)
       : action.action === "reply" ? await addAdminMessage(reference, session.user.id, action.message, action.resolve)
         : action.action === "status" ? await changeRequestStatus(reference, session.user.id, action.status)
-          : await changeRequestPriority(reference, session.user.id, action.priority);
+          : action.action === "priority" ? await changeRequestPriority(reference, session.user.id, action.priority)
+            : await updateRequestInternalNotes(reference, session.user.id, action.notes);
     return NextResponse.json({ ok: true, result });
   } catch (error) { return safeError(error); }
 }

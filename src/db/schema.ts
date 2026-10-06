@@ -97,6 +97,7 @@ export const bookingRequest = pgTable("booking_request", {
   source: text("source").default("booking-page").notNull(),
   status: text("status").default("NEW").notNull(),
   priority: text("priority").default("MEDIUM").notNull(),
+  internalNotes: text("internal_notes"),
   readAt: timestamp("read_at", { withTimezone: true }),
   readByAdminId: text("read_by_admin_id").references(() => user.id, { onDelete: "set null" }),
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),

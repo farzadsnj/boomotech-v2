@@ -1,6 +1,6 @@
 # BoomoTech Project Operations Handbook
 
-Last updated: 4 October 2026
+Last updated: 5 October 2026
 
 ## Purpose
 
@@ -24,7 +24,7 @@ The planned public domain is:
 https://boomotech.com.au
 ```
 
-The website includes database-backed verified customer accounts, booking-request storage and an authorised customer-admin request conversation. A booking is a request, not a confirmed appointment. Shop products are examples, not purchasable stock. Checkout, payments, password recovery and support-ticket attachments are not ready.
+The website includes database-backed verified customer accounts, password recovery, booking-request storage and an authorised customer-admin request conversation. A booking is a request, not a confirmed appointment. Shop products are examples, not purchasable stock. Checkout, payments and support-ticket attachments are not ready.
 
 Never put passwords, API keys, database credentials, private keys or customer information into GitHub, screenshots, this handbook or chat messages.
 
@@ -47,9 +47,11 @@ Never put passwords, API keys, database credentials, private keys or customer in
 - Administrator username login and role-protected dashboard.
 - Administrator dashboard listing registered customers and booking requests.
 - Single-use, expiring customer email verification with a replaceable Resend adapter.
+- Single-use, expiring password reset with branded Resend email and session revocation.
 - Customer request editing and withdrawal before processing starts.
 - Stored customer-admin request conversations, status, priority and audit history.
 - Administrator filters, pagination and dedicated request response pages.
+- Administrator-only internal request notes that never enter customer projections.
 - Better Auth database sessions, HTTP-only cookies, Argon2id password hashing and server-side role checks.
 - PostgreSQL-backed authentication and production booking rate limits.
 - Drizzle database migrations.
@@ -68,18 +70,20 @@ Never put passwords, API keys, database credentials, private keys or customer in
 - Windows Ed25519 SSH key login tested successfully.
 - SSH hardening configuration prepared with root login and password login disabled after key testing.
 - PostgreSQL local development environment defined through Docker Compose.
+- Node.js 22 and pnpm 11.19.0 selected for production.
+- Application deployment directory confirmed as `/var/www/boomotech`.
+- Application service confirmed as `boomotech.service`.
+- Nginx reverse proxy confirmed for `127.0.0.1:3000`.
+- Cloudflare DNS and Cloudflare Tunnel confirmed for the public route through local Nginx port 80.
 
 ### In progress or not yet production-approved
 
 - Merge the backend feature pull request into `main` after owner review.
 - Complete the first production deployment on the Dell server.
-- Connect `boomotech.com.au` and verify HTTPS.
-- Select and finalise Nginx plus direct HTTPS or Cloudflare Tunnel routing.
-- Configure the permanent production process manager or systemd service.
+- Verify `boomotech.com.au`, HTTPS, Nginx, Cloudflare Tunnel and `boomotech.service` together after each deployment.
 - Configure production PostgreSQL credentials, TLS, backup and restore procedures.
 - Configure a verified Resend sender domain and booking destination.
 - Approve privacy, terms, cancellation, retention and deletion policies.
-- Add customer password recovery.
 - Add administrator password-change and recovery procedures.
 - Extend audit logging beyond requests and add production monitoring.
 - Replace every sample product, price and availability statement with verified data.
@@ -95,13 +99,13 @@ Never put passwords, API keys, database credentials, private keys or customer in
 | Interface | React 19 and TypeScript | Components and strict application logic |
 | Styling | Tailwind CSS and project CSS | Responsive layout, design tokens and interaction styles |
 | Package manager | pnpm 11.19.0 | Dependency and script management |
-| Runtime | Node.js 24 | Local development and production runtime |
+| Runtime | Node.js 22 | Local development and production runtime |
 | Database | PostgreSQL 17 | Accounts, sessions, bookings, outbox and rate limits |
 | ORM and migrations | Drizzle ORM and Drizzle Kit | Typed queries and versioned schema changes |
 | Authentication | Better Auth | Registration, login, sessions, username and roles |
 | Password hashing | Argon2id | Secure credential hashing |
 | Validation | Zod | Client and server input validation |
-| Email | Resend adapter | Optional booking-request notifications |
+| Email | Resend adapter | Authentication email and optional booking-request notifications |
 | Unit tests | Vitest | Content, auth, booking and utility tests |
 | Browser tests | Playwright and Axe | End-to-end, responsive and accessibility checks |
 | Local services | Docker Compose | Local PostgreSQL container |
@@ -153,7 +157,7 @@ Install:
 
 - Git for Windows
 - Visual Studio Code
-- Node.js 24 LTS or the project-approved Node.js 24 release
+- Node.js 22 LTS
 - Docker Desktop with WSL 2 support
 - A modern browser such as Chrome or Edge
 
@@ -268,6 +272,9 @@ SITE_INDEXING_ENABLED=false
 DATABASE_URL=postgres://boomotech:boomotech@localhost:5433/boomotech
 BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_SECRET=replace-with-a-private-random-value-at-least-32-characters
+AUTH_FROM_EMAIL=BoomoTech <verified-local-test-sender@example.test>
+EMAIL_VERIFICATION_TTL_MINUTES=60
+PASSWORD_RESET_TTL_MINUTES=60
 
 BOOKING_NOTIFICATION_EMAIL=
 BOOKING_FROM_EMAIL=
@@ -309,7 +316,7 @@ docker compose up -d postgres
 docker compose ps
 ```
 
-The PostgreSQL container maps the database to local port `5433`. This avoids conflict with a PostgreSQL installation using the default port `5432`.
+The PostgreSQL container maps the database to loopback-only port `5433`. This avoids conflict with a PostgreSQL installation using the default port `5432` and prevents the development database from listening on external interfaces.
 
 Apply all committed database migrations:
 
@@ -400,7 +407,7 @@ Expected result:
 Administrator account created or updated. Remove ADMIN_TEMP_PASSWORD from .env.local now.
 ```
 
-Remove `ADMIN_TEMP_PASSWORD` from `.env.local` immediately. The stored password is hashed; removing the environment value does not remove the account.
+Remove `ADMIN_TEMP_PASSWORD` from `.env.local` immediately. The stored password is hashed; removing the environment value does not remove the account. Previously used Better Auth secrets, Resend keys and temporary administrator passwords must be rotated externally and must not be reused.
 
 Sign in at:
 
@@ -442,6 +449,17 @@ Existing development accounts are marked verified by migration `0002` to prevent
 
 The interface never provides an admin-role field during public registration. Hiding a link is not security; protected pages verify the session and role on the server.
 
+### Password recovery
+
+1. The customer opens `/forgot-password` and enters their email.
+2. The response remains generic whether or not an account exists.
+3. Better Auth stores an expiring reset record and the server-only adapter sends the branded Resend message.
+4. The email link validates the token before redirecting to `/reset-password`.
+5. A successful reset consumes the token, stores a new Argon2id hash and revokes existing sessions.
+6. Invalid, expired and reused links show a safe option to request another link.
+
+Password-reset requests are rate-limited. Tokens and API keys must never be logged or sent to analytics.
+
 ## 12. Booking and chatbot workflow
 
 The chatbot does not currently send visitor messages to an external AI model. It matches approved service terms locally and links to canonical service pages. This reduces privacy and hallucination risks.
@@ -482,19 +500,22 @@ RESOLVED -> IN_PROGRESS
 WITHDRAWN -> terminal
 ```
 
-Priorities are `HIGH`, `MEDIUM` and `LOW`; new and migrated requests default to `MEDIUM`. Priority is an internal ordering aid and is not an SLA. Every edit, withdrawal, read lock, reply, status change and priority change writes an audit event. A stored request remains a request rather than a confirmed booking.
+Priorities are `HIGH`, `MEDIUM` and `LOW`; new and migrated requests default to `MEDIUM`. Priority is an internal ordering aid and is not an SLA. Administrators can store private internal notes; those notes are excluded from all customer queries and responses. Every edit, withdrawal, read lock, reply, status change, priority change and internal-note update writes an audit event. A stored request remains a request rather than a confirmed booking.
+
+Operational terminology maps to the established database values: `AWAITING_USER` means waiting for the customer, `RESOLVED` means completed, and `WITHDRAWN` means customer-cancelled before processing. Do not introduce a second set of status values.
 
 ### Customer verification email configuration
 
 Configure these server-only values with a Resend sender that has been verified for authentication email:
 
 ```env
-AUTH_FROM_EMAIL=BoomoTech <verified-sender@boomotech.com.au>
+AUTH_FROM_EMAIL=BoomoTech <noreply@send.boomotech.com.au>
 RESEND_API_KEY=re_replace_with_real_key
 EMAIL_VERIFICATION_TTL_MINUTES=60
+PASSWORD_RESET_TTL_MINUTES=60
 ```
 
-`AUTH_FROM_EMAIL` is logically separate from `BOOKING_FROM_EMAIL`. The same Resend API key may be used, but sender permissions and templates remain isolated in code. Never configure `AUTH_EMAIL_CAPTURE_PATH` in production; that variable exists only for automated tests. Confirm signup, expiry, reuse rejection, resend cooldown and dashboard blocking before launch.
+`AUTH_FROM_EMAIL` is logically separate from `BOOKING_FROM_EMAIL`. The same Resend API key may be used, but sender permissions and templates remain isolated in code. Never configure `AUTH_EMAIL_CAPTURE_PATH` in production; that variable exists only for automated tests. Confirm signup, verification, forgot-password, reset, expiry, reuse rejection, resend cooldown, session revocation and dashboard blocking before launch.
 
 ## 13. Booking email configuration
 
@@ -502,7 +523,7 @@ Database storage works without email delivery. For real notifications, create an
 
 ```env
 BOOKING_NOTIFICATION_EMAIL=approved-destination@example.com
-BOOKING_FROM_EMAIL=BoomoTech <verified-sender@boomotech.com.au>
+BOOKING_FROM_EMAIL=BoomoTech <noreply@send.boomotech.com.au>
 RESEND_API_KEY=re_replace_with_real_key
 ```
 
@@ -700,7 +721,7 @@ sudo apt upgrade -y
 sudo apt install -y git curl ca-certificates nginx
 ```
 
-Install the approved Node.js 24 runtime and pnpm 11.19.0 using the official supported method. Verify:
+Install Node.js 22 LTS and pnpm 11.19.0 using the official supported method. Verify:
 
 ```bash
 node --version
@@ -708,66 +729,100 @@ pnpm --version
 git --version
 ```
 
-Install Docker Engine and the Compose plugin from Docker's official Ubuntu repository. Do not use local development database passwords in production.
+### 17.2 Prepare PostgreSQL
 
-### 17.2 Obtain the application
+Install PostgreSQL from the approved Ubuntu repository and keep it bound to the private server:
+
+```bash
+sudo apt install -y postgresql postgresql-contrib
+sudo systemctl enable --now postgresql
+sudo -u postgres createuser --pwprompt boomotech_app
+sudo -u postgres createdb --owner=boomotech_app boomotech
+sudo ss -ltnp | grep 5432
+```
+
+Use a unique password from the production secret store. The listening-address check must show loopback or another explicitly approved private interface. Do not open PostgreSQL port 5432 in UFW, Nginx, Cloudflare or the router.
+
+### 17.3 Obtain the application
 
 Use a dedicated application directory owned by the deployment user:
 
 ```bash
-cd /srv
-sudo mkdir -p boomotech
-sudo chown boomotechhost:boomotechhost boomotech
-cd boomotech
-git clone https://github.com/farzadsnj/boomotech-v2.git app
-cd app
+sudo mkdir -p /var/www/boomotech
+sudo chown boomotechhost:boomotechhost /var/www/boomotech
+cd /var/www/boomotech
+git clone https://github.com/farzadsnj/boomotech-v2.git .
 git switch main
 pnpm install --frozen-lockfile
 ```
 
 If the repository becomes private, use a read-only deploy key rather than a personal password or broad personal token.
 
-### 17.3 Production environment
+### 17.4 Production environment
 
 Create the production environment through an access-controlled server file or secret manager. Minimum values include:
 
 ```env
 SITE_URL=https://boomotech.com.au
 SITE_INDEXING_ENABLED=false
-DATABASE_URL=postgres://PRODUCTION_USER:PRIVATE_PASSWORD@DATABASE_HOST:5432/boomotech
+DATABASE_URL='postgresql://PRODUCTION_USER:PRIVATE_PASSWORD@DATABASE_HOST:5432/boomotech'
 BETTER_AUTH_URL=https://boomotech.com.au
 BETTER_AUTH_SECRET=PRIVATE_RANDOM_VALUE_AT_LEAST_32_CHARACTERS
+RESEND_API_KEY=PRIVATE_ROTATED_RESEND_KEY
+AUTH_FROM_EMAIL='BoomoTech <noreply@send.boomotech.com.au>'
+EMAIL_VERIFICATION_TTL_MINUTES=60
+PASSWORD_RESET_TTL_MINUTES=60
+BOOKING_NOTIFICATION_EMAIL=APPROVED_PRIVATE_DESTINATION
+BOOKING_FROM_EMAIL='BoomoTech <noreply@send.boomotech.com.au>'
 BOOKING_TRUST_PROXY=true
 ```
 
-Set `BOOKING_TRUST_PROXY=true` only after Nginx or the chosen proxy overwrites forwarded client-address headers. Add booking email variables only after sender verification.
+Set `BOOKING_TRUST_PROXY=true` only after confirming that Nginx overwrites forwarded client-address headers. Replace the previously used Better Auth secret, Resend API key and administrator password; treat all earlier values as compromised. Verify `send.boomotech.com.au` in Resend before using the sender.
 
-Protect the environment file:
+Store the values in untracked `.env.production`. Quote values that contain spaces or shell-sensitive characters. Protect the file:
 
 ```bash
-chmod 600 .env.local
+chmod 600 .env.production
 ```
 
-### 17.4 Database and build
+Do not include `ADMIN_TEMP_PASSWORD` in the steady-state production environment. `.gitignore` excludes `.env.production`; confirm it never appears in `git status`.
+
+### 17.5 Database, administrator and build
 
 Back up the production database before every migration after launch.
 
 ```bash
+cd /var/www/boomotech
+set -a
+. ./.env.production
+set +a
+pnpm prod:check
 pnpm db:migrate
+```
+
+Create the administrator with a temporary strong password in a separate, ignored bootstrap file. Edit the file directly so the password does not enter shell history:
+
+```bash
+install -m 600 /dev/null .env.admin-bootstrap
+nano .env.admin-bootstrap
+set -a
+. ./.env.admin-bootstrap
+set +a
+NODE_ENV=production pnpm admin:seed
+```
+
+The bootstrap file must contain `ADMIN_USERNAME`, `ADMIN_EMAIL` and `ADMIN_TEMP_PASSWORD`. After the seed succeeds, remove those values from the process and disk immediately, then validate and build with the steady-state environment:
+
+```bash
+unset ADMIN_USERNAME ADMIN_EMAIL ADMIN_TEMP_PASSWORD
+shred -u .env.admin-bootstrap
+pnpm prod:check
 pnpm build
 ```
 
-Create the administrator with a temporary strong password:
+### 17.6 Application process
 
-```bash
-pnpm admin:seed
-```
-
-Remove `ADMIN_TEMP_PASSWORD` immediately.
-
-### 17.5 Application process
-
-The final choice between systemd and another approved process manager must be recorded during launch. The process must:
+The confirmed service is `boomotech.service`. It must:
 
 - run as a non-root user;
 - start automatically after reboot;
@@ -777,13 +832,21 @@ The final choice between systemd and another approved process manager must be re
 - write bounded logs;
 - expose a health check to monitoring.
 
-The application start command is:
+The service should start the production application on loopback port 3000 from `/var/www/boomotech`. The application command is:
 
 ```bash
-pnpm start
+pnpm start --hostname 127.0.0.1 --port 3000
 ```
 
-### 17.6 Domain, proxy and HTTPS
+After the build:
+
+```bash
+sudo systemctl restart boomotech.service
+sudo systemctl status boomotech.service --no-pager
+sudo journalctl -u boomotech.service -n 100 --no-pager
+```
+
+### 17.7 Domain, proxy and HTTPS
 
 The public path will be:
 
@@ -791,10 +854,10 @@ The public path will be:
 Visitor -> boomotech.com.au -> HTTPS proxy or Cloudflare Tunnel -> local Next.js service
 ```
 
-During launch, record:
+The confirmed request path is Cloudflare DNS and Tunnel to Nginx on local port 80, then Nginx to Next.js on `127.0.0.1:3000`. During launch, verify:
 
 - final DNS provider and records;
-- whether traffic enters through direct Nginx HTTPS or Cloudflare Tunnel;
+- Cloudflare Tunnel reaches only Nginx on local port 80;
 - certificate ownership and renewal;
 - Nginx or tunnel configuration path;
 - trusted proxy settings;
@@ -806,16 +869,26 @@ Keep `SITE_INDEXING_ENABLED=false` during technical testing. Enable it only afte
 
 ## 18. Production update procedure
 
-After the initial production deployment is documented and backed up, use a controlled update procedure:
+After the initial production deployment is documented and backed up, use this controlled update procedure in exact order:
 
 ```bash
-cd /srv/boomotech/app
+cd /var/www/boomotech
+set -a
+. ./.env.production
+set +a
+sudo install -d -m 700 -o boomotechhost -g boomotechhost /var/backups/boomotech
+pg_dump --format=custom --file="/var/backups/boomotech/boomotech-$(date +%F-%H%M%S).dump" "$DATABASE_URL"
 git status
 git switch main
 git pull --ff-only origin main
 pnpm install --frozen-lockfile
+pnpm prod:check
 pnpm db:migrate
 pnpm build
+sudo systemctl restart boomotech.service
+sudo systemctl status boomotech.service --no-pager
+curl --fail --silent --show-error http://127.0.0.1:3000/ > /dev/null
+curl --fail --silent --show-error https://boomotech.com.au/ > /dev/null
 ```
 
 Then restart the confirmed application service and verify:

@@ -114,6 +114,8 @@ Never invent case studies. An anonymised case study must still be factual and ap
 
 - `/register`
 - `/login`
+- `/forgot-password`
+- `/reset-password`
 - `/dashboard`
 - `/check-email`
 - `/email-verification-result`
@@ -121,7 +123,7 @@ Never invent case studies. An anonymised case study must still be factual and ap
 - `/admin`
 - `/admin/requests/[reference]`
 
-New customers verify their email before signing in. The protected customer dashboard shows account-linked requests, descriptions and conversations. The role-protected administrator area lists and filters all requests and provides a deep-linked response workflow. Accounts are not required for browsing or guest booking. Account recovery and broader profile functions remain later work.
+New customers verify their email before signing in. Forgot/reset password uses expiring, single-use links and revokes existing sessions after a successful reset. The protected customer dashboard shows account-linked requests, descriptions and conversations. The role-protected administrator area lists and filters all requests, provides a deep-linked response workflow and keeps internal notes private from customers. Accounts are not required for browsing or guest booking. Broader profile functions remain later work.
 
 ### Portal — later phase
 

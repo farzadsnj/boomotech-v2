@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminLoginSchema, loginSchema, registrationSchema } from "./schemas";
+import { adminLoginSchema, forgotPasswordSchema, loginSchema, registrationSchema, resetPasswordSchema } from "./schemas";
 
 describe("account validation", () => {
   it("normalizes valid registration emails", () => {
@@ -14,5 +14,11 @@ describe("account validation", () => {
   it("validates customer and administrator credentials", () => {
     expect(loginSchema.safeParse({ email: "bad", password: "x" }).success).toBe(false);
     expect(adminLoginSchema.safeParse({ username: "fa", password: "" }).success).toBe(false);
+  });
+
+  it("validates password recovery fields and matching strong passwords", () => {
+    expect(forgotPasswordSchema.parse({ email: " RESET@Example.com " }).email).toBe("reset@example.com");
+    expect(resetPasswordSchema.safeParse({ password: "SecurePassword9", confirmPassword: "different" }).success).toBe(false);
+    expect(resetPasswordSchema.safeParse({ password: "SecurePassword9", confirmPassword: "SecurePassword9" }).success).toBe(true);
   });
 });

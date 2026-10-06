@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { deliverVerificationEmail, VerificationEmailConfigurationError, VerificationEmailDeliveryError } from "./adapter";
+import { deliverPasswordResetEmail, deliverVerificationEmail, VerificationEmailConfigurationError, VerificationEmailDeliveryError } from "./adapter";
 
 const message = { to: "customer@example.test", name: "Taylor <script>", verificationUrl: "https://example.test/verify-email?token=secret", expiresInMinutes: 60 };
 
@@ -24,5 +24,16 @@ describe("verification email adapter", () => {
     process.env.RESEND_API_KEY = "test-only"; process.env.AUTH_FROM_EMAIL = "verified@example.test";
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("private provider error", { status: 500 }));
     await expect(deliverVerificationEmail(message)).rejects.toBeInstanceOf(VerificationEmailDeliveryError);
+  });
+
+  it("builds a branded password-reset email with a plain fallback URL", async () => {
+    process.env.RESEND_API_KEY = "test-only"; process.env.AUTH_FROM_EMAIL = "BoomoTech <verified@example.test>";
+    const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
+    await deliverPasswordResetEmail({ kind: "password-reset", to: "customer@example.test", name: "Taylor <script>", resetUrl: "https://example.test/reset-password?token=secret", expiresInMinutes: 60 });
+    const body = JSON.parse(String(fetch.mock.calls[0][1]?.body)) as { subject: string; text: string; html: string };
+    expect(body.subject).toContain("Reset");
+    expect(body.text).toContain("https://example.test/reset-password?token=secret");
+    expect(body.html).toContain("Taylor &lt;script&gt;");
+    expect(body.html).toContain("remain unchanged");
   });
 });
