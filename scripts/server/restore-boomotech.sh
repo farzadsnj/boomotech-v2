@@ -42,7 +42,7 @@ trap cleanup EXIT
 
 printf 'Creating isolated restore-test database %s.\n' "$test_database"
 runuser -u postgres -- createdb "$test_database"
-runuser -u postgres -- pg_restore --exit-on-error --no-owner --no-privileges --dbname="$test_database" "$DUMP_FILE"
+runuser -u postgres -- pg_restore --exit-on-error --no-owner --no-privileges --dbname="$test_database" < "$DUMP_FILE"
 
 table_count="$(runuser -u postgres -- psql --dbname="$test_database" --tuples-only --no-align --command="SELECT count(*) FROM pg_catalog.pg_tables WHERE schemaname = 'public';")"
 [[ "$table_count" =~ ^[0-9]+$ && "$table_count" -gt 0 ]] || fail "Restore completed without application tables."
