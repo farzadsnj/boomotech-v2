@@ -39,19 +39,29 @@ export function AccountForm({ mode }: { mode: Mode }) {
     try {
       if (mode === "register") {
         const parsed = registrationSchema.parse(values);
-        const result = await authClient.signUp.email({ name: parsed.name, email: parsed.email, password: parsed.password });
+        const result = await authClient.signUp.email({ name: parsed.name, email: parsed.email, password: parsed.password, callbackURL: "/dashboard?verified=true" });
         if (result.error) throw new Error("registration");
-        router.push("/dashboard");
+        router.push("/check-email");
       } else if (mode === "admin") {
         const parsed = adminLoginSchema.parse(values);
         const result = await authClient.signIn.username({ username: parsed.username, password: parsed.password });
-        if (result.error) throw new Error("login");
+        if (result.error) {
+          if (result.error.status === 403) {
+            router.push("/check-email");
+            return;
+          }
+          throw new Error("login");
+        }
         router.push("/admin");
       } else {
         const parsed = loginSchema.parse(values);
         const result = await authClient.signIn.email({ email: parsed.email, password: parsed.password });
+        if (result.error?.status === 403) {
+          router.push("/check-email");
+          return;
+        }
         if (result.error) throw new Error("login");
-        router.push("/dashboard");
+        router.push(result.data?.user.role === "admin" ? "/admin" : "/dashboard");
       }
       router.refresh();
     } catch {
@@ -89,6 +99,6 @@ export function AccountForm({ mode }: { mode: Mode }) {
     {mode === "register" ? <p className="auth-form__hint">Use 12–128 characters with uppercase and lowercase letters and a number.</p> : null}
     {formError ? <p className="auth-form__error" role="alert">{formError}</p> : null}
     <button className="auth-submit" disabled={pending} type="submit">{pending ? "Please wait…" : mode === "register" ? "Create account" : "Sign in"}</button>
-    {mode === "register" ? <p className="auth-form__alternate">Already registered? <Link href="/login">Sign in</Link></p> : mode === "login" ? <p className="auth-form__alternate">New customer? <Link href="/register">Create an account</Link></p> : null}
+    {mode === "register" ? <p className="auth-form__alternate">Already registered? <Link href="/login">Sign in</Link></p> : mode === "login" ? <><p className="auth-form__alternate"><Link href="/forgot-password">Forgot your password?</Link></p><p className="auth-form__alternate">New customer? <Link href="/register">Create an account</Link></p></> : null}
   </form>;
 }

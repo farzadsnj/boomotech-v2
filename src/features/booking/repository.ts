@@ -28,11 +28,12 @@ export async function storeBookingRequest(request: BookingRequest, userId: strin
       servicePath: request.servicePath,
       message: request.message,
       source: request.source,
-      status: "new",
+      status: "NEW",
+      priority: "MEDIUM",
       consentVersion: BOOKING_CONSENT_VERSION,
       notificationStatus: "pending",
     });
-    await transaction.insert(notificationOutbox).values({ id: outboxId, bookingId: id });
+    await transaction.insert(notificationOutbox).values({ id: outboxId, bookingId: id, kind: "BOOKING_CREATED", dedupeKey: `${id}:BOOKING_CREATED` });
   });
 
   return { id, reference, outboxId };
@@ -71,6 +72,7 @@ export async function listAdminBookings(page: number) {
     message: bookingRequest.message,
     source: bookingRequest.source,
     status: bookingRequest.status,
+    priority: bookingRequest.priority,
     notificationStatus: bookingRequest.notificationStatus,
     createdAt: bookingRequest.createdAt,
   }).from(bookingRequest)
@@ -87,6 +89,7 @@ export async function listCustomerBookings(userId: string) {
     reference: bookingRequest.reference,
     servicePath: bookingRequest.servicePath,
     status: bookingRequest.status,
+    priority: bookingRequest.priority,
     createdAt: bookingRequest.createdAt,
   }).from(bookingRequest)
     .where(eq(bookingRequest.userId, userId))

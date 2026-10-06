@@ -1,9 +1,10 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
+import { getDatabaseUrl } from "@/lib/config/environment";
 
-const connectionString = process.env.DATABASE_URL ?? "postgres://boomotech:boomotech@localhost:5433/boomotech";
 const e2eDatabasePath = process.env.AUTH_E2E_DATABASE_PATH;
+const connectionString = e2eDatabasePath ? "" : getDatabaseUrl();
 
 const globalDatabase = globalThis as typeof globalThis & {
   boomotechSql?: ReturnType<typeof postgres>;
