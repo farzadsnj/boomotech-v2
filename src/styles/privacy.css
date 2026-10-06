@@ -1,6 +1,6 @@
 .cookie-notice {
   position: fixed;
-  z-index: 70;
+  z-index: 30;
   bottom: 1rem;
   left: 50%;
   display: flex;
