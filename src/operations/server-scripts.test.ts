@@ -7,7 +7,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 describe("server operations scripts", () => {
   it("creates and validates database and configuration backups with retention tiers", () => {
     const script = read("scripts/server/backup-boomotech.sh");
-    expect(script).toContain("pg_dump --format=custom");
+    expect(script).toContain('pg_dump --dbname="$DATABASE_URL" --format=custom');
     expect(script).toContain("pg_restore --list");
     expect(script).toContain("tar --list --gzip");
     expect(script).toContain('prune_directory "$BACKUP_ROOT/$kind/daily" 7');
@@ -33,6 +33,7 @@ describe("server operations scripts", () => {
     }
     expect(script).toContain("BOOMOTECH_DISK_WARNING_PERCENT:-80");
     expect(script).toContain("BOOMOTECH_DISK_CRITICAL_PERCENT:-90");
+    expect(script).toContain('psql "$DATABASE_URL"');
   });
 
   it("keeps the deployment safety steps in the required order", () => {

@@ -69,7 +69,7 @@ if [[ -r "$ENV_FILE" ]]; then
   # shellcheck disable=SC1090
   source "$ENV_FILE"
   set +a
-  if [[ -n "${DATABASE_URL:-}" ]] && PGDATABASE="$DATABASE_URL" psql --tuples-only --no-align --command='SELECT 1;' 2>/dev/null | grep -qx '1'; then
+  if [[ -n "${DATABASE_URL:-}" ]] && psql "$DATABASE_URL" --tuples-only --no-align --command='SELECT 1;' 2>/dev/null | grep -qx '1'; then
     log "PostgreSQL application connection passed."
   else
     critical "PostgreSQL application connection failed."
