@@ -46,9 +46,16 @@ runuser -u postgres -- pg_restore --exit-on-error --no-owner --no-privileges --d
 
 table_count="$(runuser -u postgres -- psql --dbname="$test_database" --tuples-only --no-align --command="SELECT count(*) FROM pg_catalog.pg_tables WHERE schemaname = 'public';")"
 [[ "$table_count" =~ ^[0-9]+$ && "$table_count" -gt 0 ]] || fail "Restore completed without application tables."
+
+required_tables=("user" "account" "session" "booking_request")
+for table_name in "${required_tables[@]}"; do
+  exists="$(runuser -u postgres -- psql --dbname="$test_database" --tuples-only --no-align --command="SELECT to_regclass('public.' || quote_ident('$table_name')) IS NOT NULL;")"
+  [[ "$exists" == "t" ]] || fail "Restore is missing required table: $table_name"
+done
+
 runuser -u postgres -- psql --dbname="$test_database" --set=ON_ERROR_STOP=1 --tuples-only --no-align --command="SELECT current_database(), count(*) FROM pg_catalog.pg_tables WHERE schemaname = 'public' GROUP BY current_database();"
 
-printf 'Restore test passed with %s public tables.\n' "$table_count"
+printf 'Restore test passed with %s public tables and all required BoomoTech tables.\n' "$table_count"
 if [[ "$KEEP_TEST_DATABASE" == true ]]; then
   printf 'Test database retained for manual inspection: %s\n' "$test_database"
 else
