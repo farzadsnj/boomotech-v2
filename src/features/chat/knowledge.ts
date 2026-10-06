@@ -2,7 +2,7 @@ import { infoPages } from "@/content/pages";
 import { services } from "@/content/services";
 import { solutions } from "@/content/solutions";
 
-const publicInformationPaths = new Set(["/faq", "/support", "/support/safety", "/book", "/contact"]);
+const publicInformationPaths = new Set(["/faq", "/support", "/support/safety", "/book", "/contact", "/privacy", "/cookies"]);
 
 function serviceKnowledge() {
   return services.map((service) => [
