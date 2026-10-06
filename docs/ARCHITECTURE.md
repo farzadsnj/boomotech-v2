@@ -53,6 +53,6 @@ The initial administrator is created with `pnpm admin:seed` from untracked envir
 
 The request domain lives in `src/features/requests`. Database transactions enforce edit and withdrawal locks, allowed status transitions, priority changes, private administrator notes, chronological messages and audit events. A monotonic request version prevents stale concurrent updates. Mutation routes validate Zod input, session ownership or admin role, request origin and rate limits. Customer projections never select internal notes. The administrator list uses server-side filters and deterministic ordering: open work, priority, newest date and stable ID.
 
-Password recovery uses Better Auth's database-backed, expiring, single-use reset tokens. Authentication email templates and Resend delivery remain isolated from booking notifications, and successful password resets revoke existing sessions.
+Password recovery uses Better Auth's database-backed, expiring, single-use reset tokens. Authentication templates and booking notification templates remain separate while sharing one server-only Resend transport. Successful password resets revoke existing sessions.
 
 Production requires PostgreSQL with restricted network access, encrypted backups, restore testing and an approved retention/deletion process. Authentication secrets must come from the deployment secret manager and support rotation. Administrator credential rotation, outbox delivery workers, monitoring and owner-approved retention remain outstanding launch controls.
