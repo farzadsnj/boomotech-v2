@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { Inter, Manrope } from "next/font/google";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { CookieNotice } from "@/components/privacy/cookie-notice";
 import { PageTransition } from "@/components/motion/page-transition";
 import { Chatbot } from "@/features/chat/chatbot";
 import { ScrollToTop } from "@/components/layout/scroll-to-top";
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <SiteFooter />
         <ScrollToTop />
         <Chatbot />
+        <CookieNotice />
       </body>
     </html>
   );
