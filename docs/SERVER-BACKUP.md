@@ -52,7 +52,7 @@ latest_dump="$(sudo find /var/backups/boomotech/database/daily -maxdepth 1 -type
 sudo scripts/server/restore-boomotech.sh --dump "$latest_dump"
 ```
 
-The command creates an isolated database named `boomotech_restore_test_*`, restores the dump, checks that public tables exist, and drops it. Use `--keep-test-database` only for an authorised manual investigation, then remove that database explicitly.
+The command creates an isolated database named `boomotech_restore_test_*`, opens the protected dump as root and streams it to `pg_restore` running as the local `postgres` account, checks that public tables exist, and drops it. The backup file can therefore remain root-only (`0600`). Use `--keep-test-database` only for an authorised manual investigation, then remove that database explicitly.
 
 Production restoration is deliberately absent. A production restore requires an owner-approved incident plan, an additional current backup, a maintenance window, confirmation of PostgreSQL versions and an explicit target database review.
 
