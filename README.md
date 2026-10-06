@@ -21,6 +21,10 @@ The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local 
 - [Content strategy](docs/CONTENT.md)
 - [SEO strategy](docs/SEO.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Server backup and restore testing](docs/SERVER-BACKUP.md)
+- [Server monitoring](docs/SERVER-MONITORING.md)
+- [Production deployment runbook](docs/DEPLOYMENT.md)
+- [AI service chatbot](docs/AI-CHATBOT.md)
 - [Operations handbook](docs/OPERATIONS-HANDBOOK.md)
 
 No production claims, prices, policies, testimonials, credentials or case studies should be added unless verified by the owner.
@@ -106,6 +110,8 @@ The chatbot and `/booking` route render the same progressive `BookingForm`. Book
 Every saved request receives a public `BT-...` reference. Requests submitted with a verified customer session are linked to that account and appear in its dashboard; guest requests remain unlinked. Customers can edit or withdraw only unread `NEW` requests. Explicit administrator processing locks the original description. Stored messages, statuses, priorities and audit events support an authorised request conversation without matching ownership by email.
 
 Administrators can filter and page requests, explicitly start processing, reply, resolve or reopen within the approved transition map, assign `HIGH`, `MEDIUM` or `LOW` priority, and maintain private internal notes. Internal notes are selected only for the authorised administrator detail view and never enter customer projections. Customer replies move `AWAITING_USER` requests back to `IN_PROGRESS`. Notification outbox rows are committed with message actions; production delivery workers and retry monitoring remain an operational requirement.
+
+Service questions use the server-only OpenAI Responses API adapter documented in [docs/AI-CHATBOT.md](docs/AI-CHATBOT.md). Public context is built from the canonical service, solution and FAQ records. Requests have origin, size, schema and rate-limit controls; the API key remains server-side and automated tests never call OpenAI. Configure `OPENAI_API_KEY` and the optional `OPENAI_CHAT_MODEL` only in untracked server environment files.
 
 Configure these server-side variables before testing real delivery:
 

@@ -1,0 +1,2 @@
+*.sh text eol=lf
+scripts/server/systemd/* text eol=lf

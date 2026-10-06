@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { serviceByPath } from "@/content/services";
 import { BookingForm } from "@/features/booking/booking-form";
+import type { ChatHistoryItem } from "./chat-schema";
 import { serviceGuidance, type ServiceMatch } from "./service-matcher";
 
 const SESSION_KEY = "boomotech-welcome-seen";
@@ -28,6 +29,9 @@ export function Chatbot() {
   const [selectedService, setSelectedService] = useState("");
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<{ message: string; matches: ServiceMatch[] } | null>(null);
+  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
+  const [chatError, setChatError] = useState("");
+  const [chatPending, setChatPending] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
   const launcher = useRef<HTMLButtonElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
@@ -96,7 +100,36 @@ export function Chatbot() {
   }
   function book(path = "") { setSelectedService(path); setView("booking"); }
   function chooseCategory(id: string) { setCategoryId(id); setView("category"); }
-  function ask(event: FormEvent) { event.preventDefault(); setAnswer(serviceGuidance(question)); }
+  async function ask(event: FormEvent) {
+    event.preventDefault();
+    const message = question.trim();
+    if (!message || chatPending) return;
+    setChatPending(true);
+    setChatError("");
+    const guidance = serviceGuidance(message);
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, history: chatHistory.slice(-8) }),
+      });
+      const payload = await response.json() as { message?: string; error?: string };
+      if (!response.ok || !payload.message) throw new Error(payload.error ?? "Chat request failed.");
+      const nextHistory = [
+        ...chatHistory,
+        { role: "user" as const, content: message },
+        { role: "assistant" as const, content: payload.message },
+      ].slice(-8) satisfies ChatHistoryItem[];
+      setChatHistory(nextHistory);
+      setAnswer({ message: payload.message, matches: guidance.matches });
+      setQuestion("");
+      playChime();
+    } catch {
+      setChatError("The assistant is temporarily unavailable. Your message was not stored. Please try again, browse the service categories or request a consultation.");
+    } finally {
+      setChatPending(false);
+    }
+  }
   const category = categories.find((item) => item.id === categoryId);
   const categoryServices = category?.paths.map((path) => serviceByPath.get(path)).filter(Boolean) ?? [];
 
@@ -109,7 +142,7 @@ export function Chatbot() {
         {view === "home" && <><p>Choose a starting point. Suggestions use BoomoTech’s approved service content.</p><div className="chat-actions"><button onClick={() => setView("categories")}>Explore our services</button><button className="primary" onClick={() => book()}>Book a consultation</button><button onClick={() => setView("question")}>Ask a service question</button></div><Link className="chat-direct-link" href="/booking" onClick={close}>Open the full booking page</Link></>}
         {view === "categories" && <section aria-labelledby="chat-categories-title"><h3 id="chat-categories-title" ref={viewHeading} tabIndex={-1}>What would you like to do?</h3><div className="chat-actions">{categories.map((item) => <button key={item.id} onClick={() => chooseCategory(item.id)}>{item.label}</button>)}<button onClick={() => setView("question")}>Not sure — help me choose</button></div></section>}
         {view === "category" && category && <section aria-labelledby="chat-category-title"><h3 id="chat-category-title" ref={viewHeading} tabIndex={-1}>{category.label}</h3><div className="chat-service-list">{categoryServices.map((service) => service && <article key={service.path}><h4>{service.name}</h4><p>{service.description}</p><div><Link href={service.path} onClick={close}>View service</Link><button onClick={() => book(service.path)}>Request consultation</button></div></article>)}</div></section>}
-        {view === "question" && <section aria-labelledby="chat-question-title"><h3 id="chat-question-title" ref={viewHeading} tabIndex={-1}>Describe what you need</h3><form className="chat-question" onSubmit={ask}><label htmlFor="service-question">What is happening?</label><textarea id="service-question" rows={4} maxLength={500} value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="For example: computers and Wi-Fi for our office" /><button className="button-link button-link--primary">Find a service</button></form><div className="sr-only" aria-live="polite" aria-atomic="true">{answer?.message ?? ""}</div>{answer && <div className="chat-answer"><p>{answer.message}</p>{answer.matches.length ? answer.matches.map(({ service }) => <article key={service.path}><h4>{service.name}</h4><p><strong>Why this may help:</strong> {service.description}</p><Link href={service.path} onClick={close}>View {service.name}</Link></article>) : <button onClick={() => setView("categories")}>Browse all service categories</button>}<button onClick={() => book(answer.matches[0]?.service.path)}>Request a consultation</button></div>}</section>}
+        {view === "question" && <section aria-labelledby="chat-question-title"><h3 id="chat-question-title" ref={viewHeading} tabIndex={-1}>Describe what you need</h3><p>Ask about BoomoTech services and the assistant will use the published service and FAQ information.</p><p className="fine-print">Your question and limited recent chat context are sent to an AI service to generate the answer. Do not include passwords, confidential customer data or other sensitive information. Read the <Link href="/privacy">Privacy Policy</Link>.</p><form className="chat-question" onSubmit={ask}><label htmlFor="service-question">What is happening?</label><textarea id="service-question" rows={4} maxLength={1500} required value={question} onChange={(event) => { setQuestion(event.target.value); if (chatError) setChatError(""); }} placeholder="For example: computers and Wi-Fi for our office" /><button className="button-link button-link--primary" disabled={chatPending}>{chatPending ? "Finding a helpful answer…" : "Ask BoomoTech"}</button></form><div className="sr-only" aria-live="polite" aria-atomic="true">{chatPending ? "Finding a helpful answer." : chatError || answer?.message || ""}</div>{chatError && <p className="chat-error" role="alert">{chatError}</p>}{answer && <div className="chat-answer"><p>{answer.message}</p>{answer.matches.length ? answer.matches.map(({ service }) => <article key={service.path}><h4>{service.name}</h4><p><strong>Why this may help:</strong> {service.description}</p><Link href={service.path} onClick={close}>View {service.name}</Link></article>) : <button onClick={() => setView("categories")}>Browse all service categories</button>}<button onClick={() => book(answer.matches[0]?.service.path)}>Request a consultation</button></div>}</section>}
         {view === "booking" && <BookingForm key={selectedService} initialService={selectedService} compact onClose={close} />}
       </div>
     </div>}

@@ -3,3 +3,4 @@ allowBuilds:
   unrs-resolver: true
 overrides:
   esbuild@<=0.24.2: 0.25.12
+  source-map-js@<1.2.2: 1.2.2

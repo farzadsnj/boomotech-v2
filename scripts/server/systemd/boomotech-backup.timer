@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the BoomoTech backup each night
+
+[Timer]
+OnCalendar=*-*-* 02:00:00 Australia/Brisbane
+Persistent=true
+RandomizedDelaySec=10m
+Unit=boomotech-backup.service
+
+[Install]
+WantedBy=timers.target

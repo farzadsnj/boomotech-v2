@@ -1,0 +1,21 @@
+[Unit]
+Description=BoomoTech PostgreSQL and configuration backup
+After=postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/var/www/boomotech/scripts/server/backup-boomotech.sh
+User=root
+Group=root
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/backups/boomotech /var/log/boomotech-backup /run/lock
+
+[Install]
+WantedBy=multi-user.target
