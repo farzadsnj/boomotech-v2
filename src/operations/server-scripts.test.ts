@@ -20,6 +20,9 @@ describe("server operations scripts", () => {
     expect(script).toContain("boomotech_restore_test_");
     expect(script).toContain("pg_restore --exit-on-error");
     expect(script).toContain("dropdb --if-exists");
+    for (const requiredTable of ["user", "account", "session", "booking_request"]) {
+      expect(script).toContain(`"${requiredTable}"`);
+    }
     expect(script).not.toContain("boomotech_production");
   });
 
