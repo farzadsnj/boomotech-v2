@@ -15,12 +15,12 @@ The script:
 5. fetches and fast-forwards `main` only;
 6. runs `pnpm install --frozen-lockfile`;
 7. runs `pnpm prod:check` against the complete production environment;
-8. runs lint, type-check and unit tests (unless the operator explicitly uses `--fast`);
+8. runs lint and type-check, then runs unit tests in an isolated test environment with production database, email, OpenAI, proxy and origin variables explicitly removed (unless the operator explicitly uses `--fast`);
 9. runs `pnpm db:migrate` and `pnpm build`;
 10. restarts `boomotech.service` only after all prior steps pass;
 11. checks the local service and public HTTPS origin.
 
-There is no destructive Git reset and no automatic database rollback. A migration failure leaves the running service untouched. A restart or health-check failure prints service diagnostics and stops for manual investigation.
+There is no destructive Git reset and no automatic database rollback. Production credentials are never intentionally passed into the unit-test process, preventing tests from contacting the live database, Resend or OpenAI configuration. The production environment is loaded again only after tests pass, before migrations and the production build. A migration failure leaves the running service untouched. A restart or health-check failure prints service diagnostics and stops for manual investigation.
 
 ## Server prerequisites
 
