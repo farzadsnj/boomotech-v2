@@ -96,7 +96,7 @@ export function AccountForm({ mode }: { mode: Mode }) {
     {mode === "admin" ? field("username", "Administrator username", "text", "username") : field("email", "Email address", "email", "email")}
     {field("password", "Password", "password", mode === "register" ? "new-password" : "current-password")}
     {mode === "register" ? field("confirmPassword", "Confirm password", "password", "new-password") : null}
-    {mode === "register" ? <p className="auth-form__hint">Use 12–128 characters with uppercase and lowercase letters and a number.</p> : null}
+    {mode === "register" ? <><p className="auth-form__hint">Use 12–128 characters with uppercase and lowercase letters and a number.</p><p className="auth-form__hint">By creating an account, you acknowledge the <Link href="/privacy">Privacy Policy</Link> and <Link href="/cookies">Cookies & browser storage</Link>.</p></> : null}
     {formError ? <p className="auth-form__error" role="alert">{formError}</p> : null}
     <button className="auth-submit" disabled={pending} type="submit">{pending ? "Please wait…" : mode === "register" ? "Create account" : "Sign in"}</button>
     {mode === "register" ? <p className="auth-form__alternate">Already registered? <Link href="/login">Sign in</Link></p> : mode === "login" ? <><p className="auth-form__alternate"><Link href="/forgot-password">Forgot your password?</Link></p><p className="auth-form__alternate">New customer? <Link href="/register">Create an account</Link></p></> : null}
