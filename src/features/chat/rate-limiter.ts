@@ -1,3 +1,7 @@
+import { randomUUID } from "node:crypto";
+import { sql } from "drizzle-orm";
+import { db } from "@/db";
+import { rateLimit } from "@/db/schema";
 import { getBookingClientKey, RateLimitConfigurationError } from "@/features/booking/rate-limiter";
 
 export { RateLimitConfigurationError };
@@ -53,12 +57,38 @@ function sharedLimiter(url: string, token: string): ChatRateLimiter {
   } };
 }
 
+function databaseLimiter(): ChatRateLimiter {
+  return { async check(key) {
+    const now = Date.now();
+    const windowStart = now - WINDOW_SECONDS * 1000;
+    const namespacedKey = `chat:${key}`;
+    const [entry] = await db.insert(rateLimit).values({
+      id: randomUUID(),
+      key: namespacedKey,
+      count: 1,
+      lastRequest: now,
+    }).onConflictDoUpdate({
+      target: rateLimit.key,
+      set: {
+        count: sql<number>`case when ${rateLimit.lastRequest} <= ${windowStart} then 1 else ${rateLimit.count} + 1 end`,
+        lastRequest: sql<number>`case when ${rateLimit.lastRequest} <= ${windowStart} then ${now} else ${rateLimit.lastRequest} end`,
+      },
+    }).returning({ count: rateLimit.count, lastRequest: rateLimit.lastRequest });
+
+    const resetAt = entry.lastRequest + WINDOW_SECONDS * 1000;
+    return {
+      allowed: entry.count <= LIMIT,
+      retryAfterSeconds: Math.max(1, Math.ceil((resetAt - now) / 1_000)),
+    };
+  } };
+}
+
 export function getChatRateLimiter(): ChatRateLimiter {
   const url = process.env.BOOKING_RATE_LIMIT_REST_URL?.trim();
   const token = process.env.BOOKING_RATE_LIMIT_REST_TOKEN?.trim();
   if (url && token) return sharedLimiter(url, token);
   if (process.env.NODE_ENV !== "production") return developmentLimiter();
-  throw new RateLimitConfigurationError("A shared chat rate limiter is required in production.");
+  return databaseLimiter();
 }
 
 export function getChatClientKey(request: Request) {
