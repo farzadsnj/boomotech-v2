@@ -1,0 +1,83 @@
+.cookie-notice {
+  position: fixed;
+  z-index: 30;
+  bottom: 1rem;
+  left: 50%;
+  display: flex;
+  width: min(40rem, calc(100vw - 10rem));
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  transform: translateX(-50%);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: rgb(255 255 255 / 98%);
+  box-shadow: 0 18px 48px rgb(13 42 59 / 18%);
+  color: var(--color-ink);
+}
+
+.cookie-notice strong {
+  display: block;
+  margin-bottom: .35rem;
+  font-size: .92rem;
+}
+
+.cookie-notice p {
+  margin: 0;
+  color: var(--color-ink-soft);
+  font-size: .82rem;
+  line-height: 1.5;
+}
+
+.cookie-notice__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  margin-top: .45rem !important;
+}
+
+.cookie-notice a {
+  color: var(--color-primary-dark);
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: .15em;
+}
+
+.cookie-notice button {
+  min-width: 4.5rem;
+  min-height: 2.4rem;
+  flex: none;
+  padding: .45rem .75rem;
+  border: 0;
+  border-radius: .4rem;
+  background: var(--color-primary);
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+.cookie-notice button:hover,
+.cookie-notice button:focus-visible {
+  background: var(--color-primary-dark);
+}
+
+@media (max-width: 700px) {
+  .cookie-notice {
+    top: 5.25rem;
+    right: 1rem;
+    bottom: auto;
+    left: 1rem;
+    width: auto;
+    max-height: calc(100vh - 6.25rem);
+    overflow: auto;
+    flex-direction: column;
+    transform: none;
+  }
+
+  .cookie-notice button {
+    width: 100%;
+  }
+}
