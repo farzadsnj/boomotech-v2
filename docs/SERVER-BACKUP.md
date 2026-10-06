@@ -10,7 +10,7 @@ This runbook covers the operator-run backup tools for a single Ubuntu BoomoTech 
 - Every database dump is checked with `pg_restore --list`; every configuration archive is listed with `tar` before it is accepted.
 - Daily copies retain the newest 7 files. Sunday copies retain 4 weekly files. Copies made on the first day of a month retain 3 monthly files.
 - A lock prevents overlapping backups and partially written files remain hidden until validation passes.
-- `scripts/server/restore-boomotech.sh` restores a selected dump only into a generated test database, validates that application tables exist, and removes the test database by default.
+- `scripts/server/restore-boomotech.sh` restores a selected dump only into a generated test database, validates the expected `user`, `account`, `session` and `booking_request` tables, and removes the test database by default.
 - systemd service and timer templates schedule the backup for 02:00 in `Australia/Brisbane`, with a random delay and catch-up after downtime.
 
 The local retention values support operational testing. The owner must approve the final retention period, off-site destination, encryption and deletion policy before launch. A backup stored only on the application server does not protect against loss of that server.
