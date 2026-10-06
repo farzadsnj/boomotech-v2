@@ -2,13 +2,14 @@
   position: fixed;
   z-index: 70;
   bottom: 1rem;
-  left: 1rem;
+  left: 50%;
   display: flex;
-  width: min(36rem, calc(100vw - 2rem));
+  width: min(40rem, calc(100vw - 10rem));
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem 1.1rem;
+  transform: translateX(-50%);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
   background: rgb(255 255 255 / 98%);
@@ -63,12 +64,17 @@
   background: var(--color-primary-dark);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 700px) {
   .cookie-notice {
+    top: 5.25rem;
     right: 1rem;
-    bottom: 5.5rem;
+    bottom: auto;
+    left: 1rem;
     width: auto;
+    max-height: calc(100vh - 6.25rem);
+    overflow: auto;
     flex-direction: column;
+    transform: none;
   }
 
   .cookie-notice button {
