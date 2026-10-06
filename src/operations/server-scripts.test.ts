@@ -19,6 +19,7 @@ describe("server operations scripts", () => {
     const script = read("scripts/server/restore-boomotech.sh");
     expect(script).toContain("boomotech_restore_test_");
     expect(script).toContain("pg_restore --exit-on-error");
+    expect(script).toContain('--dbname="$test_database" < "$DUMP_FILE"');
     expect(script).toContain("dropdb --if-exists");
     for (const requiredTable of ["user", "account", "session", "booking_request"]) {
       expect(script).toContain(`"${requiredTable}"`);
