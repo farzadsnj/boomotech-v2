@@ -23,7 +23,7 @@ There is no destructive Git reset and no automatic database rollback. A migratio
 
 ## Server prerequisites
 
-- Ubuntu host with Node.js 24, pnpm 11, Git, curl, PostgreSQL client tools, Nginx and systemd.
+- Ubuntu host with Node.js 22, pnpm 11, Git, curl, PostgreSQL client tools, Nginx and systemd.
 - Repository checkout at `/var/www/boomotech`, owned by a dedicated non-root application user.
 - A reviewed `boomotech.service` and Nginx/TLS configuration.
 - Production PostgreSQL with restricted credentials and tested backups.
@@ -42,8 +42,9 @@ BETTER_AUTH_URL=https://approved.example
 BOOKING_NOTIFICATION_EMAIL=...
 BOOKING_FROM_EMAIL=...
 RESEND_API_KEY=...
-BOOKING_RATE_LIMIT_REST_URL=...
-BOOKING_RATE_LIMIT_REST_TOKEN=...
+# Optional for future multi-instance rate limiting:
+BOOKING_RATE_LIMIT_REST_URL=
+BOOKING_RATE_LIMIT_REST_TOKEN=
 BOOKING_TRUST_PROXY=true
 OPENAI_API_KEY=...
 OPENAI_CHAT_MODEL=gpt-6-luna
