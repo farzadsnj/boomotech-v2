@@ -70,6 +70,155 @@ export const infoPages: InfoPage[] = [
   info({ path: "/about", eyebrow: "About BoomoTech", title: "Practical technology, explained clearly", description: "BoomoTech helps small businesses and individuals resolve everyday technology problems, strengthen their setup and plan useful digital improvements.", metaDescription: "Meet BoomoTech founder Farzad Sanjarani and learn about the practical, clear approach to IT support and digital systems.", cards: [{ title: "Resolve everyday problems", description: "Start with what is affecting the person or the work, then identify a safe practical path." }, { title: "Improve reliability and security", description: "Prioritise understandable foundations across devices, accounts, networks, backups and access." }, { title: "Build useful digital tools", description: "Shape websites, software and automation around a defined need and responsible human review." }], sections: [{ title: "Meet the founder", description: "Farzad Sanjarani is a Brisbane-based IT professional with a Master of Information Technology in Software Development from QUT. His practical background spans IT support, endpoint deployment, networking, Microsoft 365, cloud, websites, software and automation, supporting both technical and non-technical users." }, { title: "Why BoomoTech exists", description: "Technology help should make the next decision easier to understand. BoomoTech aims to connect hands-on problem solving with thoughtful improvements, without unnecessary jargon or pressure." }, { title: "How work is approached", items: ["Listen to the problem and its impact before choosing a tool", "Explain options, dependencies and boundaries in plain language", "Use safe support practices and never request secrets through forms", "Agree scope and practical outcomes before work begins", "Help customers make better purchasing and project decisions"] }, { title: "Brisbane and remote-service context", description: "BoomoTech is based in Brisbane. Remote options may be suitable across Australia, while onsite scope, service area, availability and operating details are confirmed case by case and still require owner approval." }], related: [{ label: "Explore services", href: "/services" }, { label: "Request a consultation", href: "/booking" }], cta: { label: "Request a consultation", href: "/booking", description: "Describe the problem, decision or project you want to discuss. A request does not confirm an appointment." } }),
   info({ path: "/contact", eyebrow: "Contact", title: "Prepare a useful first conversation", description: "Use the secure booking-request form to start a conversation, or prepare the context that will make a future contact useful.", metaDescription: "Prepare to contact BoomoTech about IT support, a consultation or a digital project.", notice: { tone: "info", title: "Secure booking requests are available", body: "The booking-request form collects and transmits the details shown on that form to the configured BoomoTech notification service. It does not confirm an appointment. Public phone and direct email channels remain unconfirmed." }, cards: [{ title: "For an IT issue", description: "Note what is affected, when it started and how work is impacted—without including secrets." }, { title: "For a project", description: "Describe the people, problem, current process and the outcome you want." }, { title: "For advice", description: "Bring the decision, constraints and options you are already considering." }], related: [{ label: "Support guidance", href: "/support" }, { label: "Consultation options", href: "/book" }, { label: "Quote preparation", href: "/get-a-quote" }] }),
   info({ path: "/get-a-quote", eyebrow: "Project preparation", title: "Prepare a clearer quote request", description: "Good estimates depend on useful context. Prepare the details below, then use the booking-request form to start a project conversation.", metaDescription: "Learn what information helps BoomoTech prepare a useful technology service or project quote.", notice: { tone: "info", title: "Formal quotes follow scope clarification", body: "The booking-request form can collect an initial project description. It does not generate a quote, approve scope or create a price commitment." }, process: [{ number: "01", title: "Describe the outcome", description: "Explain what needs to improve and who it affects." }, { number: "02", title: "Share safe context", description: "List systems, constraints and timing without credentials or private customer data." }, { number: "03", title: "Clarify the next stage", description: "Some requests need discovery before scope and estimates can be responsible." }], sections: [{ title: "Helpful inputs", items: ["Problem or outcome in plain language", "People, locations and systems involved", "Known dependencies and constraints", "Timing needs and a realistic budget range if available", "Who can approve scope and decisions"] }], related: [{ label: "Project discovery", href: "/book/project-discovery" }, { label: "Explore services", href: "/services" }] }),
-  info({ kind: "legal", path: "/privacy", eyebrow: "Draft policy", title: "Privacy information", description: "This page is a structural placeholder and is not approved legal policy.", metaDescription: "BoomoTech privacy policy placeholder pending owner and legal review.", notice: { tone: "draft", title: "Owner and legal review required", body: "The booking-request form collects a name, email address, phone number, selected service and message for delivery to the configured business inbox. Customer accounts separately store a name, normalized email address, password hash, server-side session records and necessary timestamps in PostgreSQL. Plaintext passwords are never stored. The owner must still approve the legal entity wording, provider disclosures, retention and deletion rules, access and correction process, backup policy, and complaint contact before launch." }, sections: [{ title: "The final policy must cover", items: ["Who operates the service and how to make contact", "What information is collected and why", "Service providers and any overseas handling", "Retention, security, access, correction and deletion", "Cookies, analytics and complaint pathways"] }] }),
+  info({
+    kind: "legal",
+    path: "/privacy",
+    eyebrow: "Privacy policy",
+    title: "Privacy policy",
+    description: "How BoomoTech collects, uses, stores and shares personal information when you use our website, accounts, service requests and AI service assistant.",
+    metaDescription: "Read the BoomoTech privacy policy covering accounts, service requests, email delivery, AI chat, security, overseas processing and privacy rights.",
+    notice: {
+      tone: "info",
+      title: "Last updated 6 October 2026",
+      body: "This policy describes BoomoTech's current information-handling practices and applies Australian privacy law, including the Privacy Act 1988 (Cth), where it applies. Please do not submit passwords, MFA codes, recovery keys, private keys, full payment-card details or unrelated confidential information."
+    },
+    sections: [
+      {
+        title: "Who we are and how to contact us",
+        description: "BoomoTech is a Brisbane-based technology services business providing IT support, networking, cloud, cybersecurity, websites, software, automation and related consultation. Privacy questions, access or correction requests, deletion requests and complaints can be sent through the BoomoTech Contact page. Include the word 'Privacy' so the request can be identified."
+      },
+      {
+        title: "Personal information we collect",
+        items: [
+          "Account information such as your name and email address, together with password hashes, session records, security timestamps and related authentication records. BoomoTech does not store your plaintext account password.",
+          "Service and booking information such as your name, email address, phone number, selected service, request description, request status, messages exchanged about the request and internal service notes used to manage the request.",
+          "AI service-assistant content when you choose to ask an AI question, including your current question and a limited number of recent in-memory chat turns needed to provide context.",
+          "Technical and security information such as IP or trusted forwarded client address, browser or user-agent information, request timing, rate-limit records, application logs, Nginx logs and security events.",
+          "Email-delivery information required for account verification, password recovery, booking notifications and request communication."
+        ]
+      },
+      {
+        title: "How we collect and use information",
+        items: [
+          "Information is collected directly from you when you create an account, sign in, submit a booking or service request, reply to a request, use password recovery, contact BoomoTech or ask the AI service assistant a question.",
+          "Technical information is collected automatically when the website and security controls receive a request.",
+          "We use information to provide and secure accounts, receive and manage service requests, communicate with you, prevent abuse, troubleshoot the service, maintain backups, respond to privacy requests and meet applicable legal obligations.",
+          "BoomoTech does not sell personal information and does not currently use the website for behavioural advertising."
+        ]
+      },
+      {
+        title: "Service providers and overseas processing",
+        description: "Some service providers may process information outside Australia. Where practicable, BoomoTech limits the information sent to each provider to what is needed for that function.",
+        items: [
+          "OpenAI is used for the optional AI service assistant. The server sends the question and limited recent chat context to the OpenAI API. The integration requests no application-state storage. OpenAI states that API inputs and outputs are not used to train its models by default unless an organisation explicitly opts in, and standard abuse-monitoring logs may be retained for up to 30 days. Processing may occur outside Australia, including in the United States.",
+          "Resend is used to deliver verification, password-reset, booking and request-related email. Email addresses, message content and delivery metadata may be processed and stored in the United States under Resend's service terms and data-processing arrangements.",
+          "Cloudflare is used for DNS, secure tunnelling and network/security delivery. Cloudflare may process network identifiers such as IP addresses and request metadata through its global infrastructure.",
+          "Other suppliers may be introduced only when required for an approved service. This policy will be updated when a change materially affects how personal information is handled."
+        ]
+      },
+      {
+        title: "AI service assistant",
+        description: "The AI assistant provides general guidance about BoomoTech's published services. It is not used to make eligibility, employment, credit, legal, medical or other decisions that significantly affect a person's rights or interests. Account records, private booking conversations and administrator-only notes are not intentionally supplied to the AI assistant. Service decisions and customer requests remain subject to human review."
+      },
+      {
+        title: "Cookies, browser storage and caching",
+        description: "BoomoTech uses essential cookies and limited browser storage for secure sign-in and site preferences. The website does not currently intentionally set analytics, advertising or cross-site marketing cookies. Details, storage names and browser choices are explained in the Cookies, browser storage and cache policy.",
+        items: [
+          "Authentication cookies are necessary to keep signed-in sessions working securely.",
+          "Local and session storage are used for small interface preferences such as chatbot sound and whether a welcome message has already been shown.",
+          "Browsers may cache public static files such as styles, scripts, fonts and images. Sensitive account, administrator and API routes are sent with no-store cache instructions.",
+          "If non-essential analytics or marketing technology is introduced later, BoomoTech will update the policy and implement appropriate notice and consent controls before enabling it."
+        ]
+      },
+      {
+        title: "Retention and backups",
+        description: "Personal information is kept only for as long as reasonably needed for the purpose it was collected, operational security, dispute handling and applicable legal or accounting obligations. Account and request records may remain while an account or service relationship is active. Server backups can continue to contain earlier copies until the normal backup rotation expires. The current operational backup rotation is designed to retain up to 7 daily, 4 weekly and 3 monthly copies. Third-party providers apply their own documented retention settings and legal requirements."
+      },
+      {
+        title: "Security",
+        items: [
+          "Production traffic uses HTTPS and server-side secrets are kept out of the browser and source-control environment files.",
+          "Passwords are stored as one-way password hashes rather than plaintext, and production authentication cookies use secure settings.",
+          "Access to customer requests and administrator functions is restricted by authenticated user identity and role checks.",
+          "Backups and production configuration are protected with restricted filesystem permissions and are intended to be tested through isolated restore procedures.",
+          "No internet service can guarantee absolute security. If BoomoTech becomes aware of a security incident, it will assess and respond to it in line with applicable obligations."
+        ]
+      },
+      {
+        title: "Access, correction and deletion requests",
+        description: "You may ask BoomoTech what personal information it holds about you, request correction of inaccurate information, or request deletion where appropriate. Use the Contact page and identify the request as a privacy matter. BoomoTech may need to verify identity before disclosing or changing account information. Some records may need to be retained where required by law, for security, or to establish or defend legal rights."
+      },
+      {
+        title: "Privacy complaints",
+        description: "Send a privacy complaint through the Contact page with enough information to understand the concern, but do not include passwords or other secrets. BoomoTech will review the complaint and respond with the outcome or the next reasonable step. If the issue is not resolved and applicable Australian privacy law provides that option, you may also contact the Office of the Australian Information Commissioner."
+      },
+      {
+        title: "Changes to this policy",
+        description: "BoomoTech will update this page when information-handling practices materially change. The date at the top of the policy shows the latest published update. Material changes affecting an existing service may also be communicated through the relevant account or service channel."
+      }
+    ],
+    related: [
+      { label: "Cookies, browser storage and cache", href: "/cookies" },
+      { label: "Contact BoomoTech", href: "/contact" },
+      { label: "Support safety", href: "/support/safety" }
+    ]
+  }),
+  info({
+    kind: "legal",
+    path: "/cookies",
+    eyebrow: "Browser privacy",
+    title: "Cookies, browser storage and cache",
+    description: "What BoomoTech stores in your browser, why it is needed and how browser caching is handled.",
+    metaDescription: "Read how BoomoTech uses essential cookies, local storage, session storage and browser cache, with no current analytics or advertising cookies.",
+    notice: {
+      tone: "info",
+      title: "Essential and functional storage only",
+      body: "BoomoTech does not currently intentionally use analytics, advertising or cross-site marketing cookies. The notice shown on the website explains current browser storage; the acknowledgement button is not consent to marketing tracking."
+    },
+    sections: [
+      {
+        title: "Essential authentication cookies",
+        description: "Signed-in customer and administrator areas require authentication cookies so the server can recognise a valid session. These cookies are necessary for account security and protected areas of the website. Blocking them may prevent registration, sign-in, dashboards and other authenticated functions from working correctly."
+      },
+      {
+        title: "Local and session storage",
+        items: [
+          "boomotech-chat-sound stores whether you turned the optional chatbot sound on or off.",
+          "boomotech-welcome-seen records for the current browser session that the chatbot welcome message has already been shown.",
+          "boomotech-chat-sound-played records for the current browser session that the optional sound has already played.",
+          "boomotech-cookie-notice-seen stores that you have dismissed the privacy and browser-storage notice so it does not need to appear on every page."
+        ]
+      },
+      {
+        title: "Browser cache",
+        description: "Your browser may cache public static website files such as images, fonts, stylesheets and scripts to improve performance. BoomoTech does not intentionally place booking-form content, account data or AI-chat history into a persistent browser cache. Sensitive account, administrator and API routes are configured with no-store cache instructions. Browser history and cache behaviour can still vary by browser and device."
+      },
+      {
+        title: "Security and infrastructure cookies",
+        description: "Infrastructure and security providers such as Cloudflare may set strictly necessary cookies or similar identifiers when required for security, abuse prevention, network delivery or challenge verification. These are not used by BoomoTech for behavioural advertising."
+      },
+      {
+        title: "Your choices",
+        items: [
+          "You can clear or block cookies, local storage and cached files using your browser settings.",
+          "Blocking essential authentication storage can stop signed-in features from working.",
+          "You can change the chatbot sound from the chatbot interface without changing any advertising preference.",
+          "Because BoomoTech does not currently intentionally use non-essential analytics or marketing cookies, there is no 'accept all' advertising-cookie control."
+        ]
+      },
+      {
+        title: "Future analytics or marketing technology",
+        description: "If BoomoTech later introduces non-essential analytics, advertising, tracking pixels or similar technologies, those tools will be reviewed before launch. This page and the Privacy Policy will be updated, and appropriate consent or preference controls will be implemented before non-essential tracking is enabled where required."
+      },
+      {
+        title: "More information",
+        description: "For how personal information is collected, used, disclosed, secured, retained and accessed, read the Privacy Policy. Privacy questions can be submitted through the Contact page."
+      }
+    ],
+    related: [
+      { label: "Privacy policy", href: "/privacy" },
+      { label: "Contact BoomoTech", href: "/contact" }
+    ]
+  }),
   info({ kind: "legal", path: "/terms", eyebrow: "Draft terms", title: "Website and service terms", description: "This page is a structural placeholder and does not create approved service terms.", metaDescription: "BoomoTech website and service terms placeholder pending owner and legal review.", notice: { tone: "draft", title: "Owner and legal review required", body: "Legal entity details, service scope, payment, cancellations, acceptable use, warranties, liability and dispute terms are not approved." }, sections: [{ title: "The final terms must address", items: ["Website use and content limitations", "Quoting, scope and customer responsibilities", "Payments, cancellations and rescheduling", "Products, shipping, returns and refunds if commerce proceeds", "Liability, governing law and dispute handling"] }] }),
 ];

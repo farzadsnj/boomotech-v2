@@ -114,11 +114,16 @@ Never invent case studies. An anonymised case study must still be factual and ap
 
 - `/register`
 - `/login`
+- `/forgot-password`
+- `/reset-password`
 - `/dashboard`
+- `/check-email`
+- `/email-verification-result`
 - `/admin/login`
 - `/admin`
+- `/admin/requests/[reference]`
 
-The first account slice includes registration, sign-in, a minimal protected customer dashboard and a role-protected customer list for the administrator. It does not make accounts a condition of browsing or booking. Account recovery, email verification and wider portal functions remain later work.
+New customers verify their email before signing in. Forgot/reset password uses expiring, single-use links and revokes existing sessions after a successful reset. The protected customer dashboard shows account-linked requests, descriptions and conversations. The role-protected administrator area lists and filters all requests, provides a deep-linked response workflow and keeps internal notes private from customers. Accounts are not required for browsing or guest booking. Broader profile functions remain later work.
 
 ### Portal — later phase
 

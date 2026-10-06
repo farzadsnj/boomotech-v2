@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetDevelopmentRateLimiter } from "@/features/booking/rate-limiter";
+import { recordBookingNotification, storeBookingRequest } from "@/features/booking/repository";
 import { POST } from "./route";
+
+vi.mock("@/features/booking/repository", () => ({
+  storeBookingRequest: vi.fn(),
+  recordBookingNotification: vi.fn(),
+}));
+
+const storeBooking = vi.mocked(storeBookingRequest);
+const recordNotification = vi.mocked(recordBookingNotification);
 
 const payload = { fullName: "Taylor Smith", email: "taylor@example.com", phone: "+61 400 000 000", servicePath: "/services/it-support", message: "We need help with several office computers.\nPlease contact us.", consent: true, website: "" };
 let client = 1;
@@ -9,6 +18,8 @@ const request = (body: unknown, options: { origin?: string; userAgent?: string; 
 describe("booking endpoint", () => {
   beforeEach(() => {
     resetDevelopmentRateLimiter();
+    storeBooking.mockReset().mockResolvedValue({ id: "00000000-0000-4000-8000-000000000001", reference: "BT-TEST123456", outboxId: "00000000-0000-4000-8000-000000000002" });
+    recordNotification.mockReset().mockResolvedValue(undefined);
     delete process.env.RESEND_API_KEY; delete process.env.BOOKING_NOTIFICATION_EMAIL; delete process.env.BOOKING_FROM_EMAIL;
     delete process.env.BOOKING_RATE_LIMIT_REST_URL; delete process.env.BOOKING_RATE_LIMIT_REST_TOKEN; delete process.env.BOOKING_TRUST_PROXY;
   });
@@ -26,21 +37,32 @@ describe("booking endpoint", () => {
   });
   it("accepts honeypot submissions without contacting a provider", async () => { const fetch = vi.spyOn(globalThis, "fetch"); expect((await POST(request({ ...payload, website: "spam" }))).status).toBe(200); expect(fetch).not.toHaveBeenCalled(); });
   it("rate limits repeated attempts from the same development client", async () => {
-    for (let attempt = 0; attempt < 5; attempt += 1) expect((await POST(request(payload, { userAgent: "same-client" }))).status).toBe(503);
+    for (let attempt = 0; attempt < 5; attempt += 1) expect((await POST(request(payload, { userAgent: "same-client" }))).status).toBe(201);
     expect((await POST(request(payload, { userAgent: "same-client" }))).status).toBe(429);
   });
-  it("reports missing notification configuration as unavailable", async () => expect((await POST(request(payload))).status).toBe(503));
+  it("stores a request even when notifications are not configured", async () => {
+    const response = await POST(request(payload));
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ ok: true, reference: "BT-TEST123456" });
+    expect(storeBooking).toHaveBeenCalledOnce();
+    expect(recordNotification).toHaveBeenCalledWith("00000000-0000-4000-8000-000000000001", "00000000-0000-4000-8000-000000000002", "failed", "configuration");
+  });
+  it("reports a database failure without claiming the request was saved", async () => {
+    storeBooking.mockRejectedValueOnce(new Error("database unavailable"));
+    expect((await POST(request(payload))).status).toBe(503);
+  });
   it("reports success only after provider acceptance and escapes HTML", async () => {
     process.env.RESEND_API_KEY = "test"; process.env.BOOKING_NOTIFICATION_EMAIL = "owner@example.com"; process.env.BOOKING_FROM_EMAIL = "web@example.com";
     const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
-    expect((await POST(request({ ...payload, message: "Line one\n<script>alert(1)</script>" }))).status).toBe(200);
+    expect((await POST(request({ ...payload, message: "Line one\n<script>alert(1)</script>" }))).status).toBe(201);
     const body = JSON.parse(String(fetch.mock.calls[0][1]?.body)) as { text: string; html: string };
     expect(body.text).toContain("Line one\n<script>"); expect(body.html).toContain("Line one<br>&lt;script&gt;"); expect(body.html).not.toContain("<script>");
   });
-  it.each([["provider rejection", new Response("rejected", { status: 429 })], ["provider timeout", new Error("AbortError")]])("returns a delivery failure for %s", async (_label, result) => {
+  it.each([["provider rejection", new Response("rejected", { status: 429 })], ["provider timeout", new Error("AbortError")]])("keeps the saved booking after %s", async (_label, result) => {
     process.env.RESEND_API_KEY = "test"; process.env.BOOKING_NOTIFICATION_EMAIL = "owner@example.com"; process.env.BOOKING_FROM_EMAIL = "web@example.com";
     const fetch = vi.spyOn(globalThis, "fetch");
     if (result instanceof Response) fetch.mockResolvedValue(result); else fetch.mockRejectedValue(result);
-    expect((await POST(request(payload))).status).toBe(502);
+    expect((await POST(request(payload))).status).toBe(201);
+    expect(recordNotification).toHaveBeenCalledWith("00000000-0000-4000-8000-000000000001", "00000000-0000-4000-8000-000000000002", "failed", "delivery");
   });
 });

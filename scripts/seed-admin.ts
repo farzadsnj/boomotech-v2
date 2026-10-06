@@ -1,14 +1,15 @@
-import { loadEnvConfig } from "@next/env";
+import nextEnv from "@next/env";
 import { and, eq, or } from "drizzle-orm";
 
-loadEnvConfig(process.cwd());
+const { loadEnvConfig } = nextEnv;
+loadEnvConfig(process.cwd(), process.env.NODE_ENV !== "production");
 
 const username = process.env.ADMIN_USERNAME?.trim().toLocaleLowerCase("en-AU");
 const email = process.env.ADMIN_EMAIL?.trim().toLocaleLowerCase("en-AU");
 const password = process.env.ADMIN_TEMP_PASSWORD;
 
 if (!username || !email || !password) {
-  console.error("Set ADMIN_USERNAME, ADMIN_EMAIL and ADMIN_TEMP_PASSWORD in .env.local before running this command.");
+  console.error("Set ADMIN_USERNAME, ADMIN_EMAIL and ADMIN_TEMP_PASSWORD in the protected bootstrap environment before running this command.");
   process.exit(1);
 }
 if (username !== "farzadsnj") {
@@ -49,4 +50,4 @@ await db.transaction(async (tx) => {
 });
 
 await closeDatabase();
-console.log("Administrator account created or updated. Remove ADMIN_TEMP_PASSWORD from .env.local now.");
+console.log("Administrator account created or updated. Remove ADMIN_TEMP_PASSWORD from the environment now.");

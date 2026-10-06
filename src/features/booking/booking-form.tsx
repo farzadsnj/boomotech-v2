@@ -22,6 +22,7 @@ export function BookingForm({ initialService = "", compact = false, onClose }: {
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [formError, setFormError] = useState("");
+  const [reference, setReference] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const stepHeadingRef = useRef<HTMLElement>(null);
   const firstRender = useRef(true);
@@ -73,7 +74,7 @@ export function BookingForm({ initialService = "", compact = false, onClose }: {
     event.preventDefault();
     setFormError("");
     if (step < 2) { if (validateStep(step)) setStep(step + 1); return; }
-    const parsed = bookingRequestSchema.safeParse(fields);
+    const parsed = bookingRequestSchema.safeParse({ ...fields, source: compact ? "chatbot" : "booking-page" });
     if (!parsed.success) {
       const nextErrors = issuesToErrors(parsed.error.issues);
       setErrors(nextErrors);
@@ -84,8 +85,9 @@ export function BookingForm({ initialService = "", compact = false, onClose }: {
     setStatus("sending");
     try {
       const response = await fetch("/api/booking", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(parsed.data) });
-      const result = await response.json() as { error?: string };
+      const result = await response.json() as { error?: string; reference?: string };
       if (!response.ok) throw new Error(result.error ?? "We could not deliver your request.");
+      if (result.reference) setReference(result.reference);
       setStatus("success");
     } catch (cause) {
       setStatus("error");
@@ -98,7 +100,8 @@ export function BookingForm({ initialService = "", compact = false, onClose }: {
 
   if (status === "success") return <section className="booking-success" aria-labelledby={`${id}-success-title`} role="status">
     <h2 id={`${id}-success-title`} ref={stepHeadingRef as React.RefObject<HTMLHeadingElement>} tabIndex={-1}>Request received</h2>
-    <p>Thank you. Your booking request has been received. This is not yet a confirmed appointment. The BoomoTech team will contact you to discuss availability and next steps.</p>
+    <p>Thank you. Your booking request has been saved. This is not yet a confirmed appointment. The BoomoTech team will contact you to discuss availability and next steps.</p>
+    {reference ? <p><strong>Your reference:</strong> {reference}</p> : null}
     <div className="booking-success__actions">{onClose ? <button className="button-link button-link--primary" onClick={onClose}>Close assistant</button> : null}<Link className="button-link button-link--secondary" href="/">Return home</Link><Link className="button-link button-link--secondary" href="/services">Explore services</Link></div>
   </section>;
 
@@ -114,7 +117,7 @@ export function BookingForm({ initialService = "", compact = false, onClose }: {
     {step === 1 && <fieldset><legend ref={stepHeadingRef as React.RefObject<HTMLLegendElement>} tabIndex={-1}>Tell us what you need</legend>
       <label>Service required <span aria-hidden="true">*</span><select name="servicePath" required value={fields.servicePath} aria-invalid={Boolean(errors.servicePath)} aria-describedby={describedBy("servicePath")} onChange={(event) => update("servicePath", event.target.value)}><option value="">Choose a service</option>{bookingOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>{errors.servicePath && <span className="field-error" id={errorId("servicePath")}>{errors.servicePath}</span>}</label>
       <label>Problem or requested work <span aria-hidden="true">*</span><textarea name="message" required rows={compact ? 4 : 6} minLength={20} maxLength={3000} value={fields.message} aria-invalid={Boolean(errors.message)} aria-describedby={describedBy("message")} onChange={(event) => update("message", event.target.value)} />{errors.message && <span className="field-error" id={errorId("message")}>{errors.message}</span>}</label>
-      <div className="booking-consent-wrap"><label className="booking-consent"><input name="consent" type="checkbox" checked={fields.consent} aria-invalid={Boolean(errors.consent)} aria-describedby={describedBy("consent")} onChange={(event) => update("consent", event.target.checked)} /> <span>I agree that BoomoTech may use these details to respond to this request. This does not confirm an appointment. Read the <Link href="/privacy">draft privacy information</Link>.</span></label>{errors.consent && <span className="field-error" id={errorId("consent")}>{errors.consent}</span>}</div>
+      <div className="booking-consent-wrap"><label className="booking-consent"><input name="consent" type="checkbox" checked={fields.consent} aria-invalid={Boolean(errors.consent)} aria-describedby={describedBy("consent")} onChange={(event) => update("consent", event.target.checked)} /> <span>I agree that BoomoTech may use these details to respond to this request. This does not confirm an appointment. Read the <Link href="/privacy">Privacy Policy</Link> and <Link href="/cookies">Cookies & browser storage</Link>.</span></label>{errors.consent && <span className="field-error" id={errorId("consent")}>{errors.consent}</span>}</div>
     </fieldset>}
     {step === 2 && <section className="booking-review" aria-labelledby={`${id}-review-title`}><h2 id={`${id}-review-title`} ref={stepHeadingRef as React.RefObject<HTMLHeadingElement>} tabIndex={-1}>Review your request</h2><dl><div><dt>Name</dt><dd>{fields.fullName}</dd></div><div><dt>Email</dt><dd>{fields.email}</dd></div><div><dt>Phone</dt><dd>{fields.phone}</dd></div><div><dt>Service</dt><dd>{serviceLabel(fields.servicePath)}</dd></div><div><dt>Message</dt><dd>{fields.message}</dd></div></dl><p className="fine-print">Submitting sends a request for discussion. It is not a confirmed appointment.</p></section>}
     {formError && <p className="form-error" role="alert">{formError}{status === "error" ? " Your information has been kept so you can retry." : ""}</p>}
