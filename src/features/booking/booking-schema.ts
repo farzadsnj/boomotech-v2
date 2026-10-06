@@ -21,6 +21,7 @@ export const bookingRequestSchema = z.object({
     .transform((value) => `${value.startsWith("+") ? "+" : ""}${value.replace(/\D/g, "")}`),
   servicePath: z.string().refine((value) => serviceValues.has(value), "Choose a service."),
   message: z.string().trim().min(20, "Please add a little more detail.").max(3000),
+  source: z.enum(["booking-page", "chatbot"]).default("booking-page"),
   consent: z.literal(true, { error: "Consent is required before sending." }),
   website: z.string().max(0).optional().default(""),
 });

@@ -4,7 +4,8 @@ import { canAccessAdminDashboard, canAccessCustomerDashboard } from "./access";
 describe("account route authorization", () => {
   it("requires a session for the customer dashboard", () => {
     expect(canAccessCustomerDashboard(null)).toBe(false);
-    expect(canAccessCustomerDashboard({ user: { id: "customer" } })).toBe(true);
+    expect(canAccessCustomerDashboard({ user: { id: "customer", emailVerified: false } })).toBe(false);
+    expect(canAccessCustomerDashboard({ user: { id: "customer", emailVerified: true } })).toBe(true);
   });
 
   it("allows only administrators into the admin dashboard", () => {

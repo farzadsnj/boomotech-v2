@@ -15,7 +15,7 @@ const requiredPaths = [
   "/support/remote", "/support/onsite", "/support/safety", "/book",
   "/book/consultation", "/book/remote-support", "/book/onsite-support",
   "/book/project-discovery", "/resources", "/faq", "/about", "/contact",
-  "/get-a-quote", "/privacy", "/terms",
+  "/get-a-quote", "/privacy", "/cookies", "/terms",
 ];
 
 describe("local Phase 1 content", () => {

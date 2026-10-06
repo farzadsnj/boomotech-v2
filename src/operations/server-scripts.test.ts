@@ -43,6 +43,7 @@ describe("server operations scripts", () => {
       "git fetch --prune origin",
       "git pull --ff-only origin main",
       "pnpm install --frozen-lockfile",
+      "pnpm prod:check",
       "pnpm lint",
       "pnpm typecheck",
       "pnpm test",

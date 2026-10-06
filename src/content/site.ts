@@ -38,7 +38,8 @@ export const site = {
       links: [
         { label: "About", href: "/about" },
         { label: "FAQ", href: "/faq" },
-        { label: "Privacy draft", href: "/privacy" },
+        { label: "Privacy policy", href: "/privacy" },
+        { label: "Cookies & browser storage", href: "/cookies" },
         { label: "Terms draft", href: "/terms" },
       ],
     },

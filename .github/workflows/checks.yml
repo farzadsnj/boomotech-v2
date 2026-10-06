@@ -30,6 +30,7 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/boomotech_test
+      SITE_URL: http://localhost:3100
       BETTER_AUTH_SECRET: ci-only-secret-with-more-than-thirty-two-characters
       BETTER_AUTH_URL: http://localhost:3100
     steps:
@@ -39,9 +40,17 @@ jobs:
           version: 11.19.0
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm prod:check
+        env:
+          SITE_URL: https://boomotech.com.au
+          BETTER_AUTH_URL: https://boomotech.com.au
+          RESEND_API_KEY: ci-only-email-provider-key
+          AUTH_FROM_EMAIL: BoomoTech <noreply@send.boomotech.com.au>
+          BOOKING_NOTIFICATION_EMAIL: ci-only@example.test
+          BOOKING_FROM_EMAIL: BoomoTech <noreply@send.boomotech.com.au>
       - run: pnpm db:migrate
       - run: pnpm lint
       - run: pnpm typecheck

@@ -64,6 +64,8 @@ git pull --ff-only origin main
 
 log "Installing dependencies from the lockfile."
 pnpm install --frozen-lockfile
+log "Validating the complete production environment."
+pnpm prod:check
 if [[ "$FAST" == false ]]; then
   log "Running lint, type-check and unit tests."
   pnpm lint
