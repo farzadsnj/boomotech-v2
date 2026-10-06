@@ -25,13 +25,14 @@ This is general service guidance. It is not an emergency channel, confirmed appo
 ```env
 OPENAI_API_KEY=server-side-secret
 OPENAI_CHAT_MODEL=gpt-6-luna
-BOOKING_RATE_LIMIT_REST_URL=https://shared-rate-limit-provider.example
-BOOKING_RATE_LIMIT_REST_TOKEN=server-side-secret
+# Optional only for future multi-instance scaling:
+BOOKING_RATE_LIMIT_REST_URL=
+BOOKING_RATE_LIMIT_REST_TOKEN=
 BOOKING_TRUST_PROXY=true
 SITE_URL=https://approved.example
 ```
 
-The chat limiter uses a separate `boomotech:chat:*` namespace in the existing shared expiring rate-limit provider. A bounded in-memory fallback is available only outside production. In production, the trusted proxy must overwrite `X-Forwarded-For`; otherwise the endpoint fails closed.
+The chat limiter uses a separate `chat:*` namespace in the existing PostgreSQL rate-limit table by default in production. The optional REST limiter remains available for future multi-instance scaling. A bounded in-memory fallback is available only outside production. In production, the trusted proxy must overwrite `X-Forwarded-For`; otherwise the endpoint fails closed.
 
 The model name is configurable so it can be reviewed without code changes. Verify the selected model is available to the OpenAI project and review usage limits before launch.
 
@@ -51,6 +52,11 @@ Test safe questions about Wi-Fi, Microsoft 365 and service selection. Also verif
 - approved OpenAI project, model and monthly usage budget;
 - provider data-processing and geographic handling review;
 - approved public AI disclosure and privacy wording;
-- production shared rate-limit provider and trusted proxy configuration;
+- trusted proxy configuration and, only if multi-instance scaling is introduced, an approved shared external rate-limit provider;
 - escalation route when the answer is insufficient;
 - monitoring and incident owner for provider outages or abuse.
+
+
+## Privacy notice
+
+The chatbot UI must tell visitors that an AI service is used before they submit a question and link to the BoomoTech Privacy Policy. The integration sends only the current public-service question and limited recent chat context. It must not send account records, private booking conversations, administrator-only notes or server secrets.
