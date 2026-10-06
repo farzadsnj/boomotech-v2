@@ -52,7 +52,7 @@ cleanup() { rm -f "$database_temp" "$config_temp"; }
 trap cleanup EXIT
 
 log "Starting PostgreSQL backup."
-PGDATABASE="$DATABASE_URL" pg_dump --format=custom --no-owner --no-privileges --file="$database_temp"
+pg_dump --dbname="$DATABASE_URL" --format=custom --no-owner --no-privileges --file="$database_temp"
 [[ -s "$database_temp" ]] || fail "PostgreSQL backup is empty."
 pg_restore --list "$database_temp" >/dev/null || fail "PostgreSQL backup validation failed."
 mv "$database_temp" "$database_final"
