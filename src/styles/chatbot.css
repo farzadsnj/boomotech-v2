@@ -22,6 +22,8 @@ body:has(.shop-hero, .product-hero, .auth-page, .account-dashboard, .admin-page)
 .chat-service-list { display: grid; gap: .8rem; } .chat-service-list article { padding: .9rem; border: 1px solid var(--color-border); border-radius: .65rem; } .chat-service-list h4, .chat-answer h4 { margin: 0; font-size: 1rem; } .chat-service-list p { margin: .4rem 0 .75rem; color: var(--color-ink-soft); font-size: .88rem; line-height: 1.45; } .chat-service-list article div { display: flex; flex-wrap: wrap; gap: .6rem; } .chat-service-list a, .chat-service-list button, .chat-answer a, .chat-answer button { padding: .45rem .6rem; color: var(--color-primary-dark); font-size: .83rem; font-weight: 750; }
 .chat-question label, .booking-form label { display: grid; gap: .35rem; margin-bottom: .85rem; color: var(--color-ink); font-weight: 700; }
 .chat-question textarea, .booking-form input, .booking-form textarea, .booking-form select { width: 100%; padding: .72rem; border: 1px solid var(--color-border); border-radius: .45rem; background: white; color: var(--color-ink); font-weight: 400; }
+.chat-question button:disabled { cursor: wait; opacity: .7; }
+.chat-error { margin: .8rem 0 0; padding: .75rem; border-left: .25rem solid var(--color-danger); background: #fff1f1; color: var(--color-ink); font-size: .9rem; line-height: 1.45; }
 .booking-form [aria-invalid="true"] { border-color: var(--color-danger); box-shadow: 0 0 0 1px var(--color-danger); }
 .field-error { color: var(--color-danger); font-size: .82rem; font-weight: 700; line-height: 1.4; }
 .required-note { margin: 0 0 1rem; color: var(--color-ink-soft); font-size: .85rem; }

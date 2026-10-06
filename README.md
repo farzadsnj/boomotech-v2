@@ -21,6 +21,10 @@ The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local 
 - [Content strategy](docs/CONTENT.md)
 - [SEO strategy](docs/SEO.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Server backup and restore testing](docs/SERVER-BACKUP.md)
+- [Server monitoring](docs/SERVER-MONITORING.md)
+- [Production deployment runbook](docs/DEPLOYMENT.md)
+- [AI service chatbot](docs/AI-CHATBOT.md)
 
 No production claims, prices, policies, testimonials, credentials or case studies should be added unless verified by the owner.
 
@@ -91,6 +95,8 @@ Database backups must be encrypted, access controlled, tested for restoration an
 The floating service assistant is implemented in `src/features/chat`. It reads service labels, descriptions and routes from `src/content/services.ts`; `service-matcher.ts` contains only deterministic keyword rules and returns those canonical records. Add or edit a service in the catalogue first, then add matching terms only if visitors use language that the catalogue does not already cover.
 
 The chatbot and `/booking` route render the same progressive `BookingForm`. Booking links retain a real `/booking` destination and open the assistant only when JavaScript enhancement is available. Both client and server validate requests with the shared Zod schema. The `/api/booking` endpoint validates the request origin, enforces the decoded request-size limit, checks a honeypot and uses a pluggable rate limiter before handing delivery to the isolated Resend adapter. Personal information is not placed in URLs or browser storage and is not logged.
+
+Service questions use the server-only OpenAI Responses API adapter documented in [docs/AI-CHATBOT.md](docs/AI-CHATBOT.md). Public context is built from the canonical service, solution and FAQ records. Requests have origin, size, schema and rate-limit controls; the API key remains server-side and automated tests never call OpenAI. Configure `OPENAI_API_KEY` and the optional `OPENAI_CHAT_MODEL` only in untracked server environment files.
 
 Configure these server-side variables before testing real delivery:
 

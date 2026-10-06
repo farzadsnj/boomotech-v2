@@ -1,0 +1,18 @@
+[Unit]
+Description=BoomoTech daily monitoring snapshot
+After=network-online.target nginx.service postgresql.service boomotech.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/var/www/boomotech/scripts/server/boomotech-monitor.sh
+User=root
+Group=root
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/log/boomotech-monitor
+
+[Install]
+WantedBy=multi-user.target

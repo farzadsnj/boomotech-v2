@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the BoomoTech monitoring snapshot daily
+
+[Timer]
+OnCalendar=*-*-* 06:15:00 Australia/Brisbane
+Persistent=true
+RandomizedDelaySec=5m
+Unit=boomotech-monitor.service
+
+[Install]
+WantedBy=timers.target
