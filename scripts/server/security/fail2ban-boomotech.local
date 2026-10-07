@@ -1,0 +1,16 @@
+[DEFAULT]
+ignoreip = 127.0.0.1/8 ::1
+banaction = ufw
+bantime.increment = true
+bantime.factor = 2
+bantime.maxtime = 1d
+
+[sshd]
+enabled = true
+backend = systemd
+maxretry = 5
+findtime = 10m
+bantime = 1h
+
+# The installer can append BOOMOTECH_FAIL2BAN_IGNORE_CIDR after CIDR validation.
+# Do not add a whole private subnet unless every host on it is trusted.

@@ -119,7 +119,7 @@ sudo systemctl restart boomotech.service
 
 health_check() {
   local url="$1" label="$2"
-  for attempt in {1..12}; do
+  for _ in {1..12}; do
     if curl --fail --silent --show-error --max-time 10 --output /dev/null "$url"; then log "$label health check passed: $url"; return 0; fi
     sleep 2
   done

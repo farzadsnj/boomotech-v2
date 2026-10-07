@@ -12,7 +12,8 @@ DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
 
 log() {
-  local message="$(date --iso-8601=seconds) $*"
+  local message
+  message="$(date --iso-8601=seconds) $*"
   printf '%s\n' "$message"
   if [[ "$DRY_RUN" == false ]]; then printf '%s\n' "$message" >> "${LOG_DIR}/backup.log"; fi
 }

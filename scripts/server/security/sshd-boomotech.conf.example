@@ -1,0 +1,13 @@
+# Review before installing as /etc/ssh/sshd_config.d/99-boomotech-hardening.conf.
+# Keep the current SSH session open and confirm console access first.
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PubkeyAuthentication yes
+PermitEmptyPasswords no
+X11Forwarding no
+AllowAgentForwarding no
+
+# Deliberately unchanged here. Set only after confirming administrative needs.
+# AllowTcpForwarding yes
+# AuthenticationMethods is deliberately not forced to avoid accidental lockout.

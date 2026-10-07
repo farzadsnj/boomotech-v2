@@ -41,7 +41,7 @@ ps -eo pid,comm,%cpu,%mem --sort=-%cpu | head -n 8
 section "Disk"
 mounts=(/)
 for path in /var /var/www /var/backups; do [[ -e "$path" ]] && mounts+=("$path"); done
-while read -r filesystem blocks used available percent mountpoint; do
+while read -r filesystem _ _ available percent mountpoint; do
   [[ "$percent" == "Use%" ]] && continue
   usage="${percent%%%}"
   log "$mountpoint on $filesystem: $percent used, ${available} KiB available"
@@ -76,6 +76,59 @@ if [[ -r "$ENV_FILE" ]]; then
   fi
 else
   critical "Production environment file is not readable: $ENV_FILE"
+fi
+
+section "Security posture"
+if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q '^Status: active'; then
+  log "UFW is active."
+else
+  critical "UFW is not active or its status is unavailable."
+fi
+
+if systemctl is-active --quiet fail2ban && command -v fail2ban-client >/dev/null 2>&1; then
+  if fail2ban-client status sshd >/dev/null 2>&1; then
+    log "Fail2ban is active and the sshd jail is available."
+  else
+    critical "Fail2ban is active but the sshd jail is unavailable."
+  fi
+else
+  critical "Fail2ban is not active."
+fi
+
+if systemctl is-active --quiet unattended-upgrades; then
+  log "unattended-upgrades is active."
+else
+  warn "unattended-upgrades is not active."
+fi
+if [[ -e /var/run/reboot-required ]]; then
+  warn "A reboot is required for installed updates."
+fi
+if command -v apt-get >/dev/null 2>&1; then
+  security_update_count="$(apt-get -s -o Debug::NoLocking=true upgrade 2>/dev/null | grep -Ec '^Inst .*(security|Ubuntu[[:space:]]+ESM)' || true)"
+  log "Available security-related package updates: ${security_update_count:-0}."
+else
+  warn "apt-get is unavailable, so security update count was not checked."
+fi
+
+if command -v ss >/dev/null 2>&1; then
+  listeners="$(ss -H -lntup 2>/dev/null || true)"
+  for private_port in 3000 5432; do
+    if grep -Eq "(0\\.0\\.0\\.0|\\[::\\]|\\*):${private_port}([[:space:]]|$)" <<<"$listeners"; then
+      critical "Private port $private_port is listening on a wildcard interface."
+    elif grep -Eq "(127\\.0\\.0\\.1|\\[::1\\]):${private_port}([[:space:]]|$)" <<<"$listeners"; then
+      log "Private port $private_port is loopback-only."
+    else
+      warn "Expected listener on private port $private_port was not detected."
+    fi
+  done
+  public_listener_count="$(awk '{address=$5; if (address ~ /^(0\.0\.0\.0|\[::\]|\*):/ && address !~ /:(22|3000|5432)$/) count++} END {print count+0}' <<<"$listeners")"
+  if (( public_listener_count > 0 )); then
+    warn "Detected $public_listener_count additional wildcard TCP listener(s); review them with sudo ss -lntup."
+  else
+    log "No additional wildcard TCP listeners were detected."
+  fi
+else
+  critical "ss is unavailable, so network exposure could not be assessed."
 fi
 
 section "Nginx summary"

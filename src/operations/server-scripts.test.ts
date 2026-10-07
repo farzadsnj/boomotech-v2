@@ -27,7 +27,7 @@ describe("server operations scripts", () => {
     expect(script).not.toContain("boomotech_production");
   });
 
-  it("monitors network, resources, services, PostgreSQL, Nginx and HTTP health", () => {
+  it("monitors network, resources, services, PostgreSQL, Nginx, HTTP health and security posture", () => {
     const script = read("scripts/server/boomotech-monitor.sh");
     for (const required of ["vnstat", "/proc/loadavg", "free -h", "df -Pk", "boomotech.service", "postgresql.service", "curl --fail", "access.log", "error.log"]) {
       expect(script).toContain(required);
@@ -35,6 +35,7 @@ describe("server operations scripts", () => {
     expect(script).toContain("BOOMOTECH_DISK_WARNING_PERCENT:-80");
     expect(script).toContain("BOOMOTECH_DISK_CRITICAL_PERCENT:-90");
     expect(script).toContain('psql "$DATABASE_URL"');
+    expect(script).toContain('section "Security posture"');
   });
 
   it("keeps the deployment safety steps in the required order", () => {
