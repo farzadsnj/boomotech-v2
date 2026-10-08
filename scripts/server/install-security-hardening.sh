@@ -280,7 +280,7 @@ if [[ "$apply_firewall" == true ]]; then
   ufw default allow outgoing
   ufw allow from "$SSH_ALLOW_CIDR" to any port 22 proto tcp comment 'BoomoTech management SSH'
   for destination_pattern in '(OpenSSH|22/tcp)' '80/tcp' '443/tcp' '3000/tcp' '5432/tcp'; do
-    mapfile -t public_rule_numbers < <(ufw status numbered | grep -E "${destination_pattern}[[:space:]]+ALLOW IN[[:space:]]+Anywhere" | sed -nE 's/^\[[[:space:]]*([0-9]+)\].*/\1/p' | sort -rn)
+    mapfile -t public_rule_numbers < <(ufw status numbered | grep -E "${destination_pattern}([[:space:]]+\(v6\))?[[:space:]]+ALLOW IN[[:space:]]+Anywhere([[:space:]]+\(v6\))?([[:space:]]|$)" | sed -nE 's/^\[[[:space:]]*([0-9]+)\].*/\1/p' | sort -rn)
     for rule_number in "${public_rule_numbers[@]}"; do
       ufw --force delete "$rule_number"
     done
