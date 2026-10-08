@@ -81,6 +81,10 @@ describe("server security hardening", () => {
     expect(audit).toContain("UFW unexpected public rules");
     expect(audit).toContain("XRDP/RDP is listening on a wildcard interface");
     expect(audit).toMatch(/3389.*\\\(v6\\\).*ALLOW IN.*Anywhere/);
+    expect(audit).toMatch(/3000\|5432.*\\\(v6\\\).*ALLOW IN.*Anywhere/);
+    expect(audit).toMatch(/22\|OpenSSH.*\\\(v6\\\).*ALLOW IN.*Anywhere/);
+    const installer = read("scripts/server/install-security-hardening.sh");
+    expect(installer).toContain('([[:space:]]+\\(v6\\))?[[:space:]]+ALLOW IN[[:space:]]+Anywhere');
   });
 
   it("adds security state to the daily monitoring snapshot", () => {
