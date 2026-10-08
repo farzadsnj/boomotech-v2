@@ -1,0 +1,19 @@
+# Reviewed systemd drop-in for boomotech.service.
+# Install as /etc/systemd/system/boomotech.service.d/20-hardening.conf only after
+# confirming the service already runs as boomotechhost and the cache path exists.
+[Service]
+User=boomotechhost
+Group=boomotechhost
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadWritePaths=/var/www/boomotech/.next/cache
+
+# Node/V8 may require executable memory. Do not enable MemoryDenyWriteExecute
+# without testing the exact production runtime.

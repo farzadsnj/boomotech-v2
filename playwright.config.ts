@@ -23,7 +23,7 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   use: { baseURL: "http://localhost:3100", trace: "on-first-retry" },
   webServer: {
-    command: "pnpm test:e2e:prepare && pnpm start --hostname localhost --port 3100",
+    command: "pnpm test:e2e:prepare && pnpm exec next start --hostname localhost --port 3100",
     env: e2eEnvironment,
     url: "http://localhost:3100",
     reuseExistingServer: false,

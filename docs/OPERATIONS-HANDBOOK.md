@@ -1,10 +1,10 @@
 # BoomoTech Project Operations Handbook
 
-Last updated: 5 October 2026
+Last updated: 7 October 2026
 
 ## Purpose
 
-This handbook records how the BoomoTech website has been planned, built, tested and prepared for deployment. It is written for a person with little or no experience who needs to run the project locally, understand the main systems, continue development safely, or prepare the first production release.
+This handbook records how the live BoomoTech website is built, tested, deployed and operated. It is written for a person who needs to run the project locally, understand the main systems, continue development safely, or maintain production.
 
 This is a living document. Update it after every meaningful infrastructure, deployment, security, database or operating-process change.
 
@@ -18,7 +18,7 @@ The repository is:
 https://github.com/farzadsnj/boomotech-v2
 ```
 
-The planned public domain is:
+The live public domain is:
 
 ```text
 https://boomotech.com.au
@@ -57,6 +57,10 @@ Never put passwords, API keys, database credentials, private keys or customer in
 - Drizzle database migrations.
 - Unit, integration, accessibility, responsive and browser tests.
 - GitHub Actions checks for migrations, linting, type checking, tests, build and browser testing.
+- Server-only OpenAI Responses API service guidance with deterministic fallback and protected inputs.
+- Nightly database/configuration backups, restore testing, daily host monitoring and controlled deployment scripts.
+- Read-only server security auditing, reviewed hardening templates and separate explicit installer modes.
+- Dedicated dependency, secret, CodeQL and ShellCheck workflow plus weekly Dependabot checks.
 
 ### Infrastructure completed or confirmed
 
@@ -66,7 +70,7 @@ Never put passwords, API keys, database credentials, private keys or customer in
 - Local network DHCP reservation created for the server.
 - Ubuntu user `boomotechhost` created for server administration.
 - OpenSSH installed and enabled.
-- UFW firewall enabled with SSH allowed.
+- UFW firewall enabled; its effective rules and SSH source restriction must be confirmed by the read-only audit.
 - Windows Ed25519 SSH key login tested successfully.
 - SSH hardening configuration prepared with root login and password login disabled after key testing.
 - PostgreSQL local development environment defined through Docker Compose.
@@ -76,16 +80,15 @@ Never put passwords, API keys, database credentials, private keys or customer in
 - Nginx reverse proxy confirmed for `127.0.0.1:3000`.
 - Cloudflare DNS and Cloudflare Tunnel confirmed for the public route through local Nginx port 80.
 
-### In progress or not yet production-approved
+### Remaining owner approvals and operational checks
 
-- Merge the backend feature pull request into `main` after owner review.
-- Complete the first production deployment on the Dell server.
 - Verify `boomotech.com.au`, HTTPS, Nginx, Cloudflare Tunnel and `boomotech.service` together after each deployment.
-- Configure production PostgreSQL credentials, TLS, backup and restore procedures.
+- Run and review the complete server security audit, then separately approve each host change.
+- Select and test an encrypted off-site backup destination; same-host backups are not complete disaster recovery.
 - Configure a verified Resend sender domain and booking destination.
 - Approve privacy, terms, cancellation, retention and deletion policies.
 - Add administrator password-change and recovery procedures.
-- Extend audit logging beyond requests and add production monitoring.
+- Confirm the monitoring timer, log retention, update/reboot review and tested restore schedule on the live host.
 - Replace every sample product, price and availability statement with verified data.
 - Build cart, checkout, payment, shipping, stock and fulfilment only after business rules are approved.
 - Build structured support tickets and attachments only after security and retention requirements are approved.
@@ -110,7 +113,7 @@ Never put passwords, API keys, database credentials, private keys or customer in
 | Browser tests | Playwright and Axe | End-to-end, responsive and accessibility checks |
 | Local services | Docker Compose | Local PostgreSQL container |
 | Source control | Git and GitHub | Version history, branches, pull requests and CI |
-| Server | Ubuntu Server 24.04 LTS | Planned self-hosted production environment |
+| Server | Ubuntu Server 24.04 LTS | Live self-hosted production environment |
 
 ## 4. Repository map
 
@@ -121,7 +124,8 @@ boomotech-v2/
 |-- docs/                     Product, design, architecture and operations documents
 |-- drizzle/                  Versioned PostgreSQL migrations
 |-- public/                   Logo, product and page visual assets
-|-- scripts/                  Database preparation and admin seed scripts
+|-- scripts/                  Database, deployment and server operations scripts
+|-- scripts/server/security/ Security templates that require operator review
 |-- src/app/                  Next.js routes, APIs and global layout
 |-- src/components/           Shared visual components
 |-- src/content/              Typed services, products, blog and page content
@@ -147,7 +151,8 @@ Read these files before changing architecture, product scope or branding:
 6. `docs/SEO.md`
 7. `docs/ROADMAP.md`
 8. `docs/ARCHITECTURE.md`
-9. This handbook
+9. `docs/SERVER-SECURITY.md`
+10. This handbook
 
 ## 5. One-time Windows workstation setup
 
@@ -462,7 +467,7 @@ Password-reset requests are rate-limited. Tokens and API keys must never be logg
 
 ## 12. Booking and chatbot workflow
 
-The chatbot does not currently send visitor messages to an external AI model. It matches approved service terms locally and links to canonical service pages. This reduces privacy and hallucination risks.
+The chatbot first uses deterministic service matching and can send a size-limited service question to the server-only OpenAI Responses API adapter. The prompt context comes from canonical public service, solution and FAQ records. The API key stays server-side, protected routes apply origin and rate-limit controls, and the UI falls back safely when AI is unavailable. Visitors must not send passwords, access tokens or sensitive personal information.
 
 The chatbot and `/booking` use the same booking form. The form collects only the required fields:
 
@@ -632,7 +637,7 @@ Do not merge a change when required checks fail.
 
 ## 16. Confirmed server access setup
 
-The production candidate is a Dell computer running Ubuntu Server 24.04 LTS. It is intended to run without a permanently attached monitor.
+Production runs on a Dell computer with Ubuntu Server 24.04 LTS. It is intended to run without a permanently attached monitor.
 
 The confirmed administration pattern is SSH key access from trusted computers. Record the current private LAN address, router reservation and hardware details in a private infrastructure inventory, not in the public repository.
 
@@ -689,16 +694,16 @@ PasswordAuthentication no
 KbdInteractiveAuthentication no
 ```
 
-Validate before restarting:
+Validate before reloading:
 
 ```bash
 sudo sshd -t
 ```
 
-Keep the existing SSH session open. Restart SSH and test a new session in a second terminal:
+Keep the existing SSH session open. Reload SSH and test a new session in a second terminal:
 
 ```bash
-sudo systemctl restart ssh
+sudo systemctl reload ssh
 ```
 
 Do not close the first session until key login works in the second session. This prevents accidental lockout.
@@ -709,9 +714,9 @@ Graphical remote access is optional and is not required for website hosting. SSH
 
 Never expose RDP port 3389 directly to the public internet. Restrict graphical access to the trusted LAN or a private VPN such as Tailscale.
 
-## 17. Draft first-production deployment runbook
+## 17. Production deployment reference
 
-This section is a draft for the first deployment. Complete and verify it during the actual launch, then replace draft values with the confirmed architecture.
+The live architecture is documented here for reference. Use the reviewed deployment script and the linked operational runbooks for future updates; do not repeat initial provisioning on the live host.
 
 ### 17.1 Prepare the server
 
@@ -835,7 +840,7 @@ The confirmed service is `boomotech.service`. It must:
 The service should start the production application on loopback port 3000 from `/var/www/boomotech`. The application command is:
 
 ```bash
-pnpm start --hostname 127.0.0.1 --port 3000
+pnpm start
 ```
 
 After the build:
@@ -848,7 +853,7 @@ sudo journalctl -u boomotech.service -n 100 --no-pager
 
 ### 17.7 Domain, proxy and HTTPS
 
-The public path will be:
+The public path is:
 
 ```text
 Visitor -> boomotech.com.au -> HTTPS proxy or Cloudflare Tunnel -> local Next.js service
@@ -904,9 +909,9 @@ Then restart the confirmed application service and verify:
 
 Do not deploy directly from an unreviewed feature branch. Do not run a migration without a current backup and rollback understanding.
 
-## 19. Backup and recovery requirements
+## 19. Backup and recovery
 
-Production is not ready until backups are automatic and restoration has been tested.
+Nightly PostgreSQL and approved configuration backups, tiered retention and restore-test tooling are implemented. Confirm their systemd timer and latest restore test on the live host. See `docs/SERVER-BACKUP.md`.
 
 Back up:
 
@@ -923,7 +928,7 @@ Example logical PostgreSQL backup pattern:
 pg_dump --format=custom --file=boomotech-YYYY-MM-DD.dump "$DATABASE_URL"
 ```
 
-Do not place the backup in the public web directory or Git repository. Encrypt it, restrict access, copy it to a separate device or service and define retention. Test restoration into a separate non-production database.
+Do not place the backup in the public web directory or Git repository. Encrypt it, restrict access, copy it to a separately approved off-site device or service and define retention. Test restoration into a separate non-production database. The current same-host backup is not complete disaster recovery.
 
 ## 20. Security and privacy rules
 
@@ -1168,13 +1173,15 @@ If any answer is unclear, stop and review this handbook, `README.md`, `AGENTS.md
 - Selected Ubuntu Server 24.04 LTS on the Dell server.
 - Configured local network reservation, SSH, UFW and Ed25519 key access.
 - Prepared SSH hardening and headless management.
-- Planned Docker, PostgreSQL, Node.js, Nginx or Cloudflare Tunnel, backups, monitoring and automatic startup for the first production deployment.
+- Confirmed PostgreSQL, Node.js, Nginx, Cloudflare Tunnel, automatic service startup and production operation.
+- Added nightly backup/restore-test tooling, daily host monitoring and the guarded production deployment script.
+- Added read-only server security audit and verification scripts, explicit hardening modes, reviewed SSH/Fail2ban/update/PostgreSQL/Nginx/systemd templates, security monitoring and rollback documentation.
 
 ## 25. Next milestone
 
-The next milestone is production operational approval and the first controlled release at `boomotech.com.au`.
+The next milestone is review and controlled application of the server security baseline, plus selection of an encrypted off-site backup destination.
 
-The launch session must update this handbook with:
+The next operations review must record:
 
 - actual server hostname and private inventory location;
 - deployment directory;
@@ -1184,8 +1191,8 @@ The launch session must update this handbook with:
 - DNS records and HTTPS method;
 - monitoring and log locations;
 - tested restore and rollback procedure;
-- deployment date and Git commit SHA;
-- launch verification results;
+- hardening review date and deployed Git commit SHA;
+- security audit and verification results;
 - approved indexing state.
 
-Only after the first stable production release should the project expand into confirmed appointments, structured support tickets, real commerce, richer customer portal features or AI-assisted workflows.
+Future product expansion still requires separate owner approval for confirmed appointments, structured support tickets, real commerce and richer customer portal features.

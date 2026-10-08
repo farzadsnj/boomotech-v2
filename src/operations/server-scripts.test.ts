@@ -13,6 +13,29 @@ describe("server operations scripts", () => {
     expect(script).toContain('prune_directory "$BACKUP_ROOT/$kind/daily" 7');
     expect(script).toContain('prune_directory "$BACKUP_ROOT/$kind/weekly" 4');
     expect(script).toContain('prune_directory "$BACKUP_ROOT/$kind/monthly" 3');
+    for (const path of [
+      "/etc/systemd/system/boomotech.service",
+      "/etc/systemd/system/boomotech.service.d",
+      "/etc/nginx/nginx.conf",
+      "/etc/nginx/sites-available",
+      "/etc/nginx/sites-enabled",
+      "/etc/cloudflared",
+      "/etc/ssh/sshd_config.d/99-boomotech-hardening.conf",
+      "/etc/fail2ban/jail.d/boomotech.local",
+      "/etc/fail2ban/jail.d/zz-boomotech-ignore.local",
+      "/etc/apt/apt.conf.d/20auto-upgrades",
+      "/etc/apt/apt.conf.d/52unattended-upgrades-boomotech",
+      "/etc/ufw",
+      "/etc/default/ufw",
+    ]) {
+      expect(script).toContain(path);
+    }
+    for (const setting of ["config_file", "hba_file", "ident_file", "data_directory"]) {
+      expect(script).toContain(`SHOW ${setting};`);
+    }
+    expect(script).toContain("postgresql.auto.conf");
+    expect(script).toContain('chown root:root "$config_final"');
+    expect(script).toContain('chmod 600 "$config_final"');
   });
 
   it("restores only into a generated restore-test database", () => {
@@ -27,7 +50,7 @@ describe("server operations scripts", () => {
     expect(script).not.toContain("boomotech_production");
   });
 
-  it("monitors network, resources, services, PostgreSQL, Nginx and HTTP health", () => {
+  it("monitors network, resources, services, PostgreSQL, Nginx, HTTP health and security posture", () => {
     const script = read("scripts/server/boomotech-monitor.sh");
     for (const required of ["vnstat", "/proc/loadavg", "free -h", "df -Pk", "boomotech.service", "postgresql.service", "curl --fail", "access.log", "error.log"]) {
       expect(script).toContain(required);
@@ -35,6 +58,7 @@ describe("server operations scripts", () => {
     expect(script).toContain("BOOMOTECH_DISK_WARNING_PERCENT:-80");
     expect(script).toContain("BOOMOTECH_DISK_CRITICAL_PERCENT:-90");
     expect(script).toContain('psql "$DATABASE_URL"');
+    expect(script).toContain('section "Security posture"');
   });
 
   it("keeps the deployment safety steps in the required order", () => {

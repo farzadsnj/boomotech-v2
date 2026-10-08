@@ -25,6 +25,7 @@ The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local 
 - [Server monitoring](docs/SERVER-MONITORING.md)
 - [Production deployment runbook](docs/DEPLOYMENT.md)
 - [AI service chatbot](docs/AI-CHATBOT.md)
+- [Production server security](docs/SERVER-SECURITY.md)
 - [Operations handbook](docs/OPERATIONS-HANDBOOK.md)
 
 No production claims, prices, policies, testimonials, credentials or case studies should be added unless verified by the owner.

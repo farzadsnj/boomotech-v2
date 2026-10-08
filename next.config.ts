@@ -36,16 +36,20 @@ const nextConfig: NextConfig = {
       "/email-verification-result",
       "/verify-email",
     ];
+    const globalSecurityHeaders = [
+      { key: "Content-Security-Policy", value: contentSecurityPolicy },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "X-Frame-Options", value: "DENY" },
+      ...(process.env.NODE_ENV === "production"
+        ? [{ key: "Strict-Transport-Security", value: "max-age=86400" }]
+        : []),
+    ];
     return [
       {
         source: "/(.*)",
-        headers: [
-          { key: "Content-Security-Policy", value: contentSecurityPolicy },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "DENY" },
-        ],
+        headers: globalSecurityHeaders,
       },
       ...sensitiveSources.map((source) => ({ source, headers: noStoreHeaders })),
     ];
