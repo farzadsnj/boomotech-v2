@@ -56,10 +56,16 @@ if has ufw; then
   if grep -Eqi 'Default:[[:space:]]+deny \(incoming\), allow \(outgoing\)' <<<"$ufw_verbose"; then pass "UFW defaults" "Incoming deny and outgoing allow are effective."; else fail "UFW defaults" "Expected deny incoming and allow outgoing defaults."; fi
   if grep -Eqi '(^|[[:space:]])(3000|5432)(/tcp)?[[:space:]]+ALLOW IN[[:space:]]+Anywhere' <<<"$ufw_numbered"; then fail "UFW private ports" "Port 3000 or 5432 has a public IPv4/IPv6 allow rule."; else pass "UFW private ports" "No public allow rule detected for 3000 or 5432."; fi
   if grep -Eqi '(^|[[:space:]])(80|443)(/tcp)?[[:space:]]+ALLOW IN[[:space:]]+Anywhere' <<<"$ufw_numbered"; then warn "UFW web ports" "Public 80/443 rule found; Cloudflare Tunnel normally makes it unnecessary."; else pass "UFW web ports" "No public 80/443 allow rule detected."; fi
+  if grep -Eqi '(^|[[:space:]])3389(/tcp)?([[:space:]]+\(v6\))?[[:space:]]+ALLOW IN[[:space:]]+Anywhere' <<<"$ufw_numbered"; then fail "UFW RDP scope" "RDP is allowed from Anywhere; remove the rule or restrict it to an owner-approved management CIDR.";
+  elif grep -Eqi '(^|[[:space:]])3389(/tcp)?([[:space:]]+\(v6\))?[[:space:]]+ALLOW IN' <<<"$ufw_numbered"; then
+    if [[ -n "$SSH_ALLOW_CIDR" ]] && grep -F "$SSH_ALLOW_CIDR" <<<"$ufw_numbered" | grep -Eq '(^|[[:space:]])3389(/tcp)?([[:space:]]+\(v6\))?[[:space:]]+ALLOW IN'; then warn "UFW RDP scope" "A restricted RDP rule matches the supplied management CIDR; confirm XRDP is intentionally retained."; else warn "UFW RDP scope" "A restricted RDP rule exists. Supply the owner-approved management CIDR to verify its scope."; fi
+  else pass "UFW RDP scope" "No inbound RDP allow rule was detected."; fi
   if grep -Eqi '(^|[[:space:]])(22|OpenSSH)(/tcp)?[[:space:]]+ALLOW IN[[:space:]]+Anywhere' <<<"$ufw_numbered"; then fail "UFW SSH scope" "SSH is allowed from Anywhere; restrict it to the approved management source.";
   elif [[ -n "$SSH_ALLOW_CIDR" ]]; then
     if grep -Fq "$SSH_ALLOW_CIDR" <<<"$ufw_numbered" && grep -Eq '(^|[[:space:]])(22|OpenSSH)(/tcp)?' <<<"$ufw_numbered"; then pass "UFW SSH scope" "An SSH rule for the supplied management CIDR is present."; else fail "UFW SSH scope" "No SSH rule was found for BOOMOTECH_SSH_ALLOW_CIDR."; fi
   else warn "UFW SSH scope" "Set BOOMOTECH_SSH_ALLOW_CIDR to verify the approved management source."; fi
+  unexpected_public_rules="$(grep -Ei 'ALLOW IN[[:space:]]+Anywhere([[:space:]]+\(v6\))?$' <<<"$ufw_numbered" | sed -nE 's/^\[[[:space:]]*[0-9]+\][[:space:]]+(.+)[[:space:]]+ALLOW IN[[:space:]]+Anywhere([[:space:]]+\(v6\))?$/\1/p' | sed -E 's/[[:space:]]+\(v6\)$//; s/[[:space:]]+$//' | grep -Ev '^(OpenSSH|22(/tcp)?|80(/tcp)?|443(/tcp)?|3000(/tcp)?|3389(/tcp)?|5432(/tcp)?)$' | sort -u | paste -sd, - || true)"
+  if [[ -n "$unexpected_public_rules" ]]; then warn "UFW unexpected public rules" "Review public ALLOW IN destination(s): $unexpected_public_rules."; else pass "UFW unexpected public rules" "No additional public ALLOW IN destination was detected."; fi
   if [[ -r /etc/default/ufw ]] && grep -Eq '^IPV6=yes' /etc/default/ufw; then pass "UFW IPv6 policy" "IPv6 filtering is enabled."; else warn "UFW IPv6 policy" "IPv6 filtering is disabled or could not be confirmed."; fi
 else fail "UFW availability" "ufw is not installed."; fi
 
@@ -70,7 +76,10 @@ if has ss; then
     elif grep -Eq "(127\\.0\\.0\\.1|\\[::1\\]):${port}([[:space:]]|$)" <<<"$listeners"; then pass "Port ${port} binding" "Service is loopback-only.";
     else warn "Port ${port} binding" "No listener was detected; confirm whether the service should be running."; fi
   done
-  public_other="$(awk '{address=$5; if (address ~ /^(0\.0\.0\.0|\[::\]|\*):/ && address !~ /:(22|3000|5432)$/) print address}' <<<"$listeners" | sort -u | paste -sd, -)"
+  if grep -Eq '(0\.0\.0\.0|\[::\]|\*):3389([[:space:]]|$)' <<<"$listeners"; then fail "Port 3389 binding" "XRDP/RDP is listening on a wildcard interface.";
+  elif grep -Eq ':3389([[:space:]]|$)' <<<"$listeners"; then warn "Port 3389 binding" "An RDP listener exists on a non-wildcard interface; confirm it is intentional and management-restricted.";
+  else pass "Port 3389 binding" "No RDP listener was detected."; fi
+  public_other="$(awk '{address=$5; if (address ~ /^(0\.0\.0\.0|\[::\]|\*):/ && address !~ /:(22|3000|3389|5432)$/) print address}' <<<"$listeners" | sort -u | paste -sd, -)"
   if [[ -n "$public_other" ]]; then warn "Other public listeners" "Review wildcard listeners on ports: $(sed -E 's/.*:([0-9]+)$/\1/' <<<"${public_other//,/$'\n'}" | sort -un | paste -sd, -)."; else pass "Other public listeners" "No additional wildcard TCP listeners detected."; fi
 else fail "Socket audit" "ss is unavailable."; fi
 

@@ -6,7 +6,7 @@ This runbook covers the operator-run backup tools for a single Ubuntu BoomoTech 
 
 ### CODEX CREATES
 
-- `scripts/server/backup-boomotech.sh` creates a PostgreSQL custom-format dump and a protected archive of the production environment, systemd, Nginx and Cloudflare Tunnel configuration that exists on the server.
+- `scripts/server/backup-boomotech.sh` creates a PostgreSQL custom-format dump and a protected archive of approved production and security configuration that exists on the server.
 - Every database dump is checked with `pg_restore --list`; every configuration archive is listed with `tar` before it is accepted.
 - Daily copies retain the newest 7 files. Sunday copies retain 4 weekly files. Copies made on the first day of a month retain 3 monthly files.
 - A lock prevents overlapping backups and partially written files remain hidden until validation passes.
@@ -14,6 +14,22 @@ This runbook covers the operator-run backup tools for a single Ubuntu BoomoTech 
 - systemd service and timer templates schedule the backup for 02:00 in `Australia/Brisbane`, with a random delay and catch-up after downtime.
 
 The local retention values support operational testing. The owner must approve the final retention period, off-site destination, encryption and deletion policy before launch. A backup stored only on the application server does not protect against loss of that server.
+
+## Protected configuration archive
+
+The archive includes the production environment file and the existing approved paths for:
+
+- `boomotech.service` and its systemd drop-ins;
+- Nginx main, available-site and enabled-site configuration;
+- Cloudflare Tunnel configuration;
+- the BoomoTech SSH hardening drop-in only;
+- the primary Fail2ban jail and later-loading `zz-boomotech-ignore.local` operator override;
+- unattended-upgrades configuration;
+- UFW rules and defaults.
+
+It also asks the active local PostgreSQL server for `config_file`, `hba_file`, `ident_file` and `data_directory`. The script accepts only readable absolute configuration paths with the expected filenames and ownership by `postgres` or `root`; it includes `postgresql.auto.conf` when that file exists in the active data directory. This captures the active PostgreSQL security state without assuming a distribution version directory.
+
+The archive deliberately excludes unrelated SSH host keys and user private keys. Both database dumps and configuration archives remain root-owned and mode `0600`. A backup fails instead of silently omitting an active PostgreSQL configuration file that cannot be resolved safely.
 
 ## Prerequisites
 
@@ -58,7 +74,7 @@ Production restoration is deliberately absent. A production restore requires an 
 
 ## Configuration recovery
 
-Configuration archives contain secrets and must remain root-readable (`0600`). Inspect a copy in a temporary protected directory before restoring individual files. Never extract an archive over `/` without reviewing its member list and comparing each target.
+Configuration archives contain secrets and must remain root-owned and root-readable (`0600`). Inspect a copy in a temporary protected directory before restoring individual files. Never extract an archive over `/` without reviewing its member list and comparing each target. Restore only the required service, firewall, SSH, Fail2ban, update, Nginx, tunnel or PostgreSQL files, validate that subsystem's configuration, and reload or restart it in an approved maintenance window.
 
 ## Checks and alerts
 

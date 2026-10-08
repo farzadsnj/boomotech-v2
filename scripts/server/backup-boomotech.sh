@@ -22,7 +22,7 @@ fail() { log "ERROR: $*"; exit 1; }
 require_command() { command -v "$1" >/dev/null 2>&1 || fail "Required command is unavailable: $1"; }
 
 [[ $EUID -eq 0 ]] || fail "Run this script as root so protected configuration can be read."
-for command_name in pg_dump pg_restore tar flock find; do require_command "$command_name"; done
+for command_name in pg_dump pg_restore psql tar flock find runuser realpath stat basename chown; do require_command "$command_name"; done
 [[ -r "$ENV_FILE" ]] || fail "Production environment file is not readable: $ENV_FILE"
 
 if [[ "$DRY_RUN" == true ]]; then
@@ -64,17 +64,47 @@ config_paths=()
 for path in \
   "$ENV_FILE" \
   /etc/systemd/system/boomotech.service \
+  /etc/systemd/system/boomotech.service.d \
   /etc/nginx/nginx.conf \
   /etc/nginx/sites-available \
   /etc/nginx/sites-enabled \
-  /etc/cloudflared; do
+  /etc/cloudflared \
+  /etc/ssh/sshd_config.d/99-boomotech-hardening.conf \
+  /etc/fail2ban/jail.d/boomotech.local \
+  /etc/fail2ban/jail.d/zz-boomotech-ignore.local \
+  /etc/apt/apt.conf.d/20auto-upgrades \
+  /etc/apt/apt.conf.d/52unattended-upgrades-boomotech \
+  /etc/ufw \
+  /etc/default/ufw; do
   if [[ -e "$path" ]]; then config_paths+=("${path#/}"); fi
 done
+
+add_postgresql_config() {
+  local path="$1" expected_name="$2" resolved owner
+  [[ -n "$path" && "$path" == /* && "$(basename -- "$path")" == "$expected_name" && -r "$path" ]] || fail "Active PostgreSQL $expected_name path is invalid or unreadable."
+  resolved="$(realpath -e -- "$path")" || fail "Active PostgreSQL $expected_name path could not be resolved."
+  owner="$(stat -c '%U' "$resolved")"
+  [[ "$owner" == "postgres" || "$owner" == "root" ]] || fail "Active PostgreSQL $expected_name is not owned by postgres or root."
+  config_paths+=("${resolved#/}")
+}
+
+postgresql_config_file="$(runuser -u postgres -- psql --no-psqlrc -Atqc 'SHOW config_file;' 2>/dev/null || true)"
+postgresql_hba_file="$(runuser -u postgres -- psql --no-psqlrc -Atqc 'SHOW hba_file;' 2>/dev/null || true)"
+postgresql_ident_file="$(runuser -u postgres -- psql --no-psqlrc -Atqc 'SHOW ident_file;' 2>/dev/null || true)"
+postgresql_data_directory="$(runuser -u postgres -- psql --no-psqlrc -Atqc 'SHOW data_directory;' 2>/dev/null || true)"
+add_postgresql_config "$postgresql_config_file" postgresql.conf
+add_postgresql_config "$postgresql_hba_file" pg_hba.conf
+add_postgresql_config "$postgresql_ident_file" pg_ident.conf
+if [[ -n "$postgresql_data_directory" && "$postgresql_data_directory" == /* && -f "$postgresql_data_directory/postgresql.auto.conf" ]]; then
+  add_postgresql_config "$postgresql_data_directory/postgresql.auto.conf" postgresql.auto.conf
+fi
+
 [[ ${#config_paths[@]} -gt 0 ]] || fail "No approved configuration paths were found."
 tar --create --gzip --file="$config_temp" --directory=/ --warning=no-file-changed "${config_paths[@]}"
 [[ -s "$config_temp" ]] || fail "Configuration backup is empty."
 tar --list --gzip --file="$config_temp" >/dev/null || fail "Configuration archive validation failed."
 mv "$config_temp" "$config_final"
+chown root:root "$config_final"
 chmod 600 "$config_final"
 log "Validated configuration backup: $config_final"
 

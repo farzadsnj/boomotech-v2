@@ -55,12 +55,32 @@ describe("server security hardening", () => {
     expect(backup).toContain('chmod 600 "$config_final"');
   });
 
+  it("passes the complete PostgreSQL URI explicitly for both connectivity checks", () => {
+    const installer = read("scripts/server/install-security-hardening.sh");
+    expect(installer.match(/psql "\$DATABASE_URL" -Atqc 'SELECT 1;'/g)).toHaveLength(2);
+    expect(installer).not.toContain('PGDATABASE="$DATABASE_URL"');
+    expect(read("docs/SERVER-SECURITY.md")).not.toContain('PGDATABASE="\\$DATABASE_URL"');
+  });
+
+  it("loads the trusted Fail2ban CIDR after the primary jail and verifies it", () => {
+    const installer = read("scripts/server/install-security-hardening.sh");
+    expect(installer).toContain("/etc/fail2ban/jail.d/zz-boomotech-ignore.local");
+    expect(installer).toContain("/etc/fail2ban/jail.d/boomotech-ignore.local");
+    expect(installer).toContain("fail2ban-client get sshd ignoreip");
+    expect(installer).toContain('grep -Fq -- "$FAIL2BAN_IGNORE_CIDR"');
+    expect(installer).toContain('backup_file "$legacy_ignore_override"');
+    expect(installer).toContain('backup_file "$ignore_override"');
+  });
+
   it("audits private services for wildcard exposure", () => {
     const audit = read("scripts/server/security-audit.sh");
     for (const expected of ["3000", "5432", "listen_addresses", "0\\.0\\.0\\.0/0", "::/0", "trust", "scram-sha-256"]) {
       expect(audit).toContain(expected);
     }
     expect(audit).toContain("Service is listening on a wildcard interface");
+    expect(audit).toContain("UFW unexpected public rules");
+    expect(audit).toContain("XRDP/RDP is listening on a wildcard interface");
+    expect(audit).toMatch(/3389.*\\\(v6\\\).*ALLOW IN.*Anywhere/);
   });
 
   it("adds security state to the daily monitoring snapshot", () => {

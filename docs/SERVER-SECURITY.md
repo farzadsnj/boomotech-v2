@@ -1,6 +1,6 @@
 # BoomoTech Production Server Security
 
-Last updated: 7 October 2026
+Last updated: 8 October 2026
 
 This runbook covers the Ubuntu host `BoomoTechHost`, application account `boomotechhost`, checkout `/var/www/boomotech`, and service `boomotech.service`. It prepares reviewed commands; it does not prove that the live host is hardened. Run the read-only audit on the host and review every finding before applying a change.
 
@@ -83,7 +83,8 @@ Expected policy:
 - deny incoming by default;
 - allow outgoing by default;
 - allow TCP 22 only from the owner-approved management CIDR;
-- no public inbound 80, 443, 3000 or 5432 rule;
+- no public inbound 80, 443, 3000, 3389 or 5432 rule;
+- no other public `ALLOW IN` rule unless the owner has reviewed and approved its exact source and purpose;
 - IPv6 filtering enabled with the same intent.
 
 **LOCKOUT RISK — confirm console access and keep the current SSH session open.** Validate the exact management CIDR with the network owner, then run:
@@ -105,7 +106,7 @@ sudo ufw --force enable
 sudo ufw status verbose
 ```
 
-Do not enable Cockpit, XRDP or another public administrative port without a separate approved source restriction.
+Do not enable Cockpit, XRDP or another public administrative port without a separate approved source restriction. The audit fails if XRDP/RDP listens on a wildcard address or UFW allows TCP 3389 from `Anywhere`. If XRDP is intentionally retained, bind or firewall it to an owner-approved management CIDR and supply that CIDR to the audit for review. The audit reports other unexpected public `ALLOW IN` rules for operator review; it never deletes them.
 
 ## SSH key-only access
 
@@ -141,7 +142,7 @@ sudo systemctl reload ssh
 
 ## Fail2ban
 
-The SSH jail uses the systemd backend, UFW action, five failures in ten minutes, a one-hour first ban and bounded incremental bans. Loopback is always ignored. An additional trusted CIDR is optional and must be supplied by the operator:
+The SSH jail uses the systemd backend, UFW action, five failures in ten minutes, a one-hour first ban and bounded incremental bans. Loopback is always ignored. An additional trusted CIDR is optional and must be supplied by the operator. The override is written to `/etc/fail2ban/jail.d/zz-boomotech-ignore.local`, which sorts after `/etc/fail2ban/jail.d/boomotech.local`. The installer backs up both this destination and the legacy `/etc/fail2ban/jail.d/boomotech-ignore.local`, migrates only when the exact approved CIDR is supplied, and verifies that the effective `sshd` jail contains the requested CIDR without printing banned address lists.
 
 ```bash
 sudo ./scripts/server/install-security-hardening.sh \
@@ -158,9 +159,14 @@ Do not add an Nginx jail that bans local tunnel addresses. Client enforcement th
 Rollback:
 
 ```bash
-sudo cp -a /var/backups/boomotech/security-config/TIMESTAMP/etc/fail2ban/jail.d/boomotech.local \
-  /etc/fail2ban/jail.d/boomotech.local
-# Remove the file instead if it had no backup.
+backup_root=/var/backups/boomotech/security-config/TIMESTAMP
+for name in boomotech.local zz-boomotech-ignore.local boomotech-ignore.local; do
+  if sudo test -e "$backup_root/etc/fail2ban/jail.d/$name"; then
+    sudo cp -a "$backup_root/etc/fail2ban/jail.d/$name" "/etc/fail2ban/jail.d/$name"
+  else
+    sudo rm -f "/etc/fail2ban/jail.d/$name"
+  fi
+done
 sudo fail2ban-client -t
 sudo systemctl reload fail2ban
 ```
@@ -193,7 +199,7 @@ sudo ss -lntup | grep ':5432'
 
 Review `postgresql-boomotech.conf.example` and `pg_hba-boomotech.conf.example`. Do not overwrite distribution files. Remove unrestricted `0.0.0.0/0`, `::/0` and unjustified `trust` rules by hand while preserving local peer administration.
 
-The optional installer mode backs up active files, rejects unsafe HBA rules, proves application access, uses `ALTER SYSTEM`, validates `pg_file_settings`, reloads PostgreSQL, and proves application access again. It stages the loopback listen setting; a later restart is still required for that setting.
+The optional installer mode backs up active files, rejects unsafe HBA rules, proves application access, uses `ALTER SYSTEM`, validates `pg_file_settings`, reloads PostgreSQL, and proves application access again. Both application checks pass the complete connection URI explicitly as `psql "$DATABASE_URL"`; a PostgreSQL URI must not be assigned to `PGDATABASE`. The mode stages the loopback listen setting; a later restart is still required for that setting.
 
 ```bash
 PG_CONFIG_DIR="$(sudo -u postgres psql -Atc "SELECT setting FROM pg_settings WHERE name='config_file';" | xargs dirname)"
@@ -209,7 +215,7 @@ sudo ./scripts/server/install-security-hardening.sh \
 sudo systemctl restart postgresql
 sudo -u postgres psql -Atc 'SHOW listen_addresses;'
 sudo -u postgres psql -Atc 'SHOW password_encryption;'
-sudo -u boomotechhost bash -lc "cd /var/www/boomotech && set -a && source .env.production && set +a && PGDATABASE=\"\$DATABASE_URL\" psql -Atqc 'SELECT 1;'"
+sudo -u boomotechhost bash -lc "cd /var/www/boomotech && set -a && source .env.production && set +a && psql \"\$DATABASE_URL\" -Atqc 'SELECT 1;'"
 sudo systemctl restart boomotech.service
 curl --fail --silent --show-error http://127.0.0.1:3000/ >/dev/null
 curl --fail --silent --show-error https://boomotech.com.au/ >/dev/null

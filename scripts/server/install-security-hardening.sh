@@ -199,18 +199,29 @@ fi
 if [[ "$install_fail2ban" == true ]]; then
   require_command fail2ban-client
   if [[ -n "$FAIL2BAN_IGNORE_CIDR" ]]; then validate_cidr "$FAIL2BAN_IGNORE_CIDR" || fail "Invalid Fail2ban ignore CIDR: $FAIL2BAN_IGNORE_CIDR"; fi
+  legacy_ignore_override=/etc/fail2ban/jail.d/boomotech-ignore.local
+  ignore_override=/etc/fail2ban/jail.d/zz-boomotech-ignore.local
+  if [[ -e "$legacy_ignore_override" && -z "$FAIL2BAN_IGNORE_CIDR" ]]; then
+    fail "Legacy Fail2ban ignore override exists. Re-run with the exact approved --fail2ban-ignore-cidr to migrate it safely."
+  fi
   install_template "$TEMPLATE_DIR/fail2ban-boomotech.local" /etc/fail2ban/jail.d/boomotech.local
   if [[ -n "$FAIL2BAN_IGNORE_CIDR" ]]; then
-    ignore_override=/etc/fail2ban/jail.d/boomotech-ignore.local
+    backup_file "$legacy_ignore_override"
     backup_file "$ignore_override"
     ignore_temp="$(mktemp)"
     printf '[DEFAULT]\nignoreip = 127.0.0.1/8 ::1 %s\n' "$FAIL2BAN_IGNORE_CIDR" > "$ignore_temp"
     install -o root -g root -m 0644 "$ignore_temp" "$ignore_override"
     rm -f "$ignore_temp"
+    rm -f "$legacy_ignore_override"
   fi
   fail2ban-client -t
   systemctl enable --now fail2ban
   systemctl reload fail2ban
+  if [[ -n "$FAIL2BAN_IGNORE_CIDR" ]]; then
+    effective_ignore="$(fail2ban-client get sshd ignoreip 2>/dev/null || true)"
+    grep -Fq -- "$FAIL2BAN_IGNORE_CIDR" <<<"$effective_ignore" || fail "Fail2ban reloaded, but the requested trusted CIDR is not effective in the sshd jail."
+    log "Verified the requested trusted CIDR in the effective sshd jail configuration."
+  fi
   log "Fail2ban configuration validated and SSH jail enabled."
 fi
 
@@ -305,7 +316,7 @@ if [[ "$apply_postgresql" == true ]]; then
   source "$ENV_FILE"
   set +a
   [[ -n "${DATABASE_URL:-}" ]] || fail "DATABASE_URL is missing from $ENV_FILE."
-  PGDATABASE="$DATABASE_URL" psql -Atqc 'SELECT 1;' | grep -qx 1 || fail "Application database connection failed before PostgreSQL hardening; no setting was changed."
+  psql "$DATABASE_URL" -Atqc 'SELECT 1;' | grep -qx 1 || fail "Application database connection failed before PostgreSQL hardening; no setting was changed."
   runuser -u postgres -- psql --set=ON_ERROR_STOP=1 --command="ALTER SYSTEM SET listen_addresses = 'localhost';" --command="ALTER SYSTEM SET password_encryption = 'scram-sha-256';"
   config_errors="$(runuser -u postgres -- psql -Atqc "SELECT count(*) FROM pg_file_settings WHERE error IS NOT NULL;" 2>/dev/null || printf '1')"
   if [[ "$config_errors" != "0" ]]; then
@@ -314,7 +325,7 @@ if [[ "$apply_postgresql" == true ]]; then
   fi
   systemctl reload postgresql
   pg_encryption="$(runuser -u postgres -- psql -Atqc 'SHOW password_encryption;')"
-  if [[ "$pg_encryption" != "scram-sha-256" ]] || ! PGDATABASE="$DATABASE_URL" psql -Atqc 'SELECT 1;' | grep -qx 1; then
+  if [[ "$pg_encryption" != "scram-sha-256" ]] || ! psql "$DATABASE_URL" -Atqc 'SELECT 1;' | grep -qx 1; then
     if [[ "$auto_conf_existed" == true ]]; then cp -a "$backup_dir/${auto_conf#/}" "$auto_conf"; else rm -f "$auto_conf"; fi
     systemctl reload postgresql || true
     fail "PostgreSQL verification failed; postgresql.auto.conf was restored and reloaded."
