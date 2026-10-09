@@ -39,7 +39,7 @@ check_sshd_value() {
 check_root_config_tree() {
   local path="$1" label="$2" bad
   if [[ ! -e "$path" ]]; then warn "$label" "Not present: $path"; return; fi
-  bad="$(find "$path" -xdev \( ! -user root -o -perm -0002 \) -print -quit 2>/dev/null || true)"
+  bad="$(find "$path" -xdev ! -type l \( ! -user root -o -perm -0002 \) -print -quit 2>/dev/null || true)"
   if [[ -z "$bad" ]]; then pass "$label" "Root-owned and no world-writable entries were detected."
   else fail "$label" "At least one entry is not root-owned or is world-writable."; fi
 }
@@ -157,8 +157,15 @@ if [[ -d "$PROJECT_DIR/.git" ]]; then
   for private_file in .env.production .env.local .env.admin-bootstrap; do
     if git -C "$PROJECT_DIR" check-ignore -q "$private_file"; then pass "Git ignore ${private_file}" "Private file is ignored."; else fail "Git ignore ${private_file}" "Private file is not ignored."; fi
   done
-  secret_files="$(git -C "$PROJECT_DIR" grep -IlE '(sk-[A-Za-z0-9_-]{20,}|re_[A-Za-z0-9]{20,}|BEGIN (OPENSSH |RSA |EC )?PRIVATE KEY|postgres(ql)?://[^[:space:]/:]+:[^@[:space:]]+@)' -- . ':(exclude).env.example' ':(exclude)docs/**' ':(exclude)**/*.test.ts' 2>/dev/null || true)"
-  if [[ -z "$secret_files" ]]; then pass "Tracked secret patterns" "No high-confidence secret pattern was found."; else fail "Tracked secret patterns" "Potential secret material exists in tracked file(s): $(tr '\n' ',' <<<"$secret_files" | sed 's/,$//')."; fi
+  high_confidence_secret_files="$(git -C "$PROJECT_DIR" grep -IlE '(sk-[A-Za-z0-9_-]{20,}|re_[A-Za-z0-9]{20,}|BEGIN (OPENSSH |RSA |EC )?PRIVATE KEY)' -- . ':(exclude).env.example' ':(exclude)docs/**' ':(exclude)**/*.test.ts' 2>/dev/null || true)"
+  postgres_secret_files="$(git -C "$PROJECT_DIR" grep -IlE 'postgres(ql)?://[^[:space:]/:]+:[^@[:space:]]+@' -- . ':(exclude).env.example' ':(exclude)docs/**' ':(exclude)**/*.test.ts' 2>/dev/null | while IFS= read -r candidate; do
+    [[ -n "$candidate" ]] || continue
+    if git -C "$PROJECT_DIR" grep -nE 'postgres(ql)?://[^[:space:]/:]+:[^@[:space:]]+@' -- "$candidate" 2>/dev/null | grep -Ev '(localhost|127\.0\.0\.1|ci-only|example|<[^>]+>)' >/dev/null; then
+      printf '%s\n' "$candidate"
+    fi
+  done | sort -u)"
+  secret_files="$(printf '%s\n%s\n' "$high_confidence_secret_files" "$postgres_secret_files" | sed '/^$/d' | sort -u)"
+  if [[ -z "$secret_files" ]]; then pass "Tracked secret patterns" "No high-confidence production secret pattern was found."; else fail "Tracked secret patterns" "Potential production secret material exists in tracked file(s): $(tr '\n' ',' <<<"$secret_files" | sed 's/,$//')."; fi
   if has gitleaks; then
     if gitleaks detect --source "$PROJECT_DIR" --no-banner --redact --exit-code 1 >/dev/null 2>&1; then pass "Gitleaks" "Redacted repository scan passed."; else fail "Gitleaks" "Potential secret material was reported; run the documented redacted review."; fi
   else warn "Gitleaks" "Optional scanner is not installed; CI should run the pinned scanner."; fi
@@ -205,7 +212,13 @@ if curl --fail --silent --show-error --max-time 10 --output /dev/null http://127
 if curl --fail --silent --show-error --max-time 10 --output /dev/null http://127.0.0.1/; then pass "Local Nginx" "Loopback proxy request succeeded."; else fail "Local Nginx" "Loopback proxy request failed."; fi
 
 if timedatectl show -p NTPSynchronized --value 2>/dev/null | grep -qx yes; then pass "Time synchronisation" "System clock is synchronised."; else warn "Time synchronisation" "NTP synchronisation was not confirmed."; fi
-if systemctl is-active --quiet systemd-timesyncd 2>/dev/null; then pass "Time service" "systemd-timesyncd is active."; else warn "Time service" "systemd-timesyncd is inactive; another approved NTP service may be in use."; fi
+if systemctl is-active --quiet systemd-timesyncd 2>/dev/null; then
+  pass "Time service" "systemd-timesyncd is active."
+elif systemctl is-active --quiet chrony 2>/dev/null || systemctl is-active --quiet chronyd 2>/dev/null; then
+  pass "Time service" "Chrony is active."
+else
+  warn "Time service" "No approved active systemd-timesyncd/Chrony service was detected."
+fi
 if has aa-status; then
   if aa-status --enabled >/dev/null 2>&1; then pass "AppArmor" "AppArmor is enabled."; else warn "AppArmor" "AppArmor is installed but not enabled."; fi
 else warn "AppArmor" "aa-status is unavailable."; fi
