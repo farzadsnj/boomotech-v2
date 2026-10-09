@@ -1,0 +1,5 @@
+import { ImageResponse } from "next/og";
+export const alt = "BoomoTech free IT Health Check";
+export const size = { width: 1200, height: 630 };
+export const contentType = "image/png";
+export default function OpenGraphImage() { return new ImageResponse(<div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "80px", background: "#102D3B", color: "white", fontFamily: "Arial" }}><div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 760 }}><div style={{ color: "#78C8E8", fontSize: 25, fontWeight: 750, letterSpacing: "4px" }}>BOOMOTECH · FREE TOOL</div><div style={{ fontSize: 78, lineHeight: 1, fontWeight: 750, letterSpacing: "-4px" }}>IT Health Check</div><div style={{ fontSize: 29, color: "#D0E1E8" }}>Ten questions for clearer technology priorities.</div></div><div style={{ display: "flex", width: 270, height: 270, alignItems: "center", justifyContent: "center", border: "24px solid #0070B7", borderRadius: 270, fontSize: 90, fontWeight: 800 }}>10</div></div>, size); }

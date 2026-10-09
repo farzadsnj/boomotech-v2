@@ -6,6 +6,7 @@
 @import "../styles/shop.css";
 @import "../styles/auth.css";
 @import "../styles/privacy.css";
+@import "../styles/professional.css";
 
 :root {
   --color-ink: #1d3a49;

@@ -18,6 +18,8 @@ The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local 
 - [Brand direction](docs/BRAND.md)
 - [Site structure](docs/SITE-STRUCTURE.md)
 - [Design system](docs/DESIGN-SYSTEM.md)
+- [Professional redesign architecture](docs/PROFESSIONAL-REDESIGN.md)
+- [Legacy route map](docs/LEGACY-ROUTES.md)
 - [Content strategy](docs/CONTENT.md)
 - [SEO strategy](docs/SEO.md)
 - [Roadmap](docs/ROADMAP.md)
@@ -40,6 +42,10 @@ Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` before proposin
 The architecture and outstanding assumptions are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Search indexing stays disabled until `SITE_URL` is an approved HTTPS origin and `SITE_INDEXING_ENABLED=true` is set after launch review.
 
 ## Interface and content system
+
+The public navigation and service catalogue use the Support, Secure, Improve and Build taxonomy in `src/content/service-groups.ts`. This file derives its records from the canonical service catalogue, so the header mega menu, homepage capability layout and services directory do not maintain disconnected service names or URLs.
+
+`/tools/it-health-check` is a deterministic ten-question self-check. It calculates results in component memory, sends no answers to an API, writes no answers to browser storage and makes no diagnostic or security guarantee. Edit its reviewed questions and thresholds in `src/content/health-check.ts`. The typed featured-work model in `src/content/featured-work.ts` deliberately renders a truthful fallback until owner-approved project evidence is available.
 
 The global shell self-hosts the variable Manrope display face and Inter body face through `next/font`; browsers make no runtime Google Fonts request. The header becomes sticky and gains restrained backdrop depth after scrolling. Long pages expose a reduced-motion-aware “Back to top” control. The homepage technical visual uses a small requestAnimationFrame pointer transform on fine pointers only and keeps all text and controls outside the transformed decoration.
 

@@ -10,5 +10,5 @@ const approvedInfoPaths = new Set(["/resources", "/faq", "/about", "/support", "
 export const indexablePagePaths = allPages
   .filter((page) => page.kind === "service" || page.kind === "solution" || page.kind === "services-hub" || page.kind === "solutions-hub" || approvedInfoPaths.has(page.path))
   .map((page) => page.path);
-export const intendedPublicRoutes = ["/", ...indexablePagePaths, "/blog", ...publishedArticles.map(({ slug }) => `/blog/${slug}` as const)] as const;
+export const intendedPublicRoutes = ["/", ...indexablePagePaths, "/blog", "/tools/it-health-check", ...publishedArticles.map(({ slug }) => `/blog/${slug}` as const)] as const;
 export const isPageIndexable = (path: string) => indexablePagePaths.includes(path as `/${string}`);

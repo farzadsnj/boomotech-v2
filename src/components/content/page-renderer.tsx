@@ -5,6 +5,7 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { Reveal } from "@/components/motion/reveal";
 import { services } from "@/content/services";
 import { solutions } from "@/content/solutions";
+import { serviceGroupForPath, serviceGroups } from "@/content/service-groups";
 import type { HubPage, InfoPage, PageRecord, ServiceRecord, SolutionRecord } from "@/content/types";
 import { Breadcrumbs } from "./breadcrumbs";
 import { FaqList } from "./faq-list";
@@ -13,13 +14,15 @@ import { ProcessSteps } from "./process-steps";
 import { RelatedLinks } from "./related-links";
 
 function Hero({ page, detail }: { page: PageRecord; detail?: string }) {
+  const visual = "visual" in page ? page.visual : null;
   return (
     <header className={`inner-hero inner-hero--${page.kind}`}>
       <div className="container">
         <Breadcrumbs path={page.path} title={page.title} />
-        <div className="inner-hero__grid">
+        <div className={`inner-hero__grid${visual ? " inner-hero__grid--visual" : ""}`}>
           <div><p className="eyebrow"><span className="eyebrow-line" />{page.eyebrow}</p><h1>{page.title}</h1></div>
           <div className="inner-hero__summary"><p>{page.description}</p>{detail ? <p className="inner-hero__detail">{detail}</p> : null}</div>
+          {visual ? <div className="inner-hero__visual"><Image alt={visual.alt} fill priority sizes="(max-width: 800px) 90vw, 36vw" src={visual.src} /></div> : null}
         </div>
       </div>
     </header>
@@ -49,14 +52,16 @@ function ClosingCta({ label = "Request a Consultation", href = "/booking", descr
 }
 
 function ServicePage({ page }: { page: ServiceRecord }) {
-  return <><Hero detail={page.audience} page={page} />
+  const group = serviceGroupForPath(page.path);
+  return <div className={`service-detail service-detail--${group?.accent ?? "sky"}`}><Hero detail={page.audience} page={page} />
+    <section className="service-context"><div className="container"><span>{group?.label ?? "Service"}</span><p>{group?.heading}</p><Link href="/services">Compare all services <ArrowIcon diagonal /></Link></div></section>
     <Section eyebrow="WHEN THIS MAY HELP" title="Recognise the friction"><BulletGrid items={page.signals} /></Section>
     <Section eyebrow="POSSIBLE INCLUSIONS" title="A scope shaped around the need" muted><BulletGrid items={page.inclusions} /><div className="delivery-note"><h3>Delivery approach</h3><p>{page.delivery}</p></div></Section>
     <Section eyebrow="PRACTICAL OUTCOMES" title="What the work may improve"><BulletGrid items={page.outcomes} /></Section>
     <Section eyebrow="A SIMPLE PROCESS" title="Clear stages, visible decisions" muted><ProcessSteps steps={page.process} /></Section>
     {page.faqs.length ? <Section eyebrow="HELPFUL NOTES" title="Questions to consider"><FaqList items={page.faqs} /></Section> : null}
     <Section eyebrow="RELATED SERVICES" title="Continue exploring" muted><RelatedLinks links={page.related} /></Section>
-    <ClosingCta servicePath={page.path} /></>;
+    <ClosingCta servicePath={page.path} /></div>;
 }
 
 function SolutionPage({ page }: { page: SolutionRecord }) {
@@ -70,13 +75,15 @@ function SolutionPage({ page }: { page: SolutionRecord }) {
 
 function HubPageView({ page }: { page: HubPage }) {
   const records = page.kind === "services-hub" ? services : solutions;
-  return <><Hero page={page} /><Section eyebrow={page.kind === "services-hub" ? "SERVICE AREAS" : "SITUATIONS"} title={page.kind === "services-hub" ? "Choose a practical starting point" : "Find the path closest to your work"}>
+  if (page.kind === "services-hub") return <><Hero page={page} /><section className="service-directory section-space"><div className="container"><nav aria-label="Service goals" className="service-directory__jump">{serviceGroups.map((group) => <a href={`#${group.id}`} key={group.id}>{group.label}</a>)}</nav>{serviceGroups.map((group) => <section className={`service-directory__group service-directory__group--${group.accent}`} id={group.id} key={group.id}><div className="service-directory__intro"><p className="eyebrow">{group.label}</p><h2>{group.heading}</h2><p>{group.description}</p></div><div className="service-directory__cards">{group.services.map((record) => <Link className="service-directory__card" href={record.path} key={record.path}><div className="service-directory__icon"><Image alt="" fill sizes="120px" src={record.visual.src} /></div><div><h3>{record.name}</h3><p>{record.description}</p><span>Explore service <ArrowIcon diagonal /></span></div></Link>)}</div></section>)}</div></section><ClosingCta /></>;
+  return <><Hero page={page} /><Section eyebrow="SITUATIONS" title="Find the path closest to your work">
     <div className="catalogue-grid">{records.map((record, index) => <Link aria-label={`Explore ${record.title}`} className="catalogue-card" href={record.path} key={record.path}><div className="catalogue-card__visual"><Image alt={record.visual.alt} fill sizes="(max-width: 560px) 92vw, (max-width: 900px) 46vw, 390px" src={record.visual.src} /><span>{String(index + 1).padStart(2, "0")}</span></div><div className="catalogue-card__body"><h2>{record.title}</h2><p>{record.description}</p><strong>Explore {page.kind === "services-hub" ? "service" : "solution"} <ArrowIcon diagonal /></strong></div></Link>)}</div>
   </Section><ClosingCta /></>;
 }
 
 function InfoPageView({ page }: { page: InfoPage }) {
   return <><Hero page={page} />
+    {page.path === "/about" ? <section className="about-story"><div className="container about-story__grid"><div><p className="eyebrow"><span className="eyebrow-line" />WHY BOOMOTECH</p><h2>Technical capability should make the next decision clearer.</h2><p>BoomoTech connects hands-on problem solving with thoughtful systems work. The goal is to understand what matters, explain the trade-offs and build a practical path forward.</p></div><div className="about-story__visual" aria-hidden="true"><span>Listen</span><span>Clarify</span><span>Build</span><i>BT</i></div></div></section> : null}
     {page.notice ? <div className="container notice-wrap"><Notice {...page.notice} /></div> : null}
     {page.resources?.length ? <Resources page={page} /> : null}
     {page.cards?.length ? <Section eyebrow="AT A GLANCE" title="Choose a useful starting point"><CardGrid items={page.cards} /></Section> : null}
@@ -91,11 +98,14 @@ function InfoPageView({ page }: { page: InfoPage }) {
 }
 
 export function PageRenderer({ page }: { page: PageRecord }) {
+  const breadcrumbs = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Home", item: "/" }, ...page.path.split("/").filter(Boolean).map((part, index, parts) => ({ "@type": "ListItem", position: index + 2, name: index === parts.length - 1 ? page.title : part.replaceAll("-", " "), item: `/${parts.slice(0, index + 1).join("/")}` }))] };
+  let content: React.ReactNode;
   switch (page.kind) {
-    case "service": return <ServicePage page={page} />;
-    case "solution": return <SolutionPage page={page} />;
+    case "service": content = <ServicePage page={page} />; break;
+    case "solution": content = <SolutionPage page={page} />; break;
     case "services-hub":
-    case "solutions-hub": return <HubPageView page={page} />;
-    default: return <InfoPageView page={page} />;
+    case "solutions-hub": content = <HubPageView page={page} />; break;
+    default: content = <InfoPageView page={page} />;
   }
+  return <><script dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs).replaceAll("<", "\\u003c") }} type="application/ld+json" />{content}</>;
 }

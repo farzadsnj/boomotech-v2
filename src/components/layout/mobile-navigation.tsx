@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { ArrowIcon } from "@/components/ui/arrow-icon";
-import { site } from "@/content/site";
 import { ChatBookingButton } from "./chat-booking-button";
 import { NavigationLink } from "./navigation-link";
 import { ArticleIcon } from "@/components/ui/article-icon";
@@ -45,8 +44,17 @@ export function MobileNavigation({ shopEnabled = false }: { shopEnabled?: boolea
         <span aria-hidden="true" className="menu-lines"><i /><i /></span>
       </summary>
       <nav aria-label="Mobile primary">
-        {site.navigation.filter((item) => shopEnabled || item.href !== "/shop").map((item) => <NavigationLink key={item.href} href={item.href}><span className="mobile-nav__link-label">{item.href === "/blog" ? <ArticleIcon /> : null}{item.label}</span><ArrowIcon diagonal /></NavigationLink>)}
-        <NavigationLink href="/login"><span className="mobile-nav__link-label"><AccountIcon />Account</span><ArrowIcon diagonal /></NavigationLink>
+        <NavigationLink href="/services"><span className="mobile-nav__link-label">Services</span><ArrowIcon diagonal /></NavigationLink>
+        <NavigationLink href="/solutions"><span className="mobile-nav__link-label">Solutions</span><ArrowIcon diagonal /></NavigationLink>
+        <NavigationLink href="/resources"><span className="mobile-nav__link-label">Resources</span><ArrowIcon diagonal /></NavigationLink>
+        <div className="mobile-nav__subnav" aria-label="Resource links">
+          <NavigationLink href="/blog"><span className="mobile-nav__link-label"><ArticleIcon />Blog</span><ArrowIcon diagonal /></NavigationLink>
+          <NavigationLink href="/tools/it-health-check"><span className="mobile-nav__link-label">IT Health Check</span><ArrowIcon diagonal /></NavigationLink>
+        </div>
+        <NavigationLink href="/about"><span className="mobile-nav__link-label">About</span><ArrowIcon diagonal /></NavigationLink>
+        <NavigationLink href="/support"><span className="mobile-nav__link-label">Support</span><ArrowIcon diagonal /></NavigationLink>
+        {shopEnabled ? <NavigationLink href="/shop"><span className="mobile-nav__link-label">Shop</span><ArrowIcon diagonal /></NavigationLink> : null}
+        <NavigationLink href="/login"><span className="mobile-nav__link-label"><AccountIcon />Client portal</span><ArrowIcon diagonal /></NavigationLink>
         <ChatBookingButton mobile />
       </nav>
     </details>

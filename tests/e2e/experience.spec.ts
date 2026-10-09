@@ -60,7 +60,7 @@ test("chat sound preference is explicit and optional audio failure cannot close 
 });
 
 test("visual catalogues, support resources and founder content are complete", async ({ page, request }) => {
-  await page.goto("/services"); await expect(page.locator(".catalogue-card__visual img")).toHaveCount(11); await expect(page.locator(".catalogue-card__visual > span").first()).toHaveText("01");
+  await page.goto("/services"); await expect(page.locator(".service-directory__card img")).toHaveCount(11); await expect(page.locator(".service-directory__group")).toHaveCount(4);
   await page.goto("/solutions"); await expect(page.locator(".catalogue-card__visual img")).toHaveCount(5);
   await page.goto("/support"); await expect(page.getByText("What should I never share?")).toBeVisible(); await expect(page.getByText("The exact safe error message")).toBeVisible();
   await page.goto("/resources"); const resourceLinks = page.locator(".resource-feature, .resource-card"); await expect(resourceLinks).toHaveCount(10);
@@ -80,10 +80,18 @@ test("mobile navigation supports active Blog state, route changes and Escape", a
   const menu = page.locator("summary[aria-label='Toggle navigation']"); await menu.click();
   const navigation = page.getByRole("navigation", { name: "Mobile primary" });
   await expect(navigation.getByRole("link", { name: "Blog" })).toHaveAttribute("aria-current", "page");
-  await expect(navigation.getByRole("link", { name: "Account" })).toHaveAttribute("href", "/login");
+  await expect(navigation.getByRole("link", { name: "Client portal" })).toHaveAttribute("href", "/login");
   const headerBottom = await page.locator(".site-header").evaluate((node) => node.getBoundingClientRect().bottom); const menuTop = await navigation.evaluate((node) => node.getBoundingClientRect().top); expect(menuTop).toBeGreaterThanOrEqual(headerBottom - 1);
   await page.keyboard.press("Escape"); await expect(navigation).not.toBeVisible(); await expect(menu).toBeFocused();
   await menu.click(); await navigation.getByRole("link", { name: "Services" }).click(); await expect(page).toHaveURL(/\/services$/);
+});
+
+test("desktop services and resources menus expose grouped destinations", async ({ page }) => {
+  await page.goto("/");
+  const servicesMenu = page.getByRole("button", { name: "Show services menu" }); await servicesMenu.focus(); await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Technology that supports what comes next." })).toBeVisible(); await expect(page.getByRole("link", { name: "Cybersecurity" }).first()).toBeVisible();
+  await page.keyboard.press("Escape"); await expect(page.getByRole("heading", { name: "Technology that supports what comes next." })).toHaveCount(0);
+  await page.getByRole("button", { name: "Show resources menu" }).click(); await expect(page.getByRole("link", { name: /Free IT Health Check/ })).toBeVisible(); await expect(page.getByRole("link", { name: /Practical articles/ })).toBeVisible();
 });
 
 test("service categories preselect an approved service", async ({ page }) => {
@@ -102,7 +110,7 @@ test("disabled AI and shop features stay out of the public journey", async ({ pa
   await expect(page.getByRole("button", { name: "Ask a service question" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Not sure/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Explore our services" }).click();
-  await expect(page.getByRole("button", { name: "Fix an IT problem" })).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Fix an IT problem", exact: true })).toBeVisible();
   const response = await request.post("/api/chat", { data: { message: "Help with Wi-Fi", history: [] } });
   expect(response.status()).toBe(503);
   expect(await response.json()).toMatchObject({ error: expect.stringMatching(/unavailable/i) });
@@ -187,9 +195,9 @@ test("skip link and desktop current-page marker are accessible", async ({ page }
   await page.goto("/services"); await page.keyboard.press("Tab"); await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused(); await page.keyboard.press("Enter"); await expect(page.locator("#main-content")).toBeFocused();
   const current = page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Services" }); await expect(current).toHaveAttribute("aria-current", "page");
   expect(await current.evaluate((node) => getComputedStyle(node, "::after").transform)).not.toBe("none");
-  const blog = page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Blog" });
-  expect(await blog.evaluate((node) => ({ display: getComputedStyle(node).display, alignItems: getComputedStyle(node).alignItems }))).toEqual({ display: "flex", alignItems: "center" });
-  await expect(page.getByRole("link", { name: "Customer account" })).toHaveAttribute("href", "/login");
+  const resources = page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Resources" });
+  await expect(resources).toBeVisible();
+  await expect(page.getByRole("link", { name: "Client portal" })).toHaveAttribute("href", "/login");
 });
 
 test("mobile navigation and footer branding remain aligned", async ({ page }) => {
@@ -217,7 +225,7 @@ test("blog articles expose canonical, Open Graph, updated and structured metadat
 });
 
 test("representative pages and chatbot pass automated accessibility checks", async ({ page }) => {
-  for (const path of ["/", "/booking", "/blog", "/blog/essential-it-support-checklist-small-business"]) { await page.goto(path); await page.waitForTimeout(900); expect((await new AxeBuilder({ page }).analyze()).violations.filter(({ impact }) => impact === "critical" || impact === "serious")).toEqual([]); }
+  for (const path of ["/", "/services", "/services/cybersecurity", "/tools/it-health-check", "/booking", "/blog", "/blog/essential-it-support-checklist-small-business"]) { await page.goto(path); await page.waitForTimeout(900); expect((await new AxeBuilder({ page }).analyze()).violations.filter(({ impact }) => impact === "critical" || impact === "serious")).toEqual([]); }
   await page.goto("/"); await page.getByRole("button", { name: "Chat with BoomoTech" }).click(); await page.waitForTimeout(300); expect((await new AxeBuilder({ page }).include(".chat-panel").analyze()).violations.filter(({ impact }) => impact === "critical" || impact === "serious")).toEqual([]);
 });
 
@@ -225,16 +233,22 @@ test("security headers are present and X-Powered-By is disabled", async ({ reque
   const response = await request.get("/"); expect(response.headers()["x-powered-by"]).toBeUndefined(); expect(response.headers()["x-content-type-options"]).toBe("nosniff"); expect(response.headers()["referrer-policy"]).toBe("strict-origin-when-cross-origin"); expect(response.headers()["permissions-policy"]).toContain("camera=()"); expect(response.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
 });
 
-test("unknown routes return HTTP 404", async ({ request }) => { expect((await request.get("/does-not-exist")).status()).toBe(404); expect((await request.get("/services/not-real")).status()).toBe(404); });
+test("unknown routes return HTTP 404 and approved legacy paths redirect", async ({ request }) => { expect((await request.get("/does-not-exist")).status()).toBe(404); expect((await request.get("/services/not-real")).status()).toBe(404); expect((await request.get("/projects/cms-software-solutions/" )).status()).toBe(404); const redirected = await request.get("/it-support-helpdesk/", { maxRedirects: 0 }); expect([301, 308]).toContain(redirected.status()); });
 
 test("reveals remain visible without JavaScript and reduced motion", async ({ browser }) => {
   const noJs = await browser.newContext({ javaScriptEnabled: false }); const noJsPage = await noJs.newPage(); await noJsPage.goto("/"); await expect(noJsPage.locator(".reveal").first()).toBeVisible(); await noJs.close();
   const reduced = await browser.newContext({ reducedMotion: "reduce" }); const reducedPage = await reduced.newPage(); await reducedPage.goto("/"); expect(await reducedPage.locator(".reveal").first().evaluate((node) => ({ opacity: getComputedStyle(node).opacity, transform: getComputedStyle(node).transform }))).toEqual({ opacity: "1", transform: "none" }); await reduced.close();
 });
 
-for (const viewport of [{ width: 320, height: 568 }, { width: 320, height: 800 }, { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1024, height: 768 }, { width: 1280, height: 800 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) test(`has no horizontal overflow at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+for (const viewport of [{ width: 320, height: 568 }, { width: 375, height: 812 }, { width: 390, height: 844 }, { width: 430, height: 932 }, { width: 768, height: 1024 }, { width: 1024, height: 768 }, { width: 1280, height: 800 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) test(`has no horizontal overflow at ${viewport.width}x${viewport.height}`, async ({ page }) => {
   await page.setViewportSize(viewport);
-  for (const path of ["/", "/services", "/solutions", "/support", "/resources", "/booking", "/blog", "/blog/essential-it-support-checklist-small-business", "/shop", "/about"]) { await page.goto(path); expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true); }
+  for (const path of ["/", "/services", "/solutions", "/support", "/resources", "/tools/it-health-check", "/booking", "/blog", "/blog/essential-it-support-checklist-small-business", "/shop", "/about"]) { await page.goto(path); expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true); }
+});
+
+test("service pathfinder and IT Health Check work without submitting personal data", async ({ page }) => {
+  await page.goto("/"); const pathfinder = page.getByTestId("service-pathfinder"); await pathfinder.getByRole("button", { name: /Reduce risk/ }).click(); await expect(pathfinder.getByRole("heading", { name: /Protect access/ })).toBeVisible(); await expect(pathfinder.getByRole("link", { name: /Cybersecurity/ })).toBeVisible();
+  await page.goto("/tools/it-health-check"); for (let index = 0; index < 10; index += 1) await page.getByRole("button", { name: "Partly or not consistently" }).click();
+  await expect(page.getByRole("heading", { name: "A focused review could reduce friction" })).toBeVisible(); await expect(page.getByText(/not submitted or saved/i)).toBeVisible();
 });
 
 test("representative routes produce no unexpected console errors", async ({ page }) => {
