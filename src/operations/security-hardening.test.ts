@@ -87,6 +87,15 @@ describe("server security hardening", () => {
     expect(installer).toContain('([[:space:]]+\\(v6\\))?[[:space:]]+ALLOW IN[[:space:]]+Anywhere');
   });
 
+  it("handles safe symlinks and alternate approved time services without false failures", () => {
+    const audit = read("scripts/server/security-audit.sh");
+    expect(audit).toContain("! -type l");
+    expect(audit).toContain("systemctl is-active --quiet chrony");
+    expect(audit).toContain("systemctl is-active --quiet chronyd");
+    expect(audit).toContain("high_confidence_secret_files");
+    expect(audit).toContain("postgres_secret_files");
+  });
+
   it("adds security state to the daily monitoring snapshot", () => {
     const monitor = read("scripts/server/boomotech-monitor.sh");
     for (const expected of ["Security posture", "UFW is active", "fail2ban-client status sshd", "unattended-upgrades", "/var/run/reboot-required", "security-related package updates", "wildcard interface"]) {
