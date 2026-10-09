@@ -29,5 +29,9 @@ describe("authentication environment validation", () => {
     expect(validateProductionEnvironment(environment)).toEqual({ authUrl: "https://boomotech.com.au", siteUrl: "https://boomotech.com.au" });
     expect(() => validateProductionEnvironment({ ...environment, BETTER_AUTH_URL: "http://localhost:3000" })).toThrow(/must (?:match the production SITE_URL origin|be https:\/\/boomotech\.com\.au)/);
     expect(() => validateProductionEnvironment({ ...environment, ADMIN_TEMP_PASSWORD: "must-be-removed" })).toThrow(/remove ADMIN_TEMP_PASSWORD/);
+    expect(validateProductionEnvironment({ ...environment, OPENAI_CHAT_ENABLED: "false" })).toEqual({ authUrl: "https://boomotech.com.au", siteUrl: "https://boomotech.com.au" });
+    expect(() => validateProductionEnvironment({ ...environment, OPENAI_CHAT_ENABLED: "true" })).toThrow(/OPENAI_API_KEY/);
+    expect(validateProductionEnvironment({ ...environment, OPENAI_CHAT_ENABLED: "true", OPENAI_API_KEY: "server-only-test-key" })).toEqual({ authUrl: "https://boomotech.com.au", siteUrl: "https://boomotech.com.au" });
+    expect(() => validateProductionEnvironment({ ...environment, SHOP_ENABLED: "yes" })).toThrow(/SHOP_ENABLED must be true or false/);
   });
 });

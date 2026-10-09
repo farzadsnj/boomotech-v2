@@ -47,8 +47,11 @@ RESEND_API_KEY=...
 BOOKING_RATE_LIMIT_REST_URL=
 BOOKING_RATE_LIMIT_REST_TOKEN=
 BOOKING_TRUST_PROXY=true
-OPENAI_API_KEY=...
+OPENAI_CHAT_ENABLED=false
+OPENAI_API_KEY=
 OPENAI_CHAT_MODEL=gpt-6-luna
+SHOP_ENABLED=false
+CUSTOMER_REPLY_TO_EMAIL=
 ```
 
 Keep the file outside Git, readable only by the application user and approved administrators. The reverse proxy must overwrite forwarded client headers before `BOOKING_TRUST_PROXY=true` is used.
@@ -65,6 +68,33 @@ chmod 0750 scripts/deploy-production.sh scripts/server/*.sh
 ```
 
 Use `--fast` only during a documented incident or after the exact commit has already passed the skipped checks in trusted CI. Migration and build are never skipped.
+
+## Post-deployment workers and log rotation
+
+Migration `0004` adds notification retry and claim timestamps. Rehearse it against a restored backup before production. After the application deploy succeeds, install the notification timer and logrotate policy as separate reviewed actions:
+
+```bash
+cd /var/www/boomotech
+sudo ./scripts/server/install-notification-worker.sh
+sudo ./scripts/server/install-logrotate.sh
+sudo systemctl start boomotech-notification-worker.service
+sudo systemctl status boomotech-notification-worker.timer
+sudo journalctl -u boomotech-notification-worker.service -n 100 --no-pager
+sudo logrotate --debug /etc/logrotate.d/boomotech
+```
+
+The worker needs a system-wide Node.js 22 and pnpm 11.19 installation accessible to `boomotechhost`, plus `/var/www/boomotech/.env.production` owned by that account with mode `0600`. Installation is never performed by the deployment script.
+
+Run application maintenance in dry-run mode first and retain the output with the change record:
+
+```bash
+sudo -u boomotechhost -H bash -lc 'cd /var/www/boomotech && pnpm maintenance:run'
+sudo -u boomotechhost -H bash -lc 'cd /var/www/boomotech && pnpm maintenance:run -- --apply'
+```
+
+The apply command removes only expired verification grants, stale rate-limit buckets, old sent outbox rows and long-expired sessions according to documented environment retention values. It does not delete bookings, messages, audit events or failed notifications.
+
+The defaults are `MAINTENANCE_EXPIRED_GRANT_DAYS=30`, `MAINTENANCE_RATE_LIMIT_DAYS=2`, `MAINTENANCE_SENT_OUTBOX_DAYS=90` and `MAINTENANCE_EXPIRED_SESSION_DAYS=30`. `BOOMOTECH_OUTBOX_WARNING_MINUTES=15` controls the aggregate monitor warning. Review these values against the approved privacy and retention policy before using apply mode.
 
 ## First deployment review
 

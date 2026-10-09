@@ -3,7 +3,7 @@ import { site } from "@/content/site";
 import { ArrowIcon } from "@/components/ui/arrow-icon";
 import { BrandLogo } from "@/components/brand/brand-logo";
 
-export function SiteFooter() {
+export function SiteFooter({ shopEnabled = false }: { shopEnabled?: boolean }) {
   return (
     <footer className="site-footer">
       <div className="container">
@@ -17,13 +17,13 @@ export function SiteFooter() {
             {site.footer.map((group) => (
               <div key={group.title}>
                 <h2>{group.title}</h2>
-                <ul>{group.links.map((link) => <li key={link.href}><Link href={link.href}>{link.label}</Link></li>)}</ul>
+                <ul>{group.links.filter((link) => shopEnabled || link.href !== "/shop").map((link) => <li key={link.href}><Link href={link.href}>{link.label}</Link></li>)}</ul>
               </div>
             ))}
           </div>
         </div>
         <div className="site-footer__bottom">
-          <p>© {new Date().getFullYear()} BoomoTech. Content pending owner approval.</p>
+          <p>© {new Date().getFullYear()} BoomoTech. All rights reserved.</p>
           <p>Brisbane, Queensland · Remote options across Australia</p>
         </div>
       </div>

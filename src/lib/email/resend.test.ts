@@ -22,10 +22,11 @@ describe("server email transport", () => {
   it("normalizes recipients and keeps reply-to optional", async () => {
     process.env.RESEND_API_KEY = "test-only";
     const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
-    await sendEmailWithResend({ ...message, replyTo: "reply@example.test" });
+    await sendEmailWithResend({ ...message, replyTo: "reply@example.test", idempotencyKey: "notification:test" });
     const body = JSON.parse(String(fetch.mock.calls[0][1]?.body)) as { to: string[]; reply_to?: string };
     expect(body.to).toEqual(["customer@example.test"]);
     expect(body.reply_to).toBe("reply@example.test");
+    expect(new Headers(fetch.mock.calls[0][1]?.headers).get("Idempotency-Key")).toBe("notification:test");
   });
 
   it("returns a generic delivery error and safely preserves formatted text", async () => {
@@ -33,5 +34,11 @@ describe("server email transport", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("private provider response", { status: 500 }));
     await expect(sendEmailWithResend(message)).rejects.toBeInstanceOf(EmailTransportDeliveryError);
     expect(preserveEmailLineBreaks("first <line>\nsecond")).toBe("first &lt;line&gt;<br>second");
+  });
+
+  it("turns provider timeouts into a generic delivery error", async () => {
+    process.env.RESEND_API_KEY = "test-only";
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new DOMException("provider detail", "TimeoutError"));
+    await expect(sendEmailWithResend(message)).rejects.toBeInstanceOf(EmailTransportDeliveryError);
   });
 });

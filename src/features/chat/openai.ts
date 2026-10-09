@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { boomotechKnowledge } from "./knowledge";
 import type { ChatRequest } from "./chat-schema";
+import { isAiChatEnabled } from "@/lib/config/features";
 
 const DEFAULT_MODEL = "gpt-6-luna";
 const REQUEST_TIMEOUT_MS = 12_000;
@@ -27,6 +28,7 @@ export async function generateChatResponse(
   request: ChatRequest,
   client?: ResponsesClient,
 ) {
+  if (!isAiChatEnabled()) throw new ChatConfigurationError("AI chat is disabled.");
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!client && !apiKey) throw new ChatConfigurationError("OpenAI is not configured.");
 

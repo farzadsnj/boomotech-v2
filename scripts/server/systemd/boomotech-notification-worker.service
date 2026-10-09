@@ -1,0 +1,19 @@
+[Unit]
+Description=BoomoTech notification outbox worker
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=boomotechhost
+Group=boomotechhost
+WorkingDirectory=/var/www/boomotech
+EnvironmentFile=/var/www/boomotech/.env.production
+ExecStart=/usr/bin/env pnpm exec tsx scripts/process-notification-outbox.ts
+TimeoutStartSec=90
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+RestrictSUIDSGID=true
+LockPersonality=true

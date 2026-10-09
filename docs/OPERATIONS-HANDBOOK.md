@@ -1196,3 +1196,15 @@ The next operations review must record:
 - approved indexing state.
 
 Future product expansion still requires separate owner approval for confirmed appointments, structured support tickets, real commerce and richer customer portal features.
+
+## 26. Production readiness controls
+
+- Notification delivery uses the transactional outbox described in `docs/NOTIFICATION-OUTBOX.md`; the web request stores customer work before any provider call.
+- The oneshot worker runs from a two-minute systemd timer and may be stopped independently without stopping the website.
+- The host monitor reports aggregate outbox health. Permanent failures require operator review; customer content must not be copied into operational tickets or logs.
+- `OPENAI_CHAT_ENABLED=false` keeps deterministic service guidance and booking available while preventing OpenAI calls.
+- `SHOP_ENABLED=false` removes the sample catalogue from global navigation and the sitemap. The direct preview remains noindex for owner review.
+- `pnpm maintenance:run` is dry-run by default. Use `-- --apply` only after counts and retention values are reviewed.
+- Install `scripts/server/logrotate-boomotech` through its installer so backup, monitoring and deployment logs use bounded retention and the required service ownership.
+
+Before enabling indexing, verify the HTTPS canonical origin, production copy, public legal information, current sitemap, robots response and a fresh crawl of support and contact. Authentication, booking, preview shop, administrator and draft terms routes remain noindex.

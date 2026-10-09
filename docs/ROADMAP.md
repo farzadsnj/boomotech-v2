@@ -124,6 +124,16 @@ Requirements:
 - Comparison or diagnostic tools
 - Newsletter with explicit consent
 
+## Production readiness polish
+
+- Transactional notification worker, customer acknowledgements and guest response emails implemented.
+- Customer request pagination, human-readable audit history and administrator request summaries implemented.
+- AI question mode and public sample shop now default-off feature flags.
+- Log rotation and conservative data-maintenance commands prepared for operator review.
+- Search indexing remains disabled until the launch checklist and owner decisions are complete.
+
+Outstanding launch decisions include the verified notification sender and recipient, optional customer Reply-To address, data-retention periods, AI provider budget and privacy approval, real shop catalogue approval, and the final indexing change.
+
 ## Owner decision register
 
 | Decision | Needed by | Status |

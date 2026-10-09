@@ -1,6 +1,6 @@
 # AI Service Chatbot
 
-The floating service assistant uses a small server-side OpenAI adapter for visitor questions while preserving the existing deterministic service links and consultation flow.
+The floating service assistant always preserves deterministic service links and the consultation flow. Its optional server-side OpenAI adapter is disabled by default.
 
 ## Request path
 
@@ -16,13 +16,14 @@ The floating service assistant uses a small server-side OpenAI adapter for visit
 
 The assistant is instructed to use the approved public website knowledge, state limits, avoid diagnosis, and avoid inventing prices, response times, guarantees, availability, service areas, credentials or policies. It must never request passwords, MFA codes, recovery keys, private keys, payment-card information, API keys or confidential customer data.
 
-The API returns generic errors for provider, configuration and rate-limit failures. It does not expose provider messages or secrets. Missing OpenAI or shared production rate-limit configuration makes chat unavailable rather than silently bypassing protection.
+The API returns generic errors for provider, configuration and rate-limit failures. It does not expose provider messages or secrets. When AI is enabled, missing OpenAI configuration makes chat unavailable rather than silently bypassing protection. Production uses the PostgreSQL limiter unless an approved shared limiter is configured.
 
 This is general service guidance. It is not an emergency channel, confirmed appointment, support ticket, legal advice or substitute for situation-specific technical assessment.
 
 ## Configuration
 
 ```env
+OPENAI_CHAT_ENABLED=false
 OPENAI_API_KEY=server-side-secret
 OPENAI_CHAT_MODEL=gpt-6-luna
 # Optional only for future multi-instance scaling:
@@ -31,6 +32,8 @@ BOOKING_RATE_LIMIT_REST_TOKEN=
 BOOKING_TRUST_PROXY=true
 SITE_URL=https://approved.example
 ```
+
+With `OPENAI_CHAT_ENABLED=false`, the interface hides AI-dependent choices, the deterministic service browser and booking flow continue to work, and `POST /api/chat` returns a safe 503 without contacting OpenAI. Deployment does not require an API key in this mode. Set the flag to `true` only after the provider, budget, privacy wording and operational monitoring are approved; production validation then requires `OPENAI_API_KEY`.
 
 The chat limiter uses a separate `chat:*` namespace in the existing PostgreSQL rate-limit table by default in production. The optional REST limiter remains available for future multi-instance scaling. A bounded in-memory fallback is available only outside production. In production, the trusted proxy must overwrite `X-Forwarded-For`; otherwise the endpoint fails closed.
 

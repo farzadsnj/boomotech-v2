@@ -3,11 +3,11 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { serviceLabel } from "@/features/booking/booking-schema";
-import { RequestPriorityBadge, RequestStatusBadge } from "./status-badge";
-import { statusHelp, type RequestPriority, type RequestStatus } from "@/features/requests/workflow";
+import { RequestStatusBadge } from "./status-badge";
+import { statusHelp, type RequestStatus } from "@/features/requests/workflow";
 
 type CustomerRequest = {
-  reference: string; servicePath: string; message: string; status: RequestStatus; priority: RequestPriority;
+  reference: string; servicePath: string; message: string; status: RequestStatus;
   readAt: string | null; withdrawnAt: string | null; createdAt: string; updatedAt: string;
   messages: { id: string; authorRole: string; body: string; createdAt: string }[];
 };
@@ -48,7 +48,7 @@ export function CustomerRequestList({ requests }: { requests: CustomerRequest[] 
       const canReply = request.status === "IN_PROGRESS" || request.status === "AWAITING_USER";
       const isActive = active === request.reference;
       return <article className="customer-request-card" key={request.reference}>
-        <header><div><p className="request-reference">{request.reference}</p><h3>{serviceLabel(request.servicePath)}</h3></div><div className="request-badges"><RequestStatusBadge status={request.status} /><RequestPriorityBadge priority={request.priority} /></div></header>
+        <header><div><p className="request-reference">{request.reference}</p><h3>{serviceLabel(request.servicePath)}</h3></div><div className="request-badges"><RequestStatusBadge status={request.status} /></div></header>
         <dl className="request-dates"><div><dt>Submitted</dt><dd>{request.createdAt}</dd></div><div><dt>Last updated</dt><dd>{request.updatedAt}</dd></div></dl>
         <section aria-labelledby={`${request.reference}-description`}><h4 id={`${request.reference}-description`}>Original request</h4><p className="request-copy">{request.message}</p></section>
         <p className="request-status-help">{statusHelp(request.status)}</p>

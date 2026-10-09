@@ -27,7 +27,7 @@ describe("local Phase 1 content", () => {
     expect(intendedPublicRoutes).toContain("/services/it-support");
     expect(intendedPublicRoutes).not.toContain("/privacy");
     expect(intendedPublicRoutes).not.toContain("/shop");
-    expect(intendedPublicRoutes).toHaveLength(1 + 2 + services.length + solutions.length + 4 + publishedArticles.length);
+    expect(intendedPublicRoutes).toHaveLength(1 + 2 + services.length + solutions.length + 6 + publishedArticles.length);
   });
 
   it("gives every service the required useful content", () => {

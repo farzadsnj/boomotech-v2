@@ -54,12 +54,13 @@ afterAll(async () => {
 
 describe("authorised request workflow", () => {
   it("lists only requests linked to the immutable customer id with full descriptions", async () => {
-    const records = await repository.listCustomerRequests(customerOne);
+    const { records } = await repository.listCustomerRequests(customerOne);
     expect(records).toHaveLength(2);
     expect(records.every(({ userId }) => userId === customerOne)).toBe(true);
     expect(records.map(({ message }) => message).join(" ")).toContain("detailed help");
     expect(records.map(({ message }) => message).join(" ")).not.toContain("guest used");
     expect(records[0]).not.toHaveProperty("internalNotes");
+    expect(records[0]).not.toHaveProperty("priority");
   });
 
   it("stores administrator notes privately and records an audit event", async () => {
@@ -126,5 +127,21 @@ describe("authorised request workflow", () => {
     expect(firstPage.total).toBe(25);
     expect(firstPage.records[0].rowNumber).toBe(1);
     expect(secondPage.records[0].rowNumber).toBe(21);
+  });
+
+  it("paginates customer requests while preserving ownership filtering", async () => {
+    await db.insert(tables.bookingRequest).values(Array.from({ length: 21 }, (_, index) => ({
+      id: randomUUID(), reference: `BT-${(index + 500).toString(16).padStart(10, "0").toUpperCase()}`,
+      userId: customerOne, fullName: "Taylor Smith", email: "taylor@example.com", phone: "+61400000000",
+      servicePath: "/services/it-support", message: "A customer-owned request used to verify protected pagination.",
+      source: "booking-page", status: "NEW", priority: "MEDIUM", consentVersion: "test",
+    })));
+    const firstPage = await repository.listCustomerRequests(customerOne, 1);
+    const secondPage = await repository.listCustomerRequests(customerOne, 2);
+    expect(firstPage.total).toBe(23);
+    expect(firstPage.records).toHaveLength(repository.CUSTOMER_REQUEST_PAGE_SIZE);
+    expect(secondPage.records).toHaveLength(3);
+    expect([...firstPage.records, ...secondPage.records].every(({ userId }) => userId === customerOne)).toBe(true);
+    expect([...firstPage.records, ...secondPage.records].some(({ userId }) => userId === customerTwo)).toBe(false);
   });
 });

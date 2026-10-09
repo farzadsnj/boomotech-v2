@@ -13,7 +13,7 @@ function AccountIcon() {
   return <svg aria-hidden="true" className="account-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6" /></svg>;
 }
 
-export function SiteHeader() {
+export function SiteHeader({ shopEnabled = false }: { shopEnabled?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const update = () => setScrolled(window.scrollY > 18);
@@ -26,11 +26,11 @@ export function SiteHeader() {
       <div className="site-header__inner container">
         <BrandLogo />
         <nav aria-label="Primary" className="desktop-nav">
-          {site.navigation.map((item) => <NavigationLink key={item.href} href={item.href}>{item.href === "/blog" ? <ArticleIcon /> : null}<span>{item.label}</span></NavigationLink>)}
+          {site.navigation.filter((item) => shopEnabled || item.href !== "/shop").map((item) => <NavigationLink key={item.href} href={item.href}>{item.href === "/blog" ? <ArticleIcon /> : null}<span>{item.label}</span></NavigationLink>)}
         </nav>
         <Link className="account-link" href="/login"><AccountIcon /><span className="sr-only">Customer account</span></Link>
         <ChatBookingButton />
-        <MobileNavigation />
+        <MobileNavigation shopEnabled={shopEnabled} />
       </div>
     </header>
   );

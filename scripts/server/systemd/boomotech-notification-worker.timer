@@ -1,0 +1,12 @@
+[Unit]
+Description=Run the BoomoTech notification worker every two minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=15s
+Persistent=true
+Unit=boomotech-notification-worker.service
+
+[Install]
+WantedBy=timers.target

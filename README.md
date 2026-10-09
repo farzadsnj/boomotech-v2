@@ -27,6 +27,7 @@ The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local 
 - [AI service chatbot](docs/AI-CHATBOT.md)
 - [Production server security](docs/SERVER-SECURITY.md)
 - [Operations handbook](docs/OPERATIONS-HANDBOOK.md)
+- [Notification outbox](docs/NOTIFICATION-OUTBOX.md)
 
 No production claims, prices, policies, testimonials, credentials or case studies should be added unless verified by the owner.
 
@@ -50,7 +51,7 @@ The chat welcome appears once per browser session after a short delay. Notificat
 
 Product records live in `src/content/products.ts` and are validated by Zod when loaded. Add a category to `productCategories`, then add products with unique slugs, local visuals, searchable keywords, features and specifications. `/shop` reads `q` and `category` URL parameters, and `/shop/[slug]` is generated from the same records.
 
-Every current product, price and availability label is sample content for interface review. Checkout, cart, inventory reservation, shipping and payment are intentionally absent. Replace each placeholder record with verified supplier, model, price, stock, warranty, tax and fulfilment information before making the catalogue indexable.
+Every current product, price and availability label is sample content for interface review. Checkout, cart, inventory reservation, shipping and payment are intentionally absent. `SHOP_ENABLED=false` hides Shop from global navigation and the sitemap by default; the direct preview remains available and noindex for review. Replace each placeholder record with verified supplier, model, price, stock, warranty, tax and fulfilment information before enabling the flag or indexing the catalogue.
 
 Product collections use an accessible horizontal `ProductRow`: desktop shows complete cards with previous/next controls only when content overflows, while small screens use touch-friendly 86vw scroll-snap tracks. `/shop?view=all` renders the full sample catalogue as a responsive grid. Search and category filters continue to use URL parameters.
 
@@ -110,15 +111,22 @@ The chatbot and `/booking` route render the same progressive `BookingForm`. Book
 
 Every saved request receives a public `BT-...` reference. Requests submitted with a verified customer session are linked to that account and appear in its dashboard; guest requests remain unlinked. Customers can edit or withdraw only unread `NEW` requests. Explicit administrator processing locks the original description. Stored messages, statuses, priorities and audit events support an authorised request conversation without matching ownership by email.
 
-Administrators can filter and page requests, explicitly start processing, reply, resolve or reopen within the approved transition map, assign `HIGH`, `MEDIUM` or `LOW` priority, and maintain private internal notes. Internal notes are selected only for the authorised administrator detail view and never enter customer projections. Customer replies move `AWAITING_USER` requests back to `IN_PROGRESS`. Notification outbox rows are committed with message actions; production delivery workers and retry monitoring remain an operational requirement.
+Administrators can filter and page requests, explicitly start processing, reply, resolve or reopen within the approved transition map, assign `HIGH`, `MEDIUM` or `LOW` priority, and maintain private internal notes. Internal notes are selected only for the authorised administrator detail view and never enter customer projections or email. Customer replies move `AWAITING_USER` requests back to `IN_PROGRESS`. Customer request lists use protected server pagination and do not expose internal priority.
 
-Service questions use the server-only OpenAI Responses API adapter documented in [docs/AI-CHATBOT.md](docs/AI-CHATBOT.md). Public context is built from the canonical service, solution and FAQ records. Requests have origin, size, schema and rate-limit controls; the API key remains server-side and automated tests never call OpenAI. Configure `OPENAI_API_KEY` and the optional `OPENAI_CHAT_MODEL` only in untracked server environment files.
+Notification outbox rows are committed in the same transaction as each booking or message. `pnpm notifications:process` claims pending or retryable rows with PostgreSQL row locking, supplies the unique dedupe key to Resend, applies bounded backoff and marks permanent failure after five attempts. Booking storage never depends on provider availability. Install the reviewed two-minute systemd timer only after following [the notification outbox runbook](docs/NOTIFICATION-OUTBOX.md).
+
+Service questions use the server-only OpenAI Responses API adapter documented in [docs/AI-CHATBOT.md](docs/AI-CHATBOT.md). Public context is built from the canonical service, solution and FAQ records. Requests have origin, size, schema and rate-limit controls; the API key remains server-side and automated tests never call OpenAI. `OPENAI_CHAT_ENABLED=false` is the default: AI choices are hidden, the API fails safely with 503, and deterministic service browsing plus booking remain available. Enabling the flag makes `OPENAI_API_KEY` mandatory.
 
 Configure these server-side variables before testing real delivery:
 
 ```env
 BOOKING_NOTIFICATION_EMAIL=verified-destination@example.com
 BOOKING_FROM_EMAIL=BoomoTech <verified-sender@example.com>
+CUSTOMER_REPLY_TO_EMAIL=
+OPENAI_CHAT_ENABLED=false
+OPENAI_API_KEY=
+OPENAI_CHAT_MODEL=gpt-6-luna
+SHOP_ENABLED=false
 RESEND_API_KEY=re_...
 # Optional for multi-instance deployments:
 BOOKING_RATE_LIMIT_REST_URL=https://your-shared-limiter.example
@@ -126,7 +134,9 @@ BOOKING_RATE_LIMIT_REST_TOKEN=...
 BOOKING_TRUST_PROXY=true
 ```
 
-If notification variables are missing or Resend rejects delivery, the database record remains available to the administrator and its notification state is marked failed for operational follow-up. A successful submission remains a request rather than a confirmed appointment.
+If notification variables are missing or Resend rejects delivery, the database record remains available to the administrator. Retryable rows stay visible to aggregate monitoring and stop after the bounded maximum for operator review. A successful submission remains a request rather than a confirmed appointment.
+
+Host operations also include `pnpm maintenance:run`, which reports eligible expired grants, stale limiter buckets, old sent outbox rows and long-expired sessions without changing data. The `-- --apply` form is deliberate and does not delete bookings, conversations, audit events or failed notifications. Install the reviewed logrotate policy with `sudo ./scripts/server/install-logrotate.sh`; no installer in this repository runs automatically.
 
 Blog records live in `src/content/blog.ts`. To publish another article, add a unique typed record with `isPublished: true`, complete metadata, structured sections, a related service and related slugs. Published records automatically generate `/blog/[slug]` pages and sitemap entries. Draft records remain outside both.
 
