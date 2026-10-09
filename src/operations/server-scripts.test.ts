@@ -126,7 +126,9 @@ describe("server operations scripts", () => {
     expect(service).toContain("Type=oneshot");
     expect(service).toContain("EnvironmentFile=/var/www/boomotech/.env.production");
     expect(service).toContain("Environment=PATH=/usr/local/bin:/usr/bin:/bin");
-    expect(service).toContain("ExecStartPre=/usr/bin/env pnpm notifications:check");
+    expect(service).toContain("ExecStartPre=/var/www/boomotech/node_modules/.bin/tsx scripts/check-notification-worker.ts");
+    expect(service).toContain("ExecStart=/var/www/boomotech/node_modules/.bin/tsx scripts/process-notification-outbox.ts");
+    expect(service).not.toContain("/usr/bin/env pnpm");
     expect(service).toContain("TimeoutStartSec=90");
     expect(service).toContain("NoNewPrivileges=true");
     expect(timer).toContain("OnUnitActiveSec=2min");
@@ -138,8 +140,10 @@ describe("server operations scripts", () => {
     expect(installer).toContain("systemctl enable --now boomotech-notification-worker.timer");
     expect(installer).not.toContain("systemctl start boomotech-notification-worker.service");
     expect(installer).toContain("run_as_service_user node --version");
-    expect(installer).toContain("run_as_service_user pnpm --version");
-    expect(installer).toContain("pnpm notifications:check");
+    expect(installer).toContain('TSX_BIN="${PROJECT_DIR}/node_modules/.bin/tsx"');
+    expect(installer).toContain('run_as_service_user "$TSX_BIN" --version');
+    expect(installer).toContain('exec \\"\\$3\\" scripts/check-notification-worker.ts');
+    expect(installer).not.toContain("run_as_service_user pnpm --version");
     expect(logrotate).toContain("/var/log/boomotech-backup/*.log");
     expect(logrotate).toContain("/var/log/boomotech-monitor/*.log");
     expect(logrotate).toContain("/var/log/boomotech-deploy/*.log");
