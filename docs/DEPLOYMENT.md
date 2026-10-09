@@ -87,7 +87,7 @@ sudo systemctl status boomotech-notification-worker.timer
 sudo logrotate --debug /etc/logrotate.d/boomotech
 ```
 
-The worker needs a system-wide Node.js 22 and pnpm 11.19 installation accessible to `boomotechhost`, plus `/var/www/boomotech/.env.production` owned by that account with mode `0600`. The installer verifies Node.js and pnpm in the service account's restricted environment, installs the units, runs the configuration/database/schema preflight and leaves the timer disabled. It does not process queued notifications by default. After the manual worker run has been inspected, enable the timer explicitly as shown above. `--enable-now` is available only for a separately reviewed automated enablement. Installation is never performed by the deployment script.
+The deployment still uses pnpm 11.19, but the hardened notification systemd service does not invoke pnpm/Corepack at runtime. It executes the project-local `node_modules/.bin/tsx` directly with Node.js 22, avoiding writes to the protected service user's home while `ProtectHome=true` remains enabled. The installer verifies Node.js and that project-local runtime in the service account's restricted environment, installs the units, runs the configuration/database/schema preflight and leaves the timer disabled. It does not process queued notifications by default. After the manual worker run has been inspected, enable the timer explicitly as shown above. `--enable-now` is available only for a separately reviewed automated enablement. Installation is never performed by the deployment script.
 
 Run application maintenance in dry-run mode first and retain the output with the change record:
 

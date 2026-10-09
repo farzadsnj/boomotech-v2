@@ -7,6 +7,7 @@ SYSTEMD_DIR="${BOOMOTECH_SYSTEMD_DIR:-/etc/systemd/system}"
 ENV_FILE="${BOOMOTECH_ENV_FILE:-${PROJECT_DIR}/.env.production}"
 SERVICE_USER="${BOOMOTECH_SERVICE_USER:-boomotechhost}"
 SERVICE_PATH="/usr/local/bin:/usr/bin:/bin"
+TSX_BIN="${PROJECT_DIR}/node_modules/.bin/tsx"
 ENABLE_NOW=false
 
 case "${1:-}" in
@@ -29,14 +30,15 @@ run_as_service_user() {
 }
 
 run_as_service_user node --version >/dev/null 2>&1 || { printf 'The %s service account cannot execute Node.js.\n' "$SERVICE_USER" >&2; exit 1; }
-run_as_service_user pnpm --version >/dev/null 2>&1 || { printf 'The %s service account cannot execute pnpm.\n' "$SERVICE_USER" >&2; exit 1; }
+[[ -x "$TSX_BIN" ]] || { printf 'Project-local tsx runtime is missing or not executable: %s\n' "$TSX_BIN" >&2; exit 1; }
+run_as_service_user "$TSX_BIN" --version >/dev/null 2>&1 || { printf 'The %s service account cannot execute the project-local tsx runtime.\n' "$SERVICE_USER" >&2; exit 1; }
 
 install -o root -g root -m 0644 "$PROJECT_DIR/scripts/server/systemd/boomotech-notification-worker.service" "$SYSTEMD_DIR/boomotech-notification-worker.service"
 install -o root -g root -m 0644 "$PROJECT_DIR/scripts/server/systemd/boomotech-notification-worker.timer" "$SYSTEMD_DIR/boomotech-notification-worker.timer"
 systemctl daemon-reload
 systemctl disable --now boomotech-notification-worker.timer >/dev/null 2>&1 || true
 
-run_as_service_user bash -c "set -a; source \"\$1\"; set +a; cd \"\$2\"; exec pnpm notifications:check" bash "$ENV_FILE" "$PROJECT_DIR"
+run_as_service_user bash -c "set -a; source \"\$1\"; set +a; cd \"\$2\"; exec \"\$3\" scripts/check-notification-worker.ts" bash "$ENV_FILE" "$PROJECT_DIR" "$TSX_BIN"
 
 printf 'Installed notification worker service and timer. Configuration preflight passed.\n'
 if [[ "$ENABLE_NOW" == true ]]; then

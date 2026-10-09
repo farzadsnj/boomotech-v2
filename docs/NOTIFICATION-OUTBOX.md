@@ -42,9 +42,9 @@ sudo systemctl start boomotech-notification-worker.service
 sudo journalctl -u boomotech-notification-worker.service -n 100 --no-pager
 ```
 
-The reviewed systemd unit uses `EnvironmentFile=/var/www/boomotech/.env.production`; do not source that secret file into a shared shell history.
+The reviewed systemd unit uses `EnvironmentFile=/var/www/boomotech/.env.production` and executes the project-local `node_modules/.bin/tsx` directly. It intentionally does not start through pnpm/Corepack, so `ProtectHome=true` does not require writable pnpm/Corepack state under the service user's home. Do not source the secret environment file into a shared shell history.
 
-After merging and deploying the migration, install the reviewed units. The default installer validates Node.js, pnpm and the preflight as `boomotechhost`, then leaves the timer disabled:
+After merging and deploying the migration, install the reviewed units. The default installer validates Node.js, the project-local `tsx` runtime and the preflight as `boomotechhost`, then leaves the timer disabled:
 
 ```bash
 cd /var/www/boomotech

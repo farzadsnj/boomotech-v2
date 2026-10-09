@@ -10,8 +10,8 @@ Group=boomotechhost
 WorkingDirectory=/var/www/boomotech
 EnvironmentFile=/var/www/boomotech/.env.production
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
-ExecStartPre=/usr/bin/env pnpm notifications:check
-ExecStart=/usr/bin/env pnpm exec tsx scripts/process-notification-outbox.ts
+ExecStartPre=/var/www/boomotech/node_modules/.bin/tsx scripts/check-notification-worker.ts
+ExecStart=/var/www/boomotech/node_modules/.bin/tsx scripts/process-notification-outbox.ts
 TimeoutStartSec=90
 NoNewPrivileges=true
 PrivateTmp=true
