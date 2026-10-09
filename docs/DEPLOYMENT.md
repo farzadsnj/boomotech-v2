@@ -56,6 +56,8 @@ CUSTOMER_REPLY_TO_EMAIL=
 
 Keep the file outside Git, readable only by the application user and approved administrators. The reverse proxy must overwrite forwarded client headers before `BOOKING_TRUST_PROXY=true` is used.
 
+`OPENAI_CHAT_ENABLED` and `SHOP_ENABLED` affect server-rendered navigation, routes, sitemap output and client bundles. Changing either flag requires a reviewed application rebuild and redeployment; editing `.env.production` and restarting the existing build is not sufficient for every UI change. Keep both flags `false` until their separate launch decisions are approved.
+
 ## Dry run and deployment
 
 ### COMMANDS YOU MUST RUN ON SERVER
@@ -77,13 +79,15 @@ Migration `0004` adds notification retry and claim timestamps. Rehearse it again
 cd /var/www/boomotech
 sudo ./scripts/server/install-notification-worker.sh
 sudo ./scripts/server/install-logrotate.sh
+sudo -u boomotechhost -H bash -lc 'set -a; source /var/www/boomotech/.env.production; set +a; pnpm notifications:check'
 sudo systemctl start boomotech-notification-worker.service
-sudo systemctl status boomotech-notification-worker.timer
 sudo journalctl -u boomotech-notification-worker.service -n 100 --no-pager
+sudo systemctl enable --now boomotech-notification-worker.timer
+sudo systemctl status boomotech-notification-worker.timer
 sudo logrotate --debug /etc/logrotate.d/boomotech
 ```
 
-The worker needs a system-wide Node.js 22 and pnpm 11.19 installation accessible to `boomotechhost`, plus `/var/www/boomotech/.env.production` owned by that account with mode `0600`. Installation is never performed by the deployment script.
+The worker needs a system-wide Node.js 22 and pnpm 11.19 installation accessible to `boomotechhost`, plus `/var/www/boomotech/.env.production` owned by that account with mode `0600`. The installer verifies Node.js and pnpm in the service account's restricted environment, installs the units, runs the configuration/database/schema preflight and leaves the timer disabled. It does not process queued notifications by default. After the manual worker run has been inspected, enable the timer explicitly as shown above. `--enable-now` is available only for a separately reviewed automated enablement. Installation is never performed by the deployment script.
 
 Run application maintenance in dry-run mode first and retain the output with the change record:
 

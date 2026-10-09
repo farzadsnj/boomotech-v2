@@ -488,8 +488,8 @@ The server process is:
 6. Store the booking and notification-outbox record in one transaction.
 7. Link it by immutable user ID only when a customer is authenticated.
 8. Generate a public `BT-...` reference.
-9. Attempt notification delivery if Resend is configured.
-10. Record notification success or failure separately.
+9. Let the separately managed worker validate configuration and claim the queued notification.
+10. Record notification success, bounded retry or terminal failure separately without changing the request.
 
 Guest requests remain unlinked. The system must never attach a guest request to an account merely because the email addresses match.
 
@@ -1201,9 +1201,13 @@ Future product expansion still requires separate owner approval for confirmed ap
 
 - Notification delivery uses the transactional outbox described in `docs/NOTIFICATION-OUTBOX.md`; the web request stores customer work before any provider call.
 - The oneshot worker runs from a two-minute systemd timer and may be stopped independently without stopping the website.
-- The host monitor reports aggregate outbox health. Permanent failures require operator review; customer content must not be copied into operational tickets or logs.
+- `pnpm notifications:check` validates required notification configuration, database connectivity and outbox columns without sending email or printing secrets.
+- The worker recovers stale claims transactionally. Claims below the maximum retain only their remaining attempts; exhausted stale claims become terminal failures.
+- The default worker installer leaves the timer disabled. Run one reviewed worker execution before explicitly enabling the timer, or use `--enable-now` only in an approved automated change.
+- The host monitor reports timer state, the latest worker result and aggregate outbox health. Permanent failures require operator review; customer content must not be copied into operational tickets or logs.
 - `OPENAI_CHAT_ENABLED=false` keeps deterministic service guidance and booking available while preventing OpenAI calls.
 - `SHOP_ENABLED=false` removes the sample catalogue from global navigation and the sitemap. The direct preview remains noindex for owner review.
+- Changing `OPENAI_CHAT_ENABLED` or `SHOP_ENABLED` requires a rebuild and redeployment; changing the environment file and restarting an existing build alone does not update every server-rendered or client interface.
 - `pnpm maintenance:run` is dry-run by default. Use `-- --apply` only after counts and retention values are reviewed.
 - Install `scripts/server/logrotate-boomotech` through its installer so backup, monitoring and deployment logs use bounded retention and the required service ownership.
 

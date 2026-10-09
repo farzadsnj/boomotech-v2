@@ -33,7 +33,7 @@ BOOKING_TRUST_PROXY=true
 SITE_URL=https://approved.example
 ```
 
-With `OPENAI_CHAT_ENABLED=false`, the interface hides AI-dependent choices, the deterministic service browser and booking flow continue to work, and `POST /api/chat` returns a safe 503 without contacting OpenAI. Deployment does not require an API key in this mode. Set the flag to `true` only after the provider, budget, privacy wording and operational monitoring are approved; production validation then requires `OPENAI_API_KEY`.
+With `OPENAI_CHAT_ENABLED=false`, the interface hides AI-dependent choices, the deterministic service browser and booking flow continue to work, and `POST /api/chat` returns a safe 503 without contacting OpenAI. Deployment does not require an API key in this mode. Set the flag to `true` only after the provider, budget, privacy wording and operational monitoring are approved; production validation then requires `OPENAI_API_KEY`. The flag affects server-rendered UI and client bundles, so changing it requires a rebuild and redeployment. Editing `.env.production` and restarting an existing build is not sufficient for every interface change.
 
 The chat limiter uses a separate `chat:*` namespace in the existing PostgreSQL rate-limit table by default in production. The optional REST limiter remains available for future multi-instance scaling. A bounded in-memory fallback is available only outside production. In production, the trusted proxy must overwrite `X-Forwarded-For`; otherwise the endpoint fails closed.
 

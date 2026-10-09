@@ -1,16 +1,16 @@
-import { and, asc, eq, inArray, lt, lte, or, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { bookingRequest, bookingRequestMessage, notificationOutbox, user } from "@/db/schema";
 import { serviceLabel } from "@/features/booking/booking-schema";
+import { validateNotificationWorkerEnvironment, type NotificationWorkerConfiguration } from "@/features/notifications/config";
 import { escapeEmailHtml, preserveEmailLineBreaks, sendEmailWithResend, type ServerEmail } from "@/lib/email/resend";
-import { getSiteUrl } from "@/lib/site-url";
 
 export const OUTBOX_MAX_ATTEMPTS = 5;
 export const OUTBOX_BATCH_SIZE = 20;
-const CLAIM_TIMEOUT_MINUTES = 15;
+export const OUTBOX_CLAIM_TIMEOUT_MINUTES = 15;
 
 export type NotificationKind = "BOOKING_CREATED" | "BOOKING_CUSTOMER_ACK" | "REQUEST_ADMIN_REPLY" | "REQUEST_CUSTOMER_REPLY" | "REQUEST_RESOLVED";
-type ClaimedNotification = { id: string; bookingId: string; kind: NotificationKind; dedupeKey: string; requestMessageId: string | null; attempts: number };
+type ClaimedNotification = { id: string; bookingId: string; kind: NotificationKind; dedupeKey: string; requestMessageId: string | null; attempts: number; processingStartedAt: Date };
 
 export type NotificationContext = {
   reference: string;
@@ -23,52 +23,79 @@ export type NotificationContext = {
   verifiedAccount: boolean;
 };
 
-function customerReplyTo() { return process.env.CUSTOMER_REPLY_TO_EMAIL?.trim() || undefined; }
-function adminAddress() { return process.env.BOOKING_NOTIFICATION_EMAIL?.trim(); }
-function fromAddress() { return process.env.BOOKING_FROM_EMAIL?.trim(); }
-function dashboardLink(context: NotificationContext) { return context.verifiedAccount ? new URL("/dashboard", getSiteUrl()).toString() : null; }
+function dashboardLink(context: NotificationContext, configuration: NotificationWorkerConfiguration) {
+  return context.verifiedAccount ? new URL("/dashboard", configuration.siteUrl).toString() : null;
+}
 
 function frame(title: string, paragraphs: string[]) {
   return `<h1>${escapeEmailHtml(title)}</h1>${paragraphs.map((value) => `<p>${preserveEmailLineBreaks(value)}</p>`).join("")}`;
 }
 
-export function buildNotificationEmail(kind: NotificationKind, context: NotificationContext): Omit<ServerEmail, "from" | "idempotencyKey"> {
+export function buildNotificationEmail(kind: NotificationKind, context: NotificationContext, configuration: NotificationWorkerConfiguration): Omit<ServerEmail, "from" | "idempotencyKey"> {
   const service = serviceLabel(context.servicePath);
-  const dashboard = dashboardLink(context);
+  const dashboard = dashboardLink(context, configuration);
   const safety = "Do not send passwords, MFA codes, recovery keys or payment-card information by email.";
   if (kind === "BOOKING_CREATED") {
     const fields = [`Reference: ${context.reference}`, `Name: ${context.fullName}`, `Email: ${context.email}`, `Phone: ${context.phone}`, `Service: ${service}`, `Message: ${context.requestBody}`];
-    return { to: adminAddress() ?? "", subject: `New request ${context.reference}: ${service}`, text: ["New booking request", "", ...fields].join("\n"), html: frame("New booking request", fields) };
+    return { to: configuration.adminEmail, subject: `New request ${context.reference}: ${service}`, text: ["New booking request", "", ...fields].join("\n"), html: frame("New booking request", fields) };
   }
   if (kind === "REQUEST_CUSTOMER_REPLY") {
     const fields = [`Reference: ${context.reference}`, `Customer: ${context.fullName}`, `Service: ${service}`, `Customer reply: ${context.messageBody ?? ""}`];
-    return { to: adminAddress() ?? "", subject: `Customer reply ${context.reference}`, text: fields.join("\n\n"), html: frame("Customer replied", fields) };
+    return { to: configuration.adminEmail, subject: `Customer reply ${context.reference}`, text: fields.join("\n\n"), html: frame("Customer replied", fields) };
   }
   if (kind === "BOOKING_CUSTOMER_ACK") {
     const lines = [`Thank you for contacting BoomoTech.`, `Reference: ${context.reference}`, `Requested service: ${service}`, "This is a request, not a confirmed appointment. BoomoTech will review it before scope and availability are agreed.", safety, ...(dashboard ? [`View your verified account requests: ${dashboard}`] : [])];
-    return { to: context.email, subject: `BoomoTech request received: ${context.reference}`, replyTo: customerReplyTo(), text: lines.join("\n\n"), html: frame("Your request has been received", lines) };
+    return { to: context.email, subject: `BoomoTech request received: ${context.reference}`, replyTo: configuration.customerReplyTo, text: lines.join("\n\n"), html: frame("Your request has been received", lines) };
   }
   if (kind === "REQUEST_ADMIN_REPLY") {
     const lines = [`BoomoTech has responded to request ${context.reference}.`, context.messageBody ?? "", ...(dashboard ? [`View the conversation securely in your dashboard: ${dashboard}`] : ["This request was submitted as a guest. This email contains the response; no account is required."]), safety];
-    return { to: context.email, subject: `BoomoTech response: ${context.reference}`, replyTo: customerReplyTo(), text: lines.join("\n\n"), html: frame("BoomoTech response", lines) };
+    return { to: context.email, subject: `BoomoTech response: ${context.reference}`, replyTo: configuration.customerReplyTo, text: lines.join("\n\n"), html: frame("BoomoTech response", lines) };
   }
   const lines = [`Request ${context.reference} has been marked resolved.`, ...(context.messageBody ? [context.messageBody] : []), "If more work is required, submit a new request or contact BoomoTech through the secure booking form.", ...(dashboard ? [`Review your request history: ${dashboard}`] : []), safety];
-  return { to: context.email, subject: `Request resolved: ${context.reference}`, replyTo: customerReplyTo(), text: lines.join("\n\n"), html: frame("Request resolved", lines) };
+  return { to: context.email, subject: `Request resolved: ${context.reference}`, replyTo: configuration.customerReplyTo, text: lines.join("\n\n"), html: frame("Request resolved", lines) };
+}
+
+async function recoverStaleClaims(transaction: Parameters<Parameters<typeof db.transaction>[0]>[0], now: Date, staleBefore: Date) {
+  const exhausted = await transaction.update(notificationOutbox).set({
+    status: "failed",
+    lastError: "stale-claim-exhausted",
+    processingStartedAt: null,
+    updatedAt: now,
+  }).where(and(
+    eq(notificationOutbox.status, "processing"),
+    lte(notificationOutbox.processingStartedAt, staleBefore),
+    gte(notificationOutbox.attempts, OUTBOX_MAX_ATTEMPTS),
+  )).returning({ bookingId: notificationOutbox.bookingId, kind: notificationOutbox.kind });
+
+  const failedBookingIds = exhausted.filter(({ kind }) => kind === "BOOKING_CREATED").map(({ bookingId }) => bookingId);
+  if (failedBookingIds.length > 0) {
+    await transaction.update(bookingRequest).set({ notificationStatus: "failed", updatedAt: now }).where(inArray(bookingRequest.id, failedBookingIds));
+  }
+
+  await transaction.update(notificationOutbox).set({
+    status: "retry",
+    lastError: "stale-claim-recovered",
+    nextAttemptAt: now,
+    processingStartedAt: null,
+    updatedAt: now,
+  }).where(and(
+    eq(notificationOutbox.status, "processing"),
+    lte(notificationOutbox.processingStartedAt, staleBefore),
+    lt(notificationOutbox.attempts, OUTBOX_MAX_ATTEMPTS),
+  ));
 }
 
 async function claimNext(): Promise<ClaimedNotification | null> {
   return db.transaction(async (transaction) => {
     const now = new Date();
-    const staleBefore = new Date(now.getTime() - CLAIM_TIMEOUT_MINUTES * 60_000);
+    const staleBefore = new Date(now.getTime() - OUTBOX_CLAIM_TIMEOUT_MINUTES * 60_000);
+    await recoverStaleClaims(transaction, now, staleBefore);
     const [candidate] = await transaction.select({ id: notificationOutbox.id })
       .from(notificationOutbox)
       .where(and(
         lt(notificationOutbox.attempts, OUTBOX_MAX_ATTEMPTS),
         lte(notificationOutbox.nextAttemptAt, now),
-        or(
-          inArray(notificationOutbox.status, ["pending", "retry"]),
-          and(eq(notificationOutbox.status, "processing"), lte(notificationOutbox.processingStartedAt, staleBefore)),
-        ),
+        inArray(notificationOutbox.status, ["pending", "retry"]),
       ))
       .orderBy(asc(notificationOutbox.nextAttemptAt), asc(notificationOutbox.createdAt))
       .limit(1)
@@ -86,6 +113,7 @@ async function claimNext(): Promise<ClaimedNotification | null> {
       dedupeKey: notificationOutbox.dedupeKey,
       requestMessageId: notificationOutbox.requestMessageId,
       attempts: notificationOutbox.attempts,
+      processingStartedAt: notificationOutbox.processingStartedAt,
     });
     return claimed as ClaimedNotification;
   });
@@ -109,8 +137,8 @@ async function contextFor(item: ClaimedNotification): Promise<NotificationContex
 async function markSent(item: ClaimedNotification) {
   const now = new Date();
   await db.transaction(async (transaction) => {
-    await transaction.update(notificationOutbox).set({ status: "sent", sentAt: now, lastError: null, processingStartedAt: null, updatedAt: now }).where(and(eq(notificationOutbox.id, item.id), eq(notificationOutbox.status, "processing")));
-    if (item.kind === "BOOKING_CREATED") await transaction.update(bookingRequest).set({ notificationStatus: "sent", updatedAt: now }).where(eq(bookingRequest.id, item.bookingId));
+    const updated = await transaction.update(notificationOutbox).set({ status: "sent", sentAt: now, lastError: null, processingStartedAt: null, updatedAt: now }).where(and(eq(notificationOutbox.id, item.id), eq(notificationOutbox.status, "processing"), eq(notificationOutbox.attempts, item.attempts), eq(notificationOutbox.processingStartedAt, item.processingStartedAt))).returning({ id: notificationOutbox.id });
+    if (updated.length > 0 && item.kind === "BOOKING_CREATED") await transaction.update(bookingRequest).set({ notificationStatus: "sent", updatedAt: now }).where(eq(bookingRequest.id, item.bookingId));
   });
 }
 
@@ -120,22 +148,21 @@ async function markFailed(item: ClaimedNotification, error: unknown) {
   const nextAttemptAt = new Date(Date.now() + delayMinutes * 60_000);
   const errorCode = error instanceof Error ? error.name.slice(0, 80) : "delivery-error";
   await db.transaction(async (transaction) => {
-    await transaction.update(notificationOutbox).set({ status: permanent ? "failed" : "retry", lastError: errorCode, nextAttemptAt, processingStartedAt: null, updatedAt: new Date() }).where(and(eq(notificationOutbox.id, item.id), eq(notificationOutbox.status, "processing")));
-    if (permanent && item.kind === "BOOKING_CREATED") await transaction.update(bookingRequest).set({ notificationStatus: "failed", updatedAt: new Date() }).where(eq(bookingRequest.id, item.bookingId));
+    const updated = await transaction.update(notificationOutbox).set({ status: permanent ? "failed" : "retry", lastError: errorCode, nextAttemptAt, processingStartedAt: null, updatedAt: new Date() }).where(and(eq(notificationOutbox.id, item.id), eq(notificationOutbox.status, "processing"), eq(notificationOutbox.attempts, item.attempts), eq(notificationOutbox.processingStartedAt, item.processingStartedAt))).returning({ id: notificationOutbox.id });
+    if (updated.length > 0 && permanent && item.kind === "BOOKING_CREATED") await transaction.update(bookingRequest).set({ notificationStatus: "failed", updatedAt: new Date() }).where(eq(bookingRequest.id, item.bookingId));
   });
 }
 
 export async function processNotificationOutbox(send: (message: ServerEmail) => Promise<void> = sendEmailWithResend, limit = OUTBOX_BATCH_SIZE) {
-  const from = fromAddress();
-  if (!from || !adminAddress()) throw new Error("Notification delivery configuration is incomplete.");
+  const configuration = validateNotificationWorkerEnvironment();
   let sent = 0; let failed = 0;
   for (let index = 0; index < limit; index += 1) {
     const item = await claimNext();
     if (!item) break;
     try {
       const context = await contextFor(item);
-      const email = buildNotificationEmail(item.kind, context);
-      await send({ ...email, from, idempotencyKey: item.dedupeKey });
+      const email = buildNotificationEmail(item.kind, context, configuration);
+      await send({ ...email, from: configuration.fromEmail, idempotencyKey: item.dedupeKey });
       await markSent(item); sent += 1;
     } catch (error) {
       await markFailed(item, error); failed += 1;

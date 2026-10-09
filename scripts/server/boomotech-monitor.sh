@@ -63,6 +63,25 @@ else
   critical "Local HTTP health check failed: $LOCAL_HEALTH_URL"
 fi
 
+section "Notification worker"
+worker_timer_enabled="$(systemctl is-enabled boomotech-notification-worker.timer 2>/dev/null || true)"
+worker_timer_active="$(systemctl is-active boomotech-notification-worker.timer 2>/dev/null || true)"
+if [[ "$worker_timer_enabled" == "enabled" && "$worker_timer_active" == "active" ]]; then
+  log "Notification worker timer is enabled and active."
+else
+  warn "Notification worker timer is not ready: enabled=$worker_timer_enabled active=$worker_timer_active."
+fi
+worker_service_result="$(systemctl show boomotech-notification-worker.service --property=Result --value 2>/dev/null || true)"
+if [[ -n "$worker_service_result" ]]; then
+  if [[ "$worker_service_result" == "success" ]]; then
+    log "Latest notification worker service result: success."
+  else
+    warn "Latest notification worker service result: $worker_service_result."
+  fi
+else
+  warn "Latest notification worker service result is unavailable."
+fi
+
 section "PostgreSQL"
 if systemctl is-active --quiet postgresql.service; then log "postgresql.service is active."; else warn "postgresql.service is not active or uses a version-specific unit."; fi
 if [[ -r "$ENV_FILE" ]]; then
