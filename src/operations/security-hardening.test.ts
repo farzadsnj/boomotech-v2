@@ -118,6 +118,9 @@ describe("server security hardening", () => {
       .filter((line) => !line.trimStart().startsWith("#"))
       .join("\n");
     expect(activeHba).not.toContain("0.0.0.0/0");
-    expect(read("scripts/server/security/boomotech-hardening.conf.example")).toContain("NoNewPrivileges=true");
+    const hardening = read("scripts/server/security/boomotech-hardening.conf.example");
+    expect(hardening).toContain("NoNewPrivileges=true");
+    expect(hardening).toContain("/usr/bin/node /var/www/boomotech/node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3000");
+    expect(hardening).not.toContain("/usr/bin/pnpm");
   });
 });
