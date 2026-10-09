@@ -36,7 +36,7 @@ install -o root -g root -m 0644 "$PROJECT_DIR/scripts/server/systemd/boomotech-n
 systemctl daemon-reload
 systemctl disable --now boomotech-notification-worker.timer >/dev/null 2>&1 || true
 
-run_as_service_user bash -c 'set -a; source "$1"; set +a; cd "$2"; exec pnpm notifications:check' bash "$ENV_FILE" "$PROJECT_DIR"
+run_as_service_user bash -c "set -a; source \"\$1\"; set +a; cd \"\$2\"; exec pnpm notifications:check" bash "$ENV_FILE" "$PROJECT_DIR"
 
 printf 'Installed notification worker service and timer. Configuration preflight passed.\n'
 if [[ "$ENABLE_NOW" == true ]]; then
