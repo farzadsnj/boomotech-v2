@@ -156,12 +156,15 @@ export const notificationOutbox = pgTable("notification_outbox", {
   status: text("status").default("pending").notNull(),
   attempts: integer("attempts").default(0).notNull(),
   lastError: text("last_error"),
+  nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).defaultNow().notNull(),
+  processingStartedAt: timestamp("processing_started_at", { withTimezone: true }),
   sentAt: timestamp("sent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("notification_outbox_dedupe_key_unique").on(table.dedupeKey),
   index("notification_outbox_status_idx").on(table.status),
+  index("notification_outbox_retry_idx").on(table.status, table.nextAttemptAt),
   index("notification_outbox_booking_kind_idx").on(table.bookingId, table.kind),
 ]);
 

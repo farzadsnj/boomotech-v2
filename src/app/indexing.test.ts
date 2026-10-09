@@ -5,10 +5,12 @@ import { intendedPublicRoutes } from "@/content/routes";
 
 const originalUrl = process.env.SITE_URL;
 const originalIndexing = process.env.SITE_INDEXING_ENABLED;
+const originalShop = process.env.SHOP_ENABLED;
 
 afterEach(() => {
   process.env.SITE_URL = originalUrl;
   process.env.SITE_INDEXING_ENABLED = originalIndexing;
+  process.env.SHOP_ENABLED = originalShop;
 });
 
 describe("search indexing", () => {
@@ -29,5 +31,12 @@ describe("search indexing", () => {
       expect(entries.some((entry) => new URL(entry.url).pathname === privatePath)).toBe(false);
     }
     expect(robots()).toMatchObject({ rules: { userAgent: "*", allow: "/" } });
+  });
+
+  it("includes the shop hub only when the public shop flag is enabled", () => {
+    process.env.SITE_URL = "https://boomotech.example";
+    process.env.SITE_INDEXING_ENABLED = "true";
+    process.env.SHOP_ENABLED = "true";
+    expect(sitemap().map((entry) => new URL(entry.url).pathname)).toContain("/shop");
   });
 });

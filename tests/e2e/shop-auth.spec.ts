@@ -16,7 +16,7 @@ test.describe("shop catalogue", () => {
   test("searches and filters products with URL state", async ({ page }) => {
     await page.goto("/shop");
     await expect(page.getByRole("heading", { level: 1, name: "Technology selected around how you work." })).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Shop" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Shop" })).toHaveCount(0);
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${screenshots}/shop-desktop.png`, fullPage: true });
 
@@ -114,7 +114,7 @@ test.describe("database-backed accounts", () => {
     await expect(page.getByText("Enter your full name.")).toBeVisible();
     await page.getByLabel("Full name").fill(customer.name);
     await page.getByLabel("Email address").fill(customer.email);
-    await page.getByLabel(/^Password/).fill(customer.password);
+    await page.locator('input[name="password"]').fill(customer.password);
     await page.getByLabel("Confirm password").fill(customer.password);
     await page.getByRole("button", { name: "Create account" }).click();
     await expect(page).toHaveURL(/\/check-email$/);
@@ -139,10 +139,10 @@ test.describe("database-backed accounts", () => {
   test("uses generic login errors and allows the correct customer login", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("Email address").fill(customer.email);
-    await page.getByLabel("Password").fill("IncorrectPassword9");
+    await page.locator('input[name="password"]').fill("IncorrectPassword9");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.locator(".auth-form__error[role='alert']")).toHaveText("The sign-in details could not be verified.");
-    await page.getByLabel("Password").fill(customer.password);
+    await page.locator('input[name="password"]').fill(customer.password);
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     const submitted = await page.evaluate(async (email) => {
@@ -165,7 +165,7 @@ test.describe("database-backed accounts", () => {
   test("blocks a customer from admin and shows a safe administrator customer list", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("Email address").fill(customer.email);
-    await page.getByLabel("Password").fill(customer.password);
+    await page.locator('input[name="password"]').fill(customer.password);
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     await page.goto("/admin");
@@ -175,16 +175,17 @@ test.describe("database-backed accounts", () => {
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${screenshots}/admin-login.png`, fullPage: true });
     await page.getByLabel("Administrator username").fill("farzadsnj");
-    await page.getByLabel("Password").fill("SyntheticAdminPassword9");
+    await page.locator('input[name="password"]').fill("SyntheticAdminPassword9");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/admin$/);
     await expect(page.getByRole("heading", { level: 1, name: "Operations dashboard" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "Registered customers" })).toBeVisible();
+    await expect(page.locator(".admin-summary li").filter({ hasText: "New" }).locator("strong")).toHaveText(/\d+/);
     await expect(page.getByRole("cell", { name: customer.email, exact: true })).toBeVisible();
     await expect(page.getByRole("columnheader", { name: /password/i })).toHaveCount(0);
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${screenshots}/admin-user-list.png`, fullPage: true });
-    await page.getByRole("link", { name: "Respond" }).first().click();
+    await page.getByRole("row").filter({ hasText: requestReference }).getByRole("link", { name: "Respond" }).click();
     await expect(page).toHaveURL(new RegExp(`/admin/requests/${requestReference}$`));
     await page.getByRole("button", { name: "Start processing" }).click();
     await expect(page.getByLabel("Status: In progress")).toBeVisible();
@@ -196,6 +197,10 @@ test.describe("database-backed accounts", () => {
     await page.getByLabel("Response to customer").fill("Please confirm whether all affected computers use the same office network.");
     await page.getByRole("button", { name: "Send response", exact: true }).click();
     await expect(page.getByLabel("Status: Waiting for you")).toBeVisible();
+    await expect(page.getByText("Started processing")).toBeVisible();
+    await expect(page.getByText("Priority changed")).toBeVisible();
+    await expect(page.getByText("Response sent")).toBeVisible();
+    await expect(page.getByText(/ADMIN_|CUSTOMER_/)).toHaveCount(0);
     await page.screenshot({ path: `${screenshots}/admin-request-detail.png`, fullPage: true });
     await page.getByRole("button", { name: "Sign out" }).click();
   });
@@ -203,7 +208,7 @@ test.describe("database-backed accounts", () => {
   test("customer replies to an administrator update and cannot edit the locked description", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("Email address").fill(customer.email);
-    await page.getByLabel("Password").fill(customer.password);
+    await page.locator('input[name="password"]').fill(customer.password);
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.getByText(requestReference)).toBeVisible();
     await expect(page.getByRole("button", { name: "Edit request" })).toHaveCount(0);
@@ -213,15 +218,42 @@ test.describe("database-backed accounts", () => {
     await expect(page.getByLabel("Status: In progress")).toBeVisible();
     await expect(page.getByText(/affected computers all use/)).toBeVisible();
     await expect(page.getByText(/Customer confirmed that the affected devices/)).toHaveCount(0);
+    await expect(page.getByText(/Priority:|High|Medium|Low/)).toHaveCount(0);
     expect(await page.evaluate(() => (window as typeof window & { __storedXss?: boolean }).__storedXss)).toBeUndefined();
     await page.screenshot({ path: `${screenshots}/customer-request-conversation.png`, fullPage: true });
+  });
+
+  test("paginates customer-owned requests without showing internal priority", async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.goto("/login");
+    await page.getByLabel("Email address").fill(customer.email);
+    await page.locator('input[name="password"]').fill(customer.password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    const api = page.context().request;
+    for (let index = 0; index < 20; index += 1) {
+      const response = await api.post("/api/booking", {
+        headers: { origin: "http://localhost:3100", "x-forwarded-for": `203.0.113.${index + 1}` },
+        data: { fullName: customer.name, email: customer.email, phone: "+61 400 000 000", servicePath: "/services/it-support", message: `Pagination test request ${index + 1} with a safe and sufficiently detailed description.`, consent: true, source: "booking-page", website: "" },
+      });
+      expect(response.status()).toBe(201);
+    }
+    await page.goto("/dashboard");
+    await expect(page.getByText(/Page 1 of 2/)).toBeVisible();
+    await expect(page.getByText(/21 requests|22 requests/)).toBeVisible();
+    await expect(page.getByRole("link", { name: "Next" })).toHaveAttribute("href", "/dashboard?page=2");
+    await page.getByRole("link", { name: "Next" }).click();
+    await expect(page).toHaveURL(/page=2/);
+    await expect(page.getByText(/Page 2 of 2/)).toBeVisible();
+    await expect(page.getByRole("link", { name: "Previous" })).toBeVisible();
+    await expect(page.getByText(/Priority:|High|Medium|Low/)).toHaveCount(0);
   });
 
   test("customer and administrator request screens remain responsive and accessible", async ({ page }) => {
     test.setTimeout(90_000);
     await page.goto("/login");
     await page.getByLabel("Email address").fill(customer.email);
-    await page.getByLabel("Password").fill(customer.password);
+    await page.locator('input[name="password"]').fill(customer.password);
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     for (const viewport of [{ width: 320, height: 800 }, { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1280, height: 800 }]) {
@@ -236,7 +268,7 @@ test.describe("database-backed accounts", () => {
     await page.getByRole("button", { name: "Sign out" }).click();
     await page.goto("/admin/login");
     await page.getByLabel("Administrator username").fill("farzadsnj");
-    await page.getByLabel("Password").fill("SyntheticAdminPassword9");
+    await page.locator('input[name="password"]').fill("SyntheticAdminPassword9");
     await page.getByRole("button", { name: "Sign in" }).click();
     await page.goto(`/admin/requests/${requestReference}`);
     for (const viewport of [{ width: 320, height: 800 }, { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1280, height: 800 }]) {
@@ -265,16 +297,16 @@ test.describe("database-backed accounts", () => {
     const reset = captures.findLast(({ kind, to }) => kind === "password-reset" && to === customer.email);
     await page.goto(reset!.resetUrl!);
     await expect(page).toHaveURL(/\/reset-password\?token=/);
-    await page.getByRole("textbox", { name: /^New password/ }).fill(replacementPassword);
-    await page.getByRole("textbox", { name: /^Confirm new password/ }).fill(replacementPassword);
+    await page.locator('#reset-password').fill(replacementPassword);
+    await page.locator('#reset-confirm-password').fill(replacementPassword);
     await page.getByRole("button", { name: "Set new password" }).click();
     await expect(page.getByText(/password has been changed/)).toBeVisible();
     await page.getByRole("link", { name: "Sign in with the new password" }).click();
     await page.getByLabel("Email address").fill(customer.email);
-    await page.getByLabel("Password").fill(customer.password);
+    await page.locator('input[name="password"]').fill(customer.password);
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.locator(".auth-form__error[role='alert']")).toBeVisible();
-    await page.getByLabel("Password").fill(replacementPassword);
+    await page.locator('input[name="password"]').fill(replacementPassword);
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     customer.password = replacementPassword;

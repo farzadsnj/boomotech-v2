@@ -8,6 +8,7 @@ LOG_DIR="${BOOMOTECH_MONITOR_LOG_DIR:-/var/log/boomotech-monitor}"
 LOCAL_HEALTH_URL="${BOOMOTECH_LOCAL_HEALTH_URL:-http://127.0.0.1:3000/}"
 DISK_WARNING_PERCENT="${BOOMOTECH_DISK_WARNING_PERCENT:-80}"
 DISK_CRITICAL_PERCENT="${BOOMOTECH_DISK_CRITICAL_PERCENT:-90}"
+OUTBOX_WARNING_MINUTES="${BOOMOTECH_OUTBOX_WARNING_MINUTES:-15}"
 overall_status=0
 
 mkdir -p "$LOG_DIR"
@@ -62,6 +63,25 @@ else
   critical "Local HTTP health check failed: $LOCAL_HEALTH_URL"
 fi
 
+section "Notification worker"
+worker_timer_enabled="$(systemctl is-enabled boomotech-notification-worker.timer 2>/dev/null || true)"
+worker_timer_active="$(systemctl is-active boomotech-notification-worker.timer 2>/dev/null || true)"
+if [[ "$worker_timer_enabled" == "enabled" && "$worker_timer_active" == "active" ]]; then
+  log "Notification worker timer is enabled and active."
+else
+  warn "Notification worker timer is not ready: enabled=$worker_timer_enabled active=$worker_timer_active."
+fi
+worker_service_result="$(systemctl show boomotech-notification-worker.service --property=Result --value 2>/dev/null || true)"
+if [[ -n "$worker_service_result" ]]; then
+  if [[ "$worker_service_result" == "success" ]]; then
+    log "Latest notification worker service result: success."
+  else
+    warn "Latest notification worker service result: $worker_service_result."
+  fi
+else
+  warn "Latest notification worker service result is unavailable."
+fi
+
 section "PostgreSQL"
 if systemctl is-active --quiet postgresql.service; then log "postgresql.service is active."; else warn "postgresql.service is not active or uses a version-specific unit."; fi
 if [[ -r "$ENV_FILE" ]]; then
@@ -71,6 +91,16 @@ if [[ -r "$ENV_FILE" ]]; then
   set +a
   if [[ -n "${DATABASE_URL:-}" ]] && psql "$DATABASE_URL" --tuples-only --no-align --command='SELECT 1;' 2>/dev/null | grep -qx '1'; then
     log "PostgreSQL application connection passed."
+    section "Notification outbox"
+    outbox_summary="$(psql "$DATABASE_URL" --tuples-only --no-align --field-separator='|' --command="SELECT count(*) FILTER (WHERE status = 'pending'), count(*) FILTER (WHERE status IN ('retry', 'processing')), count(*) FILTER (WHERE status = 'failed'), COALESCE(floor(EXTRACT(EPOCH FROM (now() - min(created_at) FILTER (WHERE status IN ('pending', 'retry', 'processing')))) / 60), 0)::bigint FROM notification_outbox;" 2>/dev/null || true)"
+    IFS='|' read -r outbox_pending outbox_retrying outbox_failed outbox_oldest_minutes <<<"$outbox_summary"
+    if [[ "$outbox_pending" =~ ^[0-9]+$ && "$outbox_retrying" =~ ^[0-9]+$ && "$outbox_failed" =~ ^[0-9]+$ && "$outbox_oldest_minutes" =~ ^[0-9]+$ ]]; then
+      log "Notification outbox: pending=$outbox_pending retrying=$outbox_retrying permanently_failed=$outbox_failed oldest_unsent_minutes=$outbox_oldest_minutes."
+      (( outbox_oldest_minutes > OUTBOX_WARNING_MINUTES )) && warn "Notification outbox contains items older than ${OUTBOX_WARNING_MINUTES} minutes."
+      (( outbox_failed > 0 )) && warn "Notification outbox contains permanently failed items requiring review."
+    else
+      warn "Notification outbox aggregate health could not be read."
+    fi
   else
     critical "PostgreSQL application connection failed."
   fi

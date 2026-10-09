@@ -1,0 +1,21 @@
+/var/log/boomotech-backup/*.log /var/log/boomotech-monitor/*.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    su root root
+    create 0640 root root
+}
+
+/var/log/boomotech-deploy/*.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    su boomotechhost boomotechhost
+    create 0640 boomotechhost boomotechhost
+}

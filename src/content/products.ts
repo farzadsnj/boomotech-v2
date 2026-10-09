@@ -33,7 +33,7 @@ export const productCategories: { slug: ProductCategory; name: string; descripti
   { slug: "networking-wifi", name: "Networking and Wi-Fi", description: "Connectivity equipment selected around coverage and reliability.", image: "/products/networking.svg" },
   { slug: "security-cameras", name: "Security and cameras", description: "Devices for visible, considered workplace security foundations.", image: "/products/security.svg" },
   { slug: "smart-office", name: "Smart office equipment", description: "Useful office tools that reduce friction in everyday work.", image: "/products/smart-office.svg" },
-  { slug: "refurbished-devices", name: "Refurbished devices", description: "Sample business devices with condition and warranty details still pending.", image: "/products/refurbished.svg" },
+  { slug: "refurbished-devices", name: "Refurbished devices", description: "Sample business devices whose condition and warranty details would be confirmed before sale.", image: "/products/refurbished.svg" },
   { slug: "cables-peripherals", name: "Cables, adapters and peripherals", description: "Compatible essentials for desks, displays and device connections.", image: "/products/peripherals.svg" },
 ];
 

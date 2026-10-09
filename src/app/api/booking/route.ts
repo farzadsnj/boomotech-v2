@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { bookingRequestSchema } from "@/features/booking/booking-schema";
-import { NotificationConfigurationError, sendBookingNotification } from "@/features/booking/notification";
 import { getBookingClientKey, getBookingRateLimiter, RateLimitConfigurationError } from "@/features/booking/rate-limiter";
-import { recordBookingNotification, storeBookingRequest } from "@/features/booking/repository";
+import { storeBookingRequest } from "@/features/booking/repository";
 
 const MAX_BODY_BYTES = 20_000;
 class BodyTooLargeError extends Error {}
@@ -81,18 +80,6 @@ export async function POST(request: Request) {
     stored = await storeBookingRequest(parsed.data, await getAuthenticatedUserId(request));
   } catch {
     return NextResponse.json({ error: "We could not save your request. Please try again later." }, { status: 503 });
-  }
-
-  try {
-    await sendBookingNotification(parsed.data);
-    await recordBookingNotification(stored.id, stored.outboxId, "sent");
-  } catch (error) {
-    await recordBookingNotification(
-      stored.id,
-      stored.outboxId,
-      "failed",
-      error instanceof NotificationConfigurationError ? "configuration" : "delivery",
-    ).catch(() => undefined);
   }
 
   return NextResponse.json({ ok: true, reference: stored.reference }, { status: 201 });

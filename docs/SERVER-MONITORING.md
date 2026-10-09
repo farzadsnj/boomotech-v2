@@ -13,7 +13,9 @@ The repository provides a low-complexity daily server snapshot for the first Ubu
 - unique filesystem use for `/`, `/var`, `/var/www` and `/var/backups` where present;
 - warning and critical disk thresholds, defaulting to 80% and 90%;
 - `boomotech.service` state and a local HTTP health check;
+- notification-worker timer enabled/active state and the latest oneshot service result;
 - PostgreSQL service state and an application connection check using `SELECT 1`;
+- aggregate notification-outbox pending, retrying, failed and oldest-unsent values without customer fields;
 - Nginx HTTP status-family counts, common paths without query strings, and recent error lines.
 
 Daily logs are stored as `/var/log/boomotech-monitor/YYYY-MM-DD.log`. A critical disk, application, database or health-check failure returns a non-zero status so systemd records the failed run.
@@ -48,6 +50,7 @@ Set overrides in the systemd service through a reviewed drop-in rather than edit
 Environment=BOOMOTECH_LOCAL_HEALTH_URL=http://127.0.0.1:3000/
 Environment=BOOMOTECH_DISK_WARNING_PERCENT=80
 Environment=BOOMOTECH_DISK_CRITICAL_PERCENT=90
+Environment=BOOMOTECH_OUTBOX_WARNING_MINUTES=15
 ```
 
 Then run `sudo systemctl daemon-reload` and a manual check. Keep thresholds below 100, with the warning lower than the critical threshold.
@@ -63,5 +66,6 @@ Nginx access logs may contain visitor IP addresses and requested paths. Configur
 - log retention and centralisation;
 - disk thresholds sized to the production volume;
 - expected service health path and response;
+- notification-worker failure and permanently failed outbox escalation ownership;
 - PostgreSQL service naming if a version-specific unit is used;
 - incident response and after-hours expectations.

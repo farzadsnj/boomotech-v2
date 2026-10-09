@@ -13,6 +13,7 @@ export type ServerEmail = {
   text: string;
   html: string;
   replyTo?: string;
+  idempotencyKey?: string;
 };
 
 export const escapeEmailHtml = (value: string) => value.replace(/[&<>'"]/g, (character) => ({
@@ -29,7 +30,11 @@ export async function sendEmailWithResend(message: ServerEmail) {
   try {
     response = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        ...(message.idempotencyKey ? { "Idempotency-Key": message.idempotencyKey } : {}),
+      },
       body: JSON.stringify({
         from: message.from,
         to: Array.isArray(message.to) ? message.to : [message.to],

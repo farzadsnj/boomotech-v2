@@ -17,6 +17,7 @@ async function prepareFullPage(page: import("@playwright/test").Page) {
 }
 
 test("capture final public-interface review evidence", async ({ page }) => {
+  test.setTimeout(120_000);
   await page.setViewportSize(desktop); await page.goto("/"); await prepareFullPage(page); await page.screenshot({ path: `${output}/home-desktop.png`, fullPage: true });
   const visual = page.getByTestId("hero-visual"); const box = await visual.boundingBox(); await page.mouse.move(box!.x + box!.width * .8, box!.y + box!.height * .25); await page.waitForTimeout(350); await page.screenshot({ path: `${output}/home-hero-pointer.png` });
   await page.evaluate(() => window.scrollTo(0, 950)); await expect(page.locator(".site-header")).toHaveClass(/is-scrolled/); await page.screenshot({ path: `${output}/home-sticky-header-scroll-top.png` });
@@ -30,6 +31,10 @@ test("capture final public-interface review evidence", async ({ page }) => {
   }
 
   await page.setViewportSize(desktop); await page.goto("/support"); await prepareFullPage(page); await page.getByText("What should I never share?").click(); await page.screenshot({ path: `${output}/support-faq.png`, fullPage: true });
+  await page.goto("/contact"); await prepareFullPage(page); await page.screenshot({ path: `${output}/contact-desktop.png`, fullPage: true });
+  await page.goto("/booking"); await prepareFullPage(page); await page.screenshot({ path: `${output}/booking-desktop.png`, fullPage: true });
+  await page.goto("/login"); await prepareFullPage(page); await page.screenshot({ path: `${output}/login-desktop.png`, fullPage: true });
+  await page.goto("/register"); await prepareFullPage(page); await page.screenshot({ path: `${output}/register-desktop.png`, fullPage: true });
   await page.goto("/resources"); await prepareFullPage(page); await page.screenshot({ path: `${output}/resources.png`, fullPage: true });
   await page.goto("/blog"); await prepareFullPage(page); await page.screenshot({ path: `${output}/blog-index.png`, fullPage: true });
   for (const slug of ["essential-it-support-checklist-small-business", "improve-small-business-wifi-network", "practical-cybersecurity-steps-australian-small-businesses"]) {

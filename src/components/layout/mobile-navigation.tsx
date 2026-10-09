@@ -12,7 +12,7 @@ function AccountIcon() {
   return <svg aria-hidden="true" className="account-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6" /></svg>;
 }
 
-export function MobileNavigation() {
+export function MobileNavigation({ shopEnabled = false }: { shopEnabled?: boolean }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
 
@@ -45,7 +45,7 @@ export function MobileNavigation() {
         <span aria-hidden="true" className="menu-lines"><i /><i /></span>
       </summary>
       <nav aria-label="Mobile primary">
-        {site.navigation.map((item) => <NavigationLink key={item.href} href={item.href}><span className="mobile-nav__link-label">{item.href === "/blog" ? <ArticleIcon /> : null}{item.label}</span><ArrowIcon diagonal /></NavigationLink>)}
+        {site.navigation.filter((item) => shopEnabled || item.href !== "/shop").map((item) => <NavigationLink key={item.href} href={item.href}><span className="mobile-nav__link-label">{item.href === "/blog" ? <ArticleIcon /> : null}{item.label}</span><ArrowIcon diagonal /></NavigationLink>)}
         <NavigationLink href="/login"><span className="mobile-nav__link-label"><AccountIcon />Account</span><ArrowIcon diagonal /></NavigationLink>
         <ChatBookingButton mobile />
       </nav>

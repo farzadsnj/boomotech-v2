@@ -6,6 +6,7 @@ import { FormEvent, useRef, useState } from "react";
 import type { ZodError } from "zod";
 import { authClient } from "@/lib/auth/client";
 import { adminLoginSchema, loginSchema, registrationSchema } from "@/lib/auth/schemas";
+import { PasswordInput, PasswordRequirements } from "./password-input";
 
 type Mode = "register" | "login" | "admin";
 type Errors = Record<string, string>;
@@ -20,6 +21,8 @@ export function AccountForm({ mode }: { mode: Mode }) {
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState("");
   const [pending, setPending] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -86,7 +89,7 @@ export function AccountForm({ mode }: { mode: Mode }) {
 
   const field = (name: string, label: string, type: string, autoComplete: string) => <div className="auth-field">
     <label htmlFor={`${mode}-${name}`}>{label} <span aria-hidden="true">*</span></label>
-    <input aria-describedby={errors[name] ? `${mode}-${name}-error` : undefined} aria-invalid={Boolean(errors[name])} autoComplete={autoComplete} id={`${mode}-${name}`} name={name} onChange={(event) => clearFieldError(name, event.currentTarget.value)} required type={type} />
+    {type === "password" ? <PasswordInput autoComplete={autoComplete} error={errors[name]} id={`${mode}-${name}`} name={name} onValue={(value) => { clearFieldError(name, value); if (name === "password") setPassword(value); else setConfirmation(value); }} /> : <input aria-describedby={errors[name] ? `${mode}-${name}-error` : undefined} aria-invalid={Boolean(errors[name])} autoComplete={autoComplete} id={`${mode}-${name}`} name={name} onChange={(event) => clearFieldError(name, event.currentTarget.value)} required type={type} />}
     {errors[name] ? <p className="auth-field__error" id={`${mode}-${name}-error`}>{errors[name]}</p> : null}
   </div>;
 
@@ -96,7 +99,7 @@ export function AccountForm({ mode }: { mode: Mode }) {
     {mode === "admin" ? field("username", "Administrator username", "text", "username") : field("email", "Email address", "email", "email")}
     {field("password", "Password", "password", mode === "register" ? "new-password" : "current-password")}
     {mode === "register" ? field("confirmPassword", "Confirm password", "password", "new-password") : null}
-    {mode === "register" ? <><p className="auth-form__hint">Use 12–128 characters with uppercase and lowercase letters and a number.</p><p className="auth-form__hint">By creating an account, you acknowledge the <Link href="/privacy">Privacy Policy</Link> and <Link href="/cookies">Cookies & browser storage</Link>.</p></> : null}
+    {mode === "register" ? <><PasswordRequirements confirmation={confirmation} password={password} /><p className="auth-form__hint">By creating an account, you acknowledge the <Link href="/privacy">Privacy Policy</Link> and <Link href="/cookies">Cookies & browser storage</Link>.</p></> : null}
     {formError ? <p className="auth-form__error" role="alert">{formError}</p> : null}
     <button className="auth-submit" disabled={pending} type="submit">{pending ? "Please wait…" : mode === "register" ? "Create account" : "Sign in"}</button>
     {mode === "register" ? <p className="auth-form__alternate">Already registered? <Link href="/login">Sign in</Link></p> : mode === "login" ? <><p className="auth-form__alternate"><Link href="/forgot-password">Forgot your password?</Link></p><p className="auth-form__alternate">New customer? <Link href="/register">Create an account</Link></p></> : null}

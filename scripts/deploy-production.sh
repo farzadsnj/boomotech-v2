@@ -38,8 +38,12 @@ for command_name in git pnpm curl flock sudo env; do require_command "$command_n
   # shellcheck disable=SC1090
   source "$ENV_FILE"
   set +a
-  required_variables=(SITE_URL DATABASE_URL BETTER_AUTH_SECRET BETTER_AUTH_URL BOOKING_NOTIFICATION_EMAIL BOOKING_FROM_EMAIL RESEND_API_KEY OPENAI_API_KEY)
+  required_variables=(SITE_URL DATABASE_URL BETTER_AUTH_SECRET BETTER_AUTH_URL BOOKING_NOTIFICATION_EMAIL BOOKING_FROM_EMAIL RESEND_API_KEY)
   for variable in "${required_variables[@]}"; do [[ -n "${!variable:-}" ]] || fail "$variable is missing from $ENV_FILE"; done
+  ai_chat_enabled="${OPENAI_CHAT_ENABLED:-false}"
+  shop_enabled="${SHOP_ENABLED:-false}"
+  case "${ai_chat_enabled,,}" in true) [[ -n "${OPENAI_API_KEY:-}" ]] || fail "OPENAI_API_KEY is required when OPENAI_CHAT_ENABLED=true" ;; false) ;; *) fail "OPENAI_CHAT_ENABLED must be true or false" ;; esac
+  case "${shop_enabled,,}" in true|false) ;; *) fail "SHOP_ENABLED must be true or false" ;; esac
   [[ "$SITE_URL" =~ ^https:// ]] || fail "SITE_URL must be the approved HTTPS production origin."
   [[ "$BETTER_AUTH_URL" == "$SITE_URL" ]] || fail "BETTER_AUTH_URL must exactly match SITE_URL."
   [[ "${BOOKING_TRUST_PROXY:-false}" == "true" ]] || fail "BOOKING_TRUST_PROXY must be true behind the approved production proxy."
@@ -94,6 +98,9 @@ if [[ "$FAST" == false ]]; then
     -u BOOKING_TRUST_PROXY \
     -u OPENAI_API_KEY \
     -u OPENAI_CHAT_MODEL \
+    -u OPENAI_CHAT_ENABLED \
+    -u SHOP_ENABLED \
+    -u CUSTOMER_REPLY_TO_EMAIL \
     -u ADMIN_USERNAME \
     -u ADMIN_EMAIL \
     -u ADMIN_TEMP_PASSWORD \

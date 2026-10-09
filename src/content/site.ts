@@ -40,7 +40,6 @@ export const site = {
         { label: "FAQ", href: "/faq" },
         { label: "Privacy policy", href: "/privacy" },
         { label: "Cookies & browser storage", href: "/cookies" },
-        { label: "Terms draft", href: "/terms" },
       ],
     },
   ],

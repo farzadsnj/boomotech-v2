@@ -25,6 +25,7 @@ const request = (
 
 describe("chat endpoint", () => {
   beforeEach(() => {
+    process.env.OPENAI_CHAT_ENABLED = "true";
     generateChatResponse.mockReset().mockResolvedValue("IT support and Network and Wi-Fi may help.");
     resetDevelopmentChatRateLimiter();
     delete process.env.BOOKING_RATE_LIMIT_REST_URL;
@@ -32,7 +33,14 @@ describe("chat endpoint", () => {
     delete process.env.BOOKING_TRUST_PROXY;
     delete process.env.SITE_URL;
   });
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => { delete process.env.OPENAI_CHAT_ENABLED; vi.restoreAllMocks(); });
+
+  it("returns 503 without validating or calling a provider when AI chat is disabled", async () => {
+    process.env.OPENAI_CHAT_ENABLED = "false";
+    const response = await POST(request({ message: "Hello", history: [] }));
+    expect(response.status).toBe(503);
+    expect(generateChatResponse).not.toHaveBeenCalled();
+  });
 
   it("returns a safe assistant response", async () => {
     const response = await POST(request({ message: "Help with our office network", history: [] }));

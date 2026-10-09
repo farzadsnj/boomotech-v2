@@ -277,6 +277,7 @@ svg { display: block; }
 .scroll-top span { font-size: 1.25rem; font-weight: 800; }
 
 @media (max-width: 480px) {
+  .site-footer__columns { grid-template-columns: 1fr; }
   .hero-trust { align-items: flex-start; flex-direction: column; gap: .7rem; padding-block: 1rem; }
   .hero-visual__chip--bottom { right: 1%; bottom: 4%; }
 }

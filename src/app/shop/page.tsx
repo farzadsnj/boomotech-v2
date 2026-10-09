@@ -5,13 +5,18 @@ import { ProductCard } from "@/components/shop/product-card";
 import { ProductRow } from "@/components/shop/product-row";
 import { ShopSearch } from "@/components/shop/shop-search";
 import { productCategories, products, searchProducts } from "@/content/products";
+import { isShopEnabled } from "@/lib/config/features";
+import { isIndexingEnabled } from "@/lib/site-url";
 
-export const metadata: Metadata = {
-  title: "Technology shop preview",
-  description: "Explore the sample BoomoTech technology catalogue for computers, networking, security and practical office equipment.",
-  alternates: { canonical: "/shop" },
-  robots: { index: false, follow: false },
-};
+export function generateMetadata(): Metadata {
+  const published = isShopEnabled() && isIndexingEnabled();
+  return {
+    title: published ? "Technology shop" : "Technology shop preview",
+    description: "Explore the BoomoTech technology catalogue for computers, networking, security and practical office equipment.",
+    alternates: { canonical: "/shop" },
+    robots: { index: published, follow: published },
+  };
+}
 
 type Props = { searchParams: Promise<{ q?: string | string[]; category?: string | string[]; view?: string | string[] }> };
 
@@ -35,7 +40,7 @@ export default async function ShopPage({ searchParams }: Props) {
         <div>
           <p className="eyebrow"><span className="eyebrow-line" />BoomoTech shop preview</p>
           <h1>Technology selected around how you work.</h1>
-          <p>Explore a sample catalogue designed around compatibility, setup and practical support. Product details, suppliers, availability and sales terms still require owner approval.</p>
+          <p>Explore a sample catalogue designed around compatibility, setup and practical support. Products are not offered for sale through this preview.</p>
         </div>
         <div className="shop-hero__art" aria-hidden="true"><Image alt="" fill priority sizes="(max-width: 760px) 90vw, 520px" src="/products/networking.svg" /></div>
       </div>

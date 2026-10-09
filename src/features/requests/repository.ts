@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, count, desc, eq, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { bookingRequest, bookingRequestEvent, bookingRequestMessage, notificationOutbox, user } from "@/db/schema";
+import { bookingRequest, bookingRequestEvent, bookingRequestMessage, notificationOutbox } from "@/db/schema";
 import type { RequestPriority, RequestStatus } from "./workflow";
 import { canTransitionRequest } from "./workflow";
 
@@ -41,6 +41,21 @@ const adminRequestProjection = {
   internalNotes: bookingRequest.internalNotes,
 };
 
+const customerRequestProjection = {
+  id: bookingRequest.id,
+  reference: bookingRequest.reference,
+  userId: bookingRequest.userId,
+  servicePath: bookingRequest.servicePath,
+  message: bookingRequest.message,
+  status: bookingRequest.status,
+  readAt: bookingRequest.readAt,
+  resolvedAt: bookingRequest.resolvedAt,
+  withdrawnAt: bookingRequest.withdrawnAt,
+  createdAt: bookingRequest.createdAt,
+  updatedAt: bookingRequest.updatedAt,
+  version: bookingRequest.version,
+};
+
 function statusOf(value: string) { return value as RequestStatus; }
 function priorityOf(value: string) { return value as RequestPriority; }
 
@@ -64,26 +79,27 @@ function selectMessages(requestIds: string[]) {
     .orderBy(asc(bookingRequestMessage.createdAt), asc(bookingRequestMessage.id));
 }
 
-export async function listCustomerRequests(userId: string) {
-  const records = await db.select(requestProjection).from(bookingRequest)
+export async function listCustomerRequests(userId: string, page = 1) {
+  const [{ total }] = await db.select({ total: count() }).from(bookingRequest).where(eq(bookingRequest.userId, userId));
+  const records = await db.select(customerRequestProjection).from(bookingRequest)
     .where(eq(bookingRequest.userId, userId))
     .orderBy(desc(bookingRequest.updatedAt), desc(bookingRequest.id))
-    .limit(CUSTOMER_REQUEST_PAGE_SIZE);
+    .limit(CUSTOMER_REQUEST_PAGE_SIZE)
+    .offset((page - 1) * CUSTOMER_REQUEST_PAGE_SIZE);
   const messages = await messagesFor(records.map(({ id }) => id));
-  return records.map((record) => ({
+  return { records: records.map((record) => ({
     ...record,
     status: statusOf(record.status),
-    priority: priorityOf(record.priority),
     messages: messages.get(record.id) ?? [],
-  }));
+  })), total, totalPages: Math.max(1, Math.ceil(total / CUSTOMER_REQUEST_PAGE_SIZE)) };
 }
 
 export async function getCustomerRequest(reference: string, userId: string) {
-  const [record] = await db.select(requestProjection).from(bookingRequest)
+  const [record] = await db.select(customerRequestProjection).from(bookingRequest)
     .where(and(eq(bookingRequest.reference, reference), eq(bookingRequest.userId, userId))).limit(1);
   if (!record) throw new RequestWorkflowError("not-found");
   const messages = await selectMessages([record.id]);
-  return { ...record, status: statusOf(record.status), priority: priorityOf(record.priority), messages };
+  return { ...record, status: statusOf(record.status), messages };
 }
 
 export async function editCustomerRequest(reference: string, userId: string, description: string) {
@@ -191,6 +207,12 @@ export async function listAdminRequests(filters: AdminFilters) {
   };
 }
 
+export async function getAdminRequestSummary() {
+  const rows = await db.select({ status: bookingRequest.status, total: count() }).from(bookingRequest).groupBy(bookingRequest.status);
+  const values = new Map(rows.map((row) => [row.status, row.total]));
+  return { NEW: values.get("NEW") ?? 0, IN_PROGRESS: values.get("IN_PROGRESS") ?? 0, AWAITING_USER: values.get("AWAITING_USER") ?? 0, RESOLVED: values.get("RESOLVED") ?? 0 };
+}
+
 export async function getAdminRequest(reference: string) {
   const [record] = await db.select(adminRequestProjection).from(bookingRequest).where(eq(bookingRequest.reference, reference)).limit(1);
   if (!record) throw new RequestWorkflowError("not-found");
@@ -284,10 +306,7 @@ export async function addAdminMessage(reference: string, adminUserId: string, bo
     const messageId = randomUUID();
     await transaction.insert(bookingRequestMessage).values({ id: messageId, bookingRequestId: record.id, authorUserId: adminUserId, authorRole: "admin", body });
     await transaction.insert(bookingRequestEvent).values({ id: randomUUID(), bookingRequestId: record.id, actorUserId: adminUserId, actorRole: "admin", eventType: "ADMIN_REPLIED", fromStatus: current, toStatus: nextStatus });
-    if (record.userId) {
-      const [customer] = await transaction.select({ emailVerified: user.emailVerified }).from(user).where(eq(user.id, record.userId)).limit(1);
-      if (customer?.emailVerified) await transaction.insert(notificationOutbox).values({ id: randomUUID(), bookingId: record.id, requestMessageId: messageId, kind: resolve ? "REQUEST_RESOLVED" : "REQUEST_ADMIN_REPLY", dedupeKey: `${messageId}:${resolve ? "REQUEST_RESOLVED" : "REQUEST_ADMIN_REPLY"}` });
-    }
+    await transaction.insert(notificationOutbox).values({ id: randomUUID(), bookingId: record.id, requestMessageId: messageId, kind: resolve ? "REQUEST_RESOLVED" : "REQUEST_ADMIN_REPLY", dedupeKey: `${messageId}:${resolve ? "REQUEST_RESOLVED" : "REQUEST_ADMIN_REPLY"}` });
     return { reference, messageId, status: nextStatus };
   });
 }

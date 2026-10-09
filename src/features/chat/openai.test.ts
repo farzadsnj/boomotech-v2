@@ -1,10 +1,12 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatConfigurationError, generateChatResponse, getChatModel } from "./openai";
 
 describe("OpenAI chat adapter", () => {
+  beforeEach(() => { process.env.OPENAI_CHAT_ENABLED = "true"; });
   afterEach(() => {
     delete process.env.OPENAI_API_KEY;
     delete process.env.OPENAI_CHAT_MODEL;
+    delete process.env.OPENAI_CHAT_ENABLED;
   });
 
   it("requires a server-side API key when no client is injected", async () => {

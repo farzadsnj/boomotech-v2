@@ -47,6 +47,11 @@ export function validateProductionEnvironment(environment: Record<string, string
   for (const name of ["RESEND_API_KEY", "AUTH_FROM_EMAIL", "BOOKING_NOTIFICATION_EMAIL", "BOOKING_FROM_EMAIL"]) {
     requireValue(name, environment);
   }
+  for (const name of ["OPENAI_CHAT_ENABLED", "SHOP_ENABLED"]) {
+    const value = environment[name]?.trim().toLowerCase();
+    if (value && value !== "true" && value !== "false") throw new ApplicationConfigurationError(`Production configuration error: ${name} must be true or false.`);
+  }
+  if (environment.OPENAI_CHAT_ENABLED?.trim().toLowerCase() === "true") requireValue("OPENAI_API_KEY", environment);
   if (environment.ADMIN_TEMP_PASSWORD?.trim()) {
     throw new ApplicationConfigurationError("Production configuration error: remove ADMIN_TEMP_PASSWORD after the administrator bootstrap completes.");
   }

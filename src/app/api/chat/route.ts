@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { chatRequestSchema } from "@/features/chat/chat-schema";
 import { ChatConfigurationError, ChatProviderError, generateChatResponse } from "@/features/chat/openai";
 import { getChatClientKey, getChatRateLimiter, RateLimitConfigurationError } from "@/features/chat/rate-limiter";
+import { isAiChatEnabled } from "@/lib/config/features";
 
 const MAX_BODY_BYTES = 16_000;
 class BodyTooLargeError extends Error {}
@@ -43,6 +44,7 @@ async function readRequestBody(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (!isAiChatEnabled()) return NextResponse.json({ error: "AI chat is currently unavailable. Browse services or request a consultation." }, { status: 503 });
   const origin = request.headers.get("origin");
   if (!origin || origin !== approvedOrigin(request)) {
     return NextResponse.json({ error: "This request did not come from the approved website." }, { status: 403 });

@@ -59,6 +59,14 @@ describe("server operations scripts", () => {
     expect(script).toContain("BOOMOTECH_DISK_CRITICAL_PERCENT:-90");
     expect(script).toContain('psql "$DATABASE_URL"');
     expect(script).toContain('section "Security posture"');
+    expect(script).toContain('section "Notification outbox"');
+    expect(script).toContain('section "Notification worker"');
+    expect(script).toContain("systemctl is-enabled boomotech-notification-worker.timer");
+    expect(script).toContain("systemctl is-active boomotech-notification-worker.timer");
+    expect(script).toContain("systemctl show boomotech-notification-worker.service --property=Result --value");
+    expect(script).toContain("Notification worker timer is not ready");
+    for (const aggregate of ["outbox_pending", "outbox_retrying", "outbox_failed", "outbox_oldest_minutes"]) expect(script).toContain(aggregate);
+    for (const personalField of ["full_name", "email", "message", "phone"]) expect(script).not.toContain(`SELECT ${personalField}`);
   });
 
   it("keeps the deployment safety steps in the required order", () => {
@@ -108,5 +116,53 @@ describe("server operations scripts", () => {
     expect(monitorTimer).toContain("OnCalendar=*-*-* 06:15:00 Australia/Brisbane");
     expect(backupTimer).toContain("Persistent=true");
     expect(monitorTimer).toContain("Persistent=true");
+  });
+
+  it("installs a hardened notification timer without processing notifications by default", () => {
+    const service = read("scripts/server/systemd/boomotech-notification-worker.service");
+    const timer = read("scripts/server/systemd/boomotech-notification-worker.timer");
+    const installer = read("scripts/server/install-notification-worker.sh");
+    const logrotate = read("scripts/server/logrotate-boomotech");
+    expect(service).toContain("Type=oneshot");
+    expect(service).toContain("EnvironmentFile=/var/www/boomotech/.env.production");
+    expect(service).toContain("Environment=PATH=/usr/local/bin:/usr/bin:/bin");
+    expect(service).toContain("ExecStartPre=/usr/bin/env pnpm notifications:check");
+    expect(service).toContain("TimeoutStartSec=90");
+    expect(service).toContain("NoNewPrivileges=true");
+    expect(timer).toContain("OnUnitActiveSec=2min");
+    expect(timer).toContain("Persistent=true");
+    expect(installer).toContain("ENABLE_NOW=false");
+    expect(installer).toContain("--enable-now) ENABLE_NOW=true");
+    expect(installer).toContain('if [[ "$ENABLE_NOW" == true ]]');
+    expect(installer).toContain("systemctl disable --now boomotech-notification-worker.timer");
+    expect(installer).toContain("systemctl enable --now boomotech-notification-worker.timer");
+    expect(installer).not.toContain("systemctl start boomotech-notification-worker.service");
+    expect(installer).toContain("run_as_service_user node --version");
+    expect(installer).toContain("run_as_service_user pnpm --version");
+    expect(installer).toContain("pnpm notifications:check");
+    expect(logrotate).toContain("/var/log/boomotech-backup/*.log");
+    expect(logrotate).toContain("/var/log/boomotech-monitor/*.log");
+    expect(logrotate).toContain("/var/log/boomotech-deploy/*.log");
+    expect(logrotate).toContain("compress");
+    expect(logrotate).toContain("create 0640 boomotechhost boomotechhost");
+  });
+
+  it("provides a no-delivery notification configuration and schema preflight", () => {
+    const packageJson = read("package.json");
+    const preflight = read("scripts/check-notification-worker.ts");
+    expect(packageJson).toContain('"notifications:check": "tsx scripts/check-notification-worker.ts"');
+    expect(preflight.indexOf("validateNotificationWorkerEnvironment()")).toBeLessThan(preflight.indexOf('import("../src/db")'));
+    expect(preflight).toContain("validateNotificationWorkerDatabaseEnvironment()");
+    expect(preflight).toContain("from notification_outbox");
+    expect(preflight).toContain("processing_started_at");
+    expect(preflight).not.toContain("sendEmailWithResend");
+  });
+
+  it("keeps application maintenance dry-run by default and preserves business records", () => {
+    const script = read("scripts/maintain-application-data.ts");
+    expect(script).toContain('process.argv.includes("--apply")');
+    for (const retained of ["booking_request", "booking_request_message", "booking_request_event"]) {
+      expect(script).not.toMatch(new RegExp(`DELETE FROM ${retained}(?:\\s|$)`, "i"));
+    }
   });
 });

@@ -93,6 +93,29 @@ test("service categories preselect an approved service", async ({ page }) => {
   await fillContact(page); await expect(page.getByLabel(/Service required/)).toHaveValue("/services/network-wifi");
 });
 
+test("disabled AI and shop features stay out of the public journey", async ({ page, request }) => {
+  await page.goto("/");
+  await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Shop" })).toHaveCount(0);
+  await expect(page.locator("footer").getByRole("link", { name: "Shop" })).toHaveCount(0);
+  await expect(page.locator("footer")).not.toContainText(/owner approval|content pending|terms draft/i);
+  await page.getByRole("button", { name: "Chat with BoomoTech" }).click();
+  await expect(page.getByRole("button", { name: "Ask a service question" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Not sure/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Explore our services" }).click();
+  await expect(page.getByRole("button", { name: "Fix an IT problem" })).toBeVisible();
+  const response = await request.post("/api/chat", { data: { message: "Help with Wi-Fi", history: [] } });
+  expect(response.status()).toBe(503);
+  expect(await response.json()).toMatchObject({ error: expect.stringMatching(/unavailable/i) });
+});
+
+test("contact presents the secure request as the official contact path", async ({ page }) => {
+  await page.goto("/contact");
+  const cta = page.getByRole("link", { name: /request|consultation|booking/i }).last();
+  await expect(cta).toHaveAttribute("href", "/booking");
+  await expect(page.getByText(/does not confirm an appointment/i).first()).toBeVisible();
+  await expect(page.getByText(/passwords|MFA codes|recovery keys/i).first()).toBeVisible();
+});
+
 test("booking field errors are specific and focus the first invalid field", async ({ page }) => {
   await page.goto("/booking"); await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.getByLabel(/Full name/)).toBeFocused(); await expect(page.getByText("Enter your full name.")).toBeVisible();
@@ -117,6 +140,27 @@ test("booking delivery succeeds only after the API accepts it", async ({ page })
   await page.route("**/api/booking", (route) => route.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true}' }));
   await page.goto("/booking"); await reachReview(page); await page.getByRole("button", { name: "Send booking request" }).click();
   await expect(page.getByRole("heading", { name: "Request received" })).toBeVisible(); await expect(page.getByRole("link", { name: "Return home" })).toBeVisible();
+});
+
+test("a guest request is stored and an administrator can respond without a guest account", async ({ page }) => {
+  await page.goto("/booking");
+  await reachReview(page);
+  await page.getByRole("button", { name: "Send booking request" }).click();
+  await expect(page.getByRole("heading", { name: "Request received" })).toBeVisible();
+  const referenceText = await page.getByText(/BT-[A-F0-9]{10}/).textContent();
+  const reference = referenceText?.match(/BT-[A-F0-9]{10}/)?.[0];
+  expect(reference).toBeTruthy();
+
+  await page.goto("/admin/login");
+  await page.getByLabel("Administrator username").fill("farzadsnj");
+  await page.locator('input[name="password"]').fill("SyntheticAdminPassword9");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/admin$/);
+  await page.goto(`/admin/requests/${reference}`);
+  await page.getByLabel("Response to customer").fill("Thank you. We have reviewed the request and will use the supplied details to discuss the next step.");
+  await page.getByRole("button", { name: "Send response", exact: true }).click();
+  await expect(page.getByText("Response sent")).toBeVisible();
+  await expect(page.getByText(/guest|no account/i).first()).toBeVisible();
 });
 
 test("delivery failure preserves data and can be retried", async ({ page }) => {
@@ -166,7 +210,7 @@ test("blog articles expose canonical, Open Graph, updated and structured metadat
   for (const href of links) {
     expect((await request.get(href)).status()).toBe(200); await page.goto(href);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", new RegExp(`${href}$`)); await expect(page.locator('meta[property="og:image"]')).toHaveCount(1); await expect(page.locator(".article-hero-image img")).toHaveAttribute("alt", /.+/);
-    const data = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent() ?? "[]") as Record<string, unknown>[];
+    const data = JSON.parse(await page.locator('.article-page script[type="application/ld+json"]').textContent() ?? "[]") as Record<string, unknown>[];
     expect(data[0]).toMatchObject({ "@type": "BlogPosting", publisher: { "@type": "Organization", name: "BoomoTech" } }); await expect(page.getByText(/Last updated/)).toBeVisible();
     for (const serviceHref of await page.locator('main a[href^="/services/"]').evaluateAll((nodes) => [...new Set(nodes.map((node) => (node as HTMLAnchorElement).getAttribute("href")!))])) expect((await request.get(serviceHref)).status()).toBe(200);
   }

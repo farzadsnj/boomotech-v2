@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useRef, useState } from "react";
 import { authClient } from "@/lib/auth/client";
 import { forgotPasswordSchema, resetPasswordSchema } from "@/lib/auth/schemas";
+import { PasswordInput, PasswordRequirements } from "./password-input";
 
 function fieldErrors(error: { issues: { path: PropertyKey[]; message: string }[] }) {
   return Object.fromEntries(error.issues.map((issue) => [String(issue.path[0]), issue.message]));
@@ -51,6 +52,8 @@ export function ResetPasswordForm({ token, invalid }: { token?: string; invalid?
   const [formError, setFormError] = useState(invalid || !token ? "This password-reset link is invalid or has expired. Request a new link." : "");
   const [pending, setPending] = useState(false);
   const [complete, setComplete] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -76,9 +79,9 @@ export function ResetPasswordForm({ token, invalid }: { token?: string; invalid?
   return <form className="auth-form" noValidate onSubmit={submit} ref={formRef}>
     {formError ? <p className="auth-form__error" role="alert">{formError}</p> : null}
     {token && !invalid ? <>
-      <p className="auth-form__hint">Use 12–128 characters with uppercase and lowercase letters and a number.</p>
-      <div className="auth-field"><label htmlFor="reset-password">New password <span aria-hidden="true">*</span></label><input aria-describedby={errors.password ? "reset-password-error" : undefined} aria-invalid={Boolean(errors.password)} autoComplete="new-password" id="reset-password" name="password" onChange={() => { setErrors({}); setFormError(""); }} required type="password" />{errors.password ? <p className="auth-field__error" id="reset-password-error">{errors.password}</p> : null}</div>
-      <div className="auth-field"><label htmlFor="reset-confirm-password">Confirm new password <span aria-hidden="true">*</span></label><input aria-describedby={errors.confirmPassword ? "reset-confirm-password-error" : undefined} aria-invalid={Boolean(errors.confirmPassword)} autoComplete="new-password" id="reset-confirm-password" name="confirmPassword" onChange={() => { setErrors({}); setFormError(""); }} required type="password" />{errors.confirmPassword ? <p className="auth-field__error" id="reset-confirm-password-error">{errors.confirmPassword}</p> : null}</div>
+      <div className="auth-field"><label htmlFor="reset-password">New password <span aria-hidden="true">*</span></label><PasswordInput autoComplete="new-password" error={errors.password} id="reset-password" name="password" onValue={(value) => { setPassword(value); setErrors({}); setFormError(""); }} />{errors.password ? <p className="auth-field__error" id="reset-password-error">{errors.password}</p> : null}</div>
+      <div className="auth-field"><label htmlFor="reset-confirm-password">Confirm new password <span aria-hidden="true">*</span></label><PasswordInput autoComplete="new-password" error={errors.confirmPassword} id="reset-confirm-password" name="confirmPassword" onValue={(value) => { setConfirmation(value); setErrors({}); setFormError(""); }} />{errors.confirmPassword ? <p className="auth-field__error" id="reset-confirm-password-error">{errors.confirmPassword}</p> : null}</div>
+      <PasswordRequirements confirmation={confirmation} password={password} />
       <button className="auth-submit" disabled={pending} type="submit">{pending ? "Updating…" : "Set new password"}</button>
     </> : null}
     <p className="auth-form__alternate"><Link href="/forgot-password">Request a new reset link</Link></p>
