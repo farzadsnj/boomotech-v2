@@ -79,7 +79,7 @@ if has ss; then
   if grep -Eq '(0\.0\.0\.0|\[::\]|\*):3389([[:space:]]|$)' <<<"$listeners"; then fail "Port 3389 binding" "XRDP/RDP is listening on a wildcard interface.";
   elif grep -Eq ':3389([[:space:]]|$)' <<<"$listeners"; then warn "Port 3389 binding" "An RDP listener exists on a non-wildcard interface; confirm it is intentional and management-restricted.";
   else pass "Port 3389 binding" "No RDP listener was detected."; fi
-  public_other="$(awk '{address=$5; if (address ~ /^(0\.0\.0\.0|\[::\]|\*):/ && address !~ /:(22|3000|3389|5432)$/) print address}' <<<"$listeners" | sort -u | paste -sd, -)"
+  public_other="$(awk '$1 == "tcp" {address=$5; if (address ~ /^(0\.0\.0\.0|\[::\]|\*):/ && address !~ /:(22|3000|3389|5432)$/) print address}' <<<"$listeners" | sort -u | paste -sd, -)"
   if [[ -n "$public_other" ]]; then warn "Other public listeners" "Review wildcard listeners on ports: $(sed -E 's/.*:([0-9]+)$/\1/' <<<"${public_other//,/$'\n'}" | sort -un | paste -sd, -)."; else pass "Other public listeners" "No additional wildcard TCP listeners detected."; fi
 else fail "Socket audit" "ss is unavailable."; fi
 

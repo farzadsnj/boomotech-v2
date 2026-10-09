@@ -51,6 +51,9 @@ describe("server security hardening", () => {
     expect(installer).toContain("cp -a --");
     expect(installer).toContain("-m 0700");
     expect(installer).toContain("-exec chmod 0600");
+    expect(installer).toContain("chown -h root:root");
+    expect(installer).toContain('find /var/log/boomotech-backup /var/log/boomotech-monitor');
+    expect(installer).toContain('chmod 0640');
     expect(backup).toContain('chmod 600 "$database_final"');
     expect(backup).toContain('chmod 600 "$config_final"');
   });
@@ -85,6 +88,9 @@ describe("server security hardening", () => {
     expect(audit).toMatch(/22\|OpenSSH.*\\\(v6\\\).*ALLOW IN.*Anywhere/);
     const installer = read("scripts/server/install-security-hardening.sh");
     expect(installer).toContain('([[:space:]]+\\(v6\\))?[[:space:]]+ALLOW IN[[:space:]]+Anywhere');
+    expect(installer).toContain("'(Nginx Full|80/tcp|443/tcp)'");
+    expect(installer).toContain("'3389/tcp'");
+    expect(audit).toContain('$1 == "tcp"');
   });
 
   it("handles safe symlinks and alternate approved time services without false failures", () => {
