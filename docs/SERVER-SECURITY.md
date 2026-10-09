@@ -278,7 +278,7 @@ sudo systemctl show boomotech.service -p User -p Group
 sudo systemd-analyze security boomotech.service
 ```
 
-The drop-in protects the host while keeping the Next.js cache writable. `MemoryDenyWriteExecute` is intentionally absent because Node/V8 compatibility has not been proven.
+The drop-in protects the host while keeping the Next.js cache writable. It runs the project-local Next.js binary directly with `/usr/bin/node` instead of starting through pnpm/Corepack, so `ProtectHome=true` does not require writable package-manager state under the service user's home. `MemoryDenyWriteExecute` is intentionally absent because Node/V8 compatibility has not been proven.
 
 ```bash
 sudo ./scripts/server/install-security-hardening.sh --install-systemd-drop-in
