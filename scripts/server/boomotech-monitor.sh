@@ -43,7 +43,11 @@ section "Disk"
 mounts=(/)
 for path in /var /var/www /var/backups; do [[ -e "$path" ]] && mounts+=("$path"); done
 while read -r filesystem _ _ available percent mountpoint; do
-  [[ "$percent" == "Use%" ]] && continue
+  [[ "$filesystem" == "Filesystem" ]] && continue
+  if [[ ! "$percent" =~ ^[0-9]+%$ ]]; then
+    warn "Skipping unexpected df row for $filesystem because capacity value '$percent' is not a percentage."
+    continue
+  fi
   usage="${percent%%%}"
   log "$mountpoint on $filesystem: $percent used, ${available} KiB available"
   if (( usage >= DISK_CRITICAL_PERCENT )); then critical "Disk usage for $mountpoint is $percent.";
