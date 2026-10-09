@@ -142,6 +142,16 @@ backup_file() {
   destination="${backup_dir}/${relative}"
   install -d -o root -g root -m 0700 "$(dirname -- "$destination")"
   cp -a -- "$source" "$destination"
+  if [[ -d "$destination" && ! -L "$destination" ]]; then
+    find "$destination" -xdev -type d -exec chown root:root {} + -exec chmod 0700 {} +
+    find "$destination" -xdev -type f -exec chown root:root {} + -exec chmod 0600 {} +
+    find "$destination" -xdev -type l -exec chown -h root:root {} +
+  elif [[ -f "$destination" ]]; then
+    chown root:root "$destination"
+    chmod 0600 "$destination"
+  elif [[ -L "$destination" ]]; then
+    chown -h root:root "$destination"
+  fi
   log "Backed up $source"
 }
 
@@ -193,6 +203,8 @@ if [[ "$apply_permissions" == true ]]; then
   find /var/backups/boomotech -xdev -type f -exec chmod 0600 {} +
   install -d -o root -g "$APP_GROUP" -m 0750 /var/log/boomotech-backup /var/log/boomotech-monitor
   install -d -o "$APP_USER" -g "$APP_GROUP" -m 0750 /var/log/boomotech-deploy
+  find /var/log/boomotech-backup /var/log/boomotech-monitor -xdev -type f -exec chown root:"$APP_GROUP" {} + -exec chmod 0640 {} +
+  find /var/log/boomotech-deploy -xdev -type f -exec chown "$APP_USER:$APP_GROUP" {} + -exec chmod 0640 {} +
   log "Applied least-access permissions to approved environment, SSH, backup and log paths."
 fi
 
@@ -279,7 +291,7 @@ if [[ "$apply_firewall" == true ]]; then
   ufw default deny incoming
   ufw default allow outgoing
   ufw allow from "$SSH_ALLOW_CIDR" to any port 22 proto tcp comment 'BoomoTech management SSH'
-  for destination_pattern in '(OpenSSH|22/tcp)' '80/tcp' '443/tcp' '3000/tcp' '5432/tcp'; do
+  for destination_pattern in '(OpenSSH|22/tcp)' '(Nginx Full|80/tcp|443/tcp)' '3000/tcp' '3389/tcp' '5432/tcp'; do
     mapfile -t public_rule_numbers < <(ufw status numbered | grep -E "${destination_pattern}([[:space:]]+\(v6\))?[[:space:]]+ALLOW IN[[:space:]]+Anywhere([[:space:]]+\(v6\))?([[:space:]]|$)" | sed -nE 's/^\[[[:space:]]*([0-9]+)\].*/\1/p' | sort -rn)
     for rule_number in "${public_rule_numbers[@]}"; do
       ufw --force delete "$rule_number"
