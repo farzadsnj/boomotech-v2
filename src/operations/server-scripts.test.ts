@@ -57,6 +57,8 @@ describe("server operations scripts", () => {
     }
     expect(script).toContain("BOOMOTECH_DISK_WARNING_PERCENT:-80");
     expect(script).toContain("BOOMOTECH_DISK_CRITICAL_PERCENT:-90");
+    expect(script).toContain('[[ "$filesystem" == "Filesystem" ]] && continue');
+    expect(script).toContain('[[ ! "$percent" =~ ^[0-9]+%$ ]]');
     expect(script).toContain('psql "$DATABASE_URL"');
     expect(script).toContain('section "Security posture"');
     expect(script).toContain('section "Notification outbox"');
