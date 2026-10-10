@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Suspense } from "react";
 import { ArrowIcon } from "@/components/ui/arrow-icon";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Reveal } from "@/components/motion/reveal";
@@ -12,6 +13,10 @@ import { FaqList } from "./faq-list";
 import { Notice } from "./notice";
 import { ProcessSteps } from "./process-steps";
 import { RelatedLinks } from "./related-links";
+import { ServiceQuestions } from "./service-questions";
+import { SupportRequestForm } from "@/features/booking/support-request-form";
+import { FounderProfile } from "./founder-profile";
+import { getSiteUrl } from "@/lib/site-url";
 
 function Hero({ page, detail }: { page: PageRecord; detail?: string }) {
   const visual = "visual" in page ? page.visual : null;
@@ -56,6 +61,7 @@ function ServicePage({ page }: { page: ServiceRecord }) {
   return <div className={`service-detail service-detail--${group?.accent ?? "sky"}`}><Hero detail={page.audience} page={page} />
     <section className="service-context"><div className="container"><span>{group?.label ?? "Service"}</span><p>{group?.heading}</p><Link href="/services">Compare all services <ArrowIcon diagonal /></Link></div></section>
     <Section eyebrow="WHEN THIS MAY HELP" title="Recognise the friction"><BulletGrid items={page.signals} /></Section>
+    <ServiceQuestions servicePath={page.path} />
     <Section eyebrow="POSSIBLE INCLUSIONS" title="A scope shaped around the need" muted><BulletGrid items={page.inclusions} /><div className="delivery-note"><h3>Delivery approach</h3><p>{page.delivery}</p></div></Section>
     <Section eyebrow="PRACTICAL OUTCOMES" title="What the work may improve"><BulletGrid items={page.outcomes} /></Section>
     <Section eyebrow="A SIMPLE PROCESS" title="Clear stages, visible decisions" muted><ProcessSteps steps={page.process} /></Section>
@@ -82,23 +88,28 @@ function HubPageView({ page }: { page: HubPage }) {
 }
 
 function InfoPageView({ page }: { page: InfoPage }) {
+  const founderSection = page.path === "/about" ? page.sections?.find(({ title }) => title === "Meet the founder") : undefined;
+  const sections = page.path === "/about" ? page.sections?.filter(({ title }) => title !== "Meet the founder") : page.sections;
   return <><Hero page={page} />
     {page.path === "/about" ? <section className="about-story"><div className="container about-story__grid"><div><p className="eyebrow"><span className="eyebrow-line" />WHY BOOMOTECH</p><h2>Technical capability should make the next decision clearer.</h2><p>BoomoTech connects hands-on problem solving with thoughtful systems work. The goal is to understand what matters, explain the trade-offs and build a practical path forward.</p></div><div className="about-story__visual" aria-hidden="true"><span>Listen</span><span>Clarify</span><span>Build</span><i>BT</i></div></div></section> : null}
+    {founderSection?.description ? <FounderProfile description={founderSection.description} /> : null}
     {page.notice ? <div className="container notice-wrap"><Notice {...page.notice} /></div> : null}
     {page.resources?.length ? <Resources page={page} /> : null}
     {page.cards?.length ? <Section eyebrow="AT A GLANCE" title="Choose a useful starting point"><CardGrid items={page.cards} /></Section> : null}
-    {page.sections?.map((section, index) => <Section eyebrow={`${String(index + 1).padStart(2, "0")} / GUIDANCE`} key={section.title} muted={index % 2 === 0} title={section.title}>
+    {sections?.map((section, index) => <Section eyebrow={`${String(index + 1).padStart(2, "0")} / GUIDANCE`} key={section.title} muted={index % 2 === 0} title={section.title}>
       {section.description ? <p className="prose-lead">{section.description}</p> : null}{section.items ? <BulletGrid items={section.items} /> : null}
     </Section>)}
+    {page.path === "/support" ? <section className="support-request" id="request-support"><div className="container support-request__grid"><div className="support-request__intro"><p className="eyebrow"><span className="eyebrow-line" />REQUEST SUPPORT</p><h2>Tell us what is happening.</h2><p>Share a safe summary for review. Sending this request does not confirm an appointment, service availability or a response time.</p><p className="support-request__safety"><strong>Keep secrets out of the form.</strong> Do not include passwords, MFA codes, recovery keys, payment-card details or confidential customer information.</p></div><div className="support-request__form"><Suspense fallback={<p>Loading request form…</p>}><SupportRequestForm /></Suspense></div></div></section> : null}
     {page.process?.length ? <Section eyebrow="HOW TO PREPARE" title="Build a useful brief" muted><ProcessSteps steps={page.process} /></Section> : null}
     {page.faqs?.length ? <Section eyebrow="QUESTIONS" title="Useful answers"><FaqList items={page.faqs} /></Section> : null}
     {page.related?.length ? <Section eyebrow="CONTINUE EXPLORING" title="Related information" muted><RelatedLinks links={page.related} /></Section> : null}
-    {page.cta ? <ClosingCta description={page.cta.description} href={page.cta.href} label={page.cta.label} /> : page.kind !== "legal" ? <ClosingCta /> : null}
+    {page.path === "/support" ? null : page.cta ? <ClosingCta description={page.cta.description} href={page.cta.href} label={page.cta.label} /> : page.kind !== "legal" ? <ClosingCta /> : null}
   </>;
 }
 
 export function PageRenderer({ page }: { page: PageRecord }) {
-  const breadcrumbs = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Home", item: "/" }, ...page.path.split("/").filter(Boolean).map((part, index, parts) => ({ "@type": "ListItem", position: index + 2, name: index === parts.length - 1 ? page.title : part.replaceAll("-", " "), item: `/${parts.slice(0, index + 1).join("/")}` }))] };
+  const siteUrl = getSiteUrl();
+  const breadcrumbs = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Home", item: new URL("/", siteUrl).toString() }, ...page.path.split("/").filter(Boolean).map((part, index, parts) => ({ "@type": "ListItem", position: index + 2, name: index === parts.length - 1 ? page.title : part.replaceAll("-", " "), item: new URL(`/${parts.slice(0, index + 1).join("/")}`, siteUrl).toString() }))] };
   let content: React.ReactNode;
   switch (page.kind) {
     case "service": content = <ServicePage page={page} />; break;

@@ -6,6 +6,7 @@ import { BrandLogo } from "@/components/brand/brand-logo";
 import { ChatBookingButton } from "./chat-booking-button";
 import { MobileNavigation } from "./mobile-navigation";
 import { DesktopNavigation } from "./desktop-navigation";
+import { SearchDialog } from "@/features/search/search-dialog";
 
 function AccountIcon() {
   return <svg aria-hidden="true" className="account-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6" /></svg>;
@@ -24,7 +25,8 @@ export function SiteHeader({ shopEnabled = false }: { shopEnabled?: boolean }) {
       <div className="site-header__inner container">
         <BrandLogo />
         <DesktopNavigation />
-        <Link className="account-link" href="/login"><AccountIcon /><span className="account-link__label">Client portal</span></Link>
+        <SearchDialog />
+        <Link className="header-control account-link" href="/login"><AccountIcon /><span className="account-link__label">Client portal</span></Link>
         <ChatBookingButton />
         <MobileNavigation shopEnabled={shopEnabled} />
       </div>

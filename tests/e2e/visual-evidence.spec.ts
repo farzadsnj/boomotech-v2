@@ -18,13 +18,18 @@ async function prepareFullPage(page: import("@playwright/test").Page) {
 }
 
 test("capture final public-interface review evidence", async ({ page }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(240_000);
   await page.addInitScript(() => localStorage.setItem("boomotech-cookie-notice-seen", "yes"));
   await page.setViewportSize(desktop); await page.goto("/"); await prepareFullPage(page); await page.screenshot({ path: `${output}/home-desktop.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/header-desktop-1440.png` });
+  await page.setViewportSize({ width: 1024, height: 768 }); await page.goto("/"); await page.screenshot({ path: `${output}/header-desktop-1024.png` });
+  await page.setViewportSize(desktop); await page.goto("/");
+  await page.getByRole("button", { name: "Search BoomoTech" }).click(); await page.screenshot({ path: `${output}/search-open.png` }); const search = page.getByRole("searchbox", { name: "Search BoomoTech" }); await search.fill("network"); await page.screenshot({ path: `${output}/search-results.png` }); await search.fill("zyxwvutsrq"); await page.screenshot({ path: `${output}/search-no-results.png` }); await page.keyboard.press("Escape"); await expect(page.getByRole("dialog", { name: "What can we help you find?" })).not.toBeVisible(); await page.screenshot({ path: `${output}/search-closed.png` });
   await page.getByRole("button", { name: "Show services menu" }).click(); await page.screenshot({ path: `${output}/services-mega-menu-desktop.png` }); await page.keyboard.press("Escape");
   const visual = page.getByTestId("hero-visual"); const box = await visual.boundingBox(); await page.mouse.move(box!.x + box!.width * .8, box!.y + box!.height * .25); await page.waitForTimeout(350); await page.screenshot({ path: `${output}/home-hero-pointer.png` });
   await page.evaluate(() => window.scrollTo(0, 950)); await expect(page.locator(".site-header")).toHaveClass(/is-scrolled/); await page.screenshot({ path: `${output}/home-sticky-header-scroll-top.png` });
-  await page.setViewportSize(mobile); await page.goto("/"); await prepareFullPage(page); await page.screenshot({ path: `${output}/home-mobile.png`, fullPage: true }); await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await page.waitForTimeout(250); await page.screenshot({ path: `${output}/mobile-footer.png` }); await page.evaluate(() => window.scrollTo(0, 0));
+  await page.setViewportSize(mobile); await page.goto("/"); await prepareFullPage(page); await page.screenshot({ path: `${output}/home-mobile.png`, fullPage: true }); await page.locator(".site-header, .chatbot-shell, .scroll-top").evaluateAll((nodes) => nodes.forEach((node) => ((node as HTMLElement).style.display = "none"))); await page.locator(".site-footer").screenshot({ path: `${output}/mobile-footer.png` }); await page.goto("/"); await page.evaluate(() => window.scrollTo(0, 0));
+  await page.locator("summary[aria-label='Toggle navigation']").click(); await page.getByRole("button", { name: "Search" }).click(); await page.screenshot({ path: `${output}/search-mobile.png` }); await page.keyboard.press("Escape");
   await page.evaluate(() => sessionStorage.removeItem("boomotech-welcome-seen")); await page.reload(); await expect(page.getByText(/Need help choosing a service/)).toBeVisible({ timeout: 4_000 }); await page.screenshot({ path: `${output}/chat-welcome-mobile.png` });
   await page.getByRole("button", { name: "Chat with BoomoTech" }).click(); await page.screenshot({ path: `${output}/chat-open-mobile.png` }); await page.keyboard.press("Escape");
 
@@ -33,12 +38,14 @@ test("capture final public-interface review evidence", async ({ page }) => {
     await page.setViewportSize(mobile); await page.goto(`/${route}`); await prepareFullPage(page); await page.screenshot({ path: `${output}/${route}-mobile.png`, fullPage: true });
   }
 
-  await page.setViewportSize(desktop); await page.goto("/services/cybersecurity"); await prepareFullPage(page); await page.screenshot({ path: `${output}/service-cybersecurity-desktop.png`, fullPage: true });
+  for (const slug of ["it-support", "network-wifi", "cybersecurity"]) { await page.setViewportSize(desktop); await page.goto(`/services/${slug}`); await prepareFullPage(page); await page.screenshot({ path: `${output}/service-${slug}-desktop.png`, fullPage: true }); }
+  await page.goto("/services/network-wifi"); const mini = page.locator(".service-questions"); for (const fieldset of await mini.locator("fieldset").all()) await fieldset.getByRole("radio").first().check(); await mini.screenshot({ path: `${output}/service-mini-result.png` });
   await page.goto("/solutions/small-business"); await prepareFullPage(page); await page.screenshot({ path: `${output}/solution-small-business-desktop.png`, fullPage: true });
   await page.goto("/tools/it-health-check"); await prepareFullPage(page); await page.screenshot({ path: `${output}/it-health-check-desktop.png`, fullPage: true });
   await page.setViewportSize(mobile); await page.goto("/tools/it-health-check"); await page.screenshot({ path: `${output}/it-health-check-mobile.png`, fullPage: true });
+  for (let index = 0; index < 6; index += 1) await page.getByRole("button", { name: "Partly or not consistently" }).click(); await page.screenshot({ path: `${output}/it-health-check-result-mobile.png`, fullPage: true });
 
-  await page.setViewportSize(desktop); await page.goto("/support"); await prepareFullPage(page); await page.getByText("What should I never share?").click(); await page.screenshot({ path: `${output}/support-faq.png`, fullPage: true });
+  await page.setViewportSize(desktop); await page.goto("/support"); await prepareFullPage(page); await page.getByText("What should I never share?").click(); await page.screenshot({ path: `${output}/support-faq.png`, fullPage: true }); await page.locator("#request-support").screenshot({ path: `${output}/support-form.png` });
   await page.goto("/contact"); await prepareFullPage(page); await page.screenshot({ path: `${output}/contact-desktop.png`, fullPage: true });
   await page.goto("/booking"); await prepareFullPage(page); await page.screenshot({ path: `${output}/booking-desktop.png`, fullPage: true });
   await page.goto("/login"); await prepareFullPage(page); await page.screenshot({ path: `${output}/login-desktop.png`, fullPage: true });

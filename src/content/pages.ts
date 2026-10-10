@@ -12,7 +12,6 @@ export const infoPages: InfoPage[] = [
     kind: "support", path: "/support", eyebrow: "Support", title: "Choose the right support starting point",
     description: "Start with what is affected, then use the safest path for an IT problem, account issue, device, network, backup or security concern.",
     metaDescription: "Choose a safe BoomoTech support pathway for IT, Microsoft 365, devices, networks, backups and security concerns.",
-    notice: { tone: "safety", title: "Keep sensitive information private", body: "Never send passwords, MFA codes, recovery keys, full payment-card details or confidential customer information. A booking request starts a conversation; it is not an emergency channel, support ticket, guaranteed response or confirmed appointment." },
     cards: [
       { title: "General IT problem", description: "Start with device, printer, software or recurring day-to-day issues.", href: "/services/it-support", action: "Explore IT support" },
       { title: "Microsoft 365 or account", description: "Review account access, email, collaboration and administration needs.", href: "/services/microsoft-365", action: "Explore Microsoft 365" },
@@ -52,9 +51,8 @@ export const infoPages: InfoPage[] = [
 
   info({
     kind: "resource", path: "/resources", eyebrow: "Practical resources", title: "Prepare well and choose a clearer next step", description: "Use concise checklists and reviewed articles to describe a problem, reduce common risks and plan a useful technology conversation.", metaDescription: "Practical BoomoTech checklists and guides for IT support, Wi-Fi, Microsoft 365, backups, cybersecurity, websites and technology buying.",
-    notice: { tone: "info", title: "Guidance with clear limits", body: "These resources support preparation and general education. They do not replace situation-specific technical, security or legal advice." },
     resources: [
-      { featured: true, topic: "Small-business IT", format: "Interactive tool", readTime: "5 min", title: "Free IT Health Check", description: "Answer ten practical questions to identify useful priorities across support, security, systems and continuity.", href: "/tools/it-health-check", relatedService: "IT support", action: "Start the health check" },
+      { featured: true, topic: "Small-business IT", format: "Interactive tool", readTime: "4 min", title: "Free IT Health Check", description: "Answer six practical questions to identify useful priorities across support, security, systems and continuity.", href: "/tools/it-health-check", relatedService: "IT support", action: "Start the health check" },
       { topic: "Support", format: "Checklist", readTime: "3 min read", title: "IT support request checklist", description: "Collect safe details about the issue, its impact and the affected setup before requesting help.", href: "/support", relatedService: "IT support", action: "Prepare a request" },
       { topic: "Support safety", format: "Checklist", readTime: "3 min read", title: "Remote support safety checklist", description: "Know what to verify, what never to share and how to keep control of a remote session.", href: "/support/safety", relatedService: "IT support", action: "Review safety" },
       { topic: "Connectivity", format: "Guide", readTime: "7 min read", title: "Wi-Fi problem preparation guide", description: "Map weak areas, affected devices and likely interference before changing equipment.", href: "/blog/improve-small-business-wifi-network", relatedService: "Network and Wi-Fi", action: "Read the guide" },

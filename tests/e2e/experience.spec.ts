@@ -65,7 +65,7 @@ test("visual catalogues, support resources and founder content are complete", as
   await page.goto("/support"); await expect(page.getByText("What should I never share?")).toBeVisible(); await expect(page.getByText("The exact safe error message")).toBeVisible();
   await page.goto("/resources"); const resourceLinks = page.locator(".resource-feature, .resource-card"); await expect(resourceLinks).toHaveCount(10);
   for (const href of await resourceLinks.evaluateAll((nodes) => nodes.map((node) => (node as HTMLAnchorElement).getAttribute("href")!))) expect((await request.get(href)).status()).toBe(200);
-  await page.goto("/about"); await expect(page.getByText("Farzad Sanjarani")).toBeVisible(); await expect(page.getByText(/Master of Information Technology in Software Development from QUT/)).toBeVisible();
+  await page.goto("/about"); await expect(page.getByRole("heading", { name: "Farzad Sanjarani" })).toBeVisible(); await expect(page.getByText(/Master of Information Technology in Software Development from QUT/)).toBeVisible();
 });
 
 test("header booking remains a functional fallback without JavaScript", async ({ browser }) => {
@@ -90,7 +90,7 @@ test("desktop services and resources menus expose grouped destinations", async (
   await page.goto("/");
   const servicesMenu = page.getByRole("button", { name: "Show services menu" }); await servicesMenu.focus(); await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Technology that supports what comes next." })).toBeVisible(); await expect(page.getByRole("link", { name: "Cybersecurity" }).first()).toBeVisible();
-  await page.keyboard.press("Escape"); await expect(page.getByRole("heading", { name: "Technology that supports what comes next." })).toHaveCount(0);
+  await page.keyboard.press("Escape"); await expect(page.getByRole("heading", { name: "Technology that supports what comes next." })).toHaveCount(0); await expect(servicesMenu).toBeFocused();
   await page.getByRole("button", { name: "Show resources menu" }).click(); await expect(page.getByRole("link", { name: /Free IT Health Check/ })).toBeVisible(); await expect(page.getByRole("link", { name: /Practical articles/ })).toBeVisible();
 });
 
@@ -108,7 +108,7 @@ test("disabled AI and shop features stay out of the public journey", async ({ pa
   await expect(page.locator("footer")).not.toContainText(/owner approval|content pending|terms draft/i);
   await page.getByRole("button", { name: "Chat with BoomoTech" }).click();
   await expect(page.getByRole("button", { name: "Ask a service question" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /Not sure/ })).toHaveCount(0);
+  await expect(page.getByRole("dialog").getByRole("button", { name: /Not sure/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Explore our services" }).click();
   await expect(page.getByRole("dialog").getByRole("button", { name: "Fix an IT problem", exact: true })).toBeVisible();
   const response = await request.post("/api/chat", { data: { message: "Help with Wi-Fi", history: [] } });
@@ -247,8 +247,42 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 375, height: 812 }
 
 test("service pathfinder and IT Health Check work without submitting personal data", async ({ page }) => {
   await page.goto("/"); const pathfinder = page.getByTestId("service-pathfinder"); await pathfinder.getByRole("button", { name: /Reduce risk/ }).click(); await expect(pathfinder.getByRole("heading", { name: /Protect access/ })).toBeVisible(); await expect(pathfinder.getByRole("link", { name: /Cybersecurity/ })).toBeVisible();
-  await page.goto("/tools/it-health-check"); for (let index = 0; index < 10; index += 1) await page.getByRole("button", { name: "Partly or not consistently" }).click();
-  await expect(page.getByRole("heading", { name: "A focused review could reduce friction" })).toBeVisible(); await expect(page.getByText(/not submitted or saved/i)).toBeVisible();
+  await pathfinder.getByRole("button", { name: /Not sure yet/ }).click(); await expect(pathfinder.getByRole("link", { name: "Support guidance" })).toBeVisible();
+  await page.goto("/tools/it-health-check"); for (let index = 0; index < 6; index += 1) await page.getByRole("button", { name: "Partly or not consistently" }).click();
+  await expect(page.getByRole("heading", { name: "A focused review could reduce friction" })).toBeVisible(); await expect(page.getByRole("heading", { name: "Your answers" })).toBeVisible(); await expect(page.getByRole("link", { name: "Get more assistance" })).toHaveAttribute("href", "/support#request-support"); await expect(page.getByText(/not submitted, saved/i)).toBeVisible();
+});
+
+test("site search is local, ranked and fully keyboard operable", async ({ page }) => {
+  await page.goto("/"); const trigger = page.getByRole("button", { name: "Search BoomoTech" }); await trigger.click();
+  const dialog = page.getByRole("dialog", { name: "What can we help you find?" }); await expect(dialog).toBeVisible();
+  const input = dialog.getByRole("searchbox", { name: "Search BoomoTech" }); await expect(input).toBeFocused(); await input.fill("network and wi-fi");
+  await expect(dialog.getByRole("link", { name: /Reliable connections/ }).first()).toBeVisible(); await page.keyboard.press("ArrowDown"); await page.keyboard.press("ArrowUp");
+  await input.fill("zyxwvutsrq"); await expect(dialog.getByRole("heading", { name: "Can’t find what you need?" })).toBeVisible(); await expect(dialog.getByRole("link", { name: "Ask for support" })).toHaveAttribute("href", "/support#request-support");
+  await page.keyboard.press("Escape"); await expect(dialog).not.toBeVisible(); await expect(trigger).toBeFocused();
+});
+
+test("support form safely accepts an approved service context", async ({ page }) => {
+  await page.goto("/services/network-wifi"); const questions = page.locator(".service-questions");
+  for (const fieldset of await questions.locator("fieldset").all()) await fieldset.getByRole("radio").first().check();
+  const supportLink = questions.getByRole("link", { name: "Request support" }); await expect(supportLink).toHaveAttribute("href", /\/support\?service=%2Fservices%2Fnetwork-wifi#request-support/); await supportLink.click();
+  await expect(page).toHaveURL(/\/support\?service=%2Fservices%2Fnetwork-wifi#request-support/); await expect(page.locator("#request-support")).toBeVisible();
+  await fillContact(page); await expect(page.getByLabel(/Service required/)).toHaveValue("/services/network-wifi");
+  await page.goto("/support?service=not-approved#request-support"); await fillContact(page); await expect(page.getByLabel(/Service required/)).toHaveValue("");
+});
+
+test("public breadcrumbs use absolute structured-data URLs", async ({ page }) => {
+  for (const path of ["/services/it-support", "/tools/it-health-check"]) {
+    await page.goto(path); const data = JSON.parse(await page.locator('main script[type="application/ld+json"]').first().textContent() ?? "{}") as { itemListElement?: { item: string }[] };
+    expect(data.itemListElement?.every(({ item }) => /^https?:\/\//.test(item))).toBe(true);
+  }
+});
+
+test("desktop header controls remain unified and unclipped at 1024 and 1440", async ({ page }) => {
+  for (const width of [1024, 1440]) {
+    await page.setViewportSize({ width, height: 800 }); await page.goto("/"); const header = page.locator(".site-header");
+    await expect(header.getByRole("button", { name: "Search BoomoTech" })).toBeVisible(); await expect(header.getByRole("link", { name: "Client portal" })).toBeVisible(); await expect(header.getByRole("link", { name: "Book a Consultation" })).toBeVisible();
+    expect(await header.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+  }
 });
 
 test("representative routes produce no unexpected console errors", async ({ page }) => {

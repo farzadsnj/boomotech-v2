@@ -13,6 +13,8 @@ Services are organised around four customer goals:
 
 The service catalogue remains the source of truth. Navigation, the homepage capability system and the services directory derive from that catalogue through `src/content/service-groups.ts`.
 
+Public search is a local, read-only index assembled from approved services, solutions, resources, published articles, FAQs and support information. It does not call an external search service, store queries or include account, administration, legal or disabled shop content. Service preparation questions also remain in browser memory only; their support link carries the approved service path and never carries the visitor's answers.
+
 ## Visual direction
 
 The redesign keeps the approved BoomoTech blue and ink palette while increasing contrast between editorial white space and deep navy technical surfaces. Layouts use structured grids, visible sequence numbers, restrained system diagrams and the real brand mark. Interaction movement is reserved for controls and linked cards and continues to respect reduced motion.
@@ -28,7 +30,10 @@ The redesign keeps the approved BoomoTech blue and ink palette while increasing 
 ## Phase 2 backlog
 
 - Publish approved case studies with client permission and reviewed outcomes.
-- Consider site search after the resource library is large enough to make search more useful than navigation.
+- Extend search filters only when the public resource library is large enough to justify additional controls.
 - Add a Brisbane service-area page only when the owner approves unique coverage, onsite and contact information.
 - Review professional photography or commissioned illustration when approved assets are available.
 - Review the conversion path using privacy-respecting aggregate evidence after an analytics approach is approved.
+## Founder portrait
+
+The About page includes a deliberately sized founder portrait slot. Until an approved photograph is supplied it renders a branded placeholder without layout shift. Add the approved image at `public/images/founder/farzad-sanjarani.jpg`, then set `founderProfile.image` in `src/content/founder.ts` to that path with a concise, meaningful alt description. Use a portrait crop with enough resolution for the rendered 4:5 frame and confirm usage rights before publishing.
