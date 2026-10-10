@@ -42,7 +42,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const aiEnabled = isAiChatEnabled();
   const shopEnabled = isShopEnabled();
-  const organisation = { "@context": "https://schema.org", "@type": "Organization", name: site.name, url: getSiteUrl().toString(), description: site.description, areaServed: "Australia" };
+  const organisation = { "@context": "https://schema.org", "@type": "Organization", name: site.name, url: getSiteUrl().toString(), logo: new URL("/brand/boomotech-logo.png", getSiteUrl()).toString(), description: site.description, areaServed: [{ "@type": "City", name: "Brisbane" }, { "@type": "Country", name: "Australia" }] };
   return (
     <html lang="en-AU" suppressHydrationWarning>
       <head>

@@ -25,9 +25,10 @@ describe("local Phase 1 content", () => {
     expect(paths.sort()).toEqual([...requiredPaths].sort());
     expect(intendedPublicRoutes).toContain("/");
     expect(intendedPublicRoutes).toContain("/services/it-support");
+    expect(intendedPublicRoutes).toContain("/tools/it-health-check");
     expect(intendedPublicRoutes).not.toContain("/privacy");
     expect(intendedPublicRoutes).not.toContain("/shop");
-    expect(intendedPublicRoutes).toHaveLength(1 + 2 + services.length + solutions.length + 6 + publishedArticles.length);
+    expect(intendedPublicRoutes).toHaveLength(1 + 2 + services.length + solutions.length + 7 + publishedArticles.length);
   });
 
   it("gives every service the required useful content", () => {
@@ -76,7 +77,7 @@ describe("local Phase 1 content", () => {
   });
 
   it("keeps homepage and navigation actions attached to known routes", () => {
-    const knownPaths = new Set(["/", "/booking", "/blog", "/shop", "/login", ...allPages.map(({ path }) => path)]);
+    const knownPaths = new Set(["/", "/booking", "/blog", "/shop", "/login", "/tools/it-health-check", ...allPages.map(({ path }) => path)]);
     const actionPaths = [homeContent.primaryAction.href, homeContent.secondaryAction.href,
       ...homeContent.pathways.map((pathway) => pathway.href),
       ...homeContent.serviceGroups.flatMap((group) => group.links.map((link) => link.href)),

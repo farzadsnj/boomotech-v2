@@ -4,14 +4,12 @@
 
 - Services
 - Solutions
-- Support
-- Shop
 - Resources
 - About
-- Blog
+- Support
 - Book a consultation
 
-Keep the header focused. Put secondary links, account access, policies, and detailed categories in menus or the footer.
+Blog and the IT Health Check sit under Resources. Detailed services sit in the Services mega menu. Client portal and booking are labelled utility actions. Shop stays behind `SHOP_ENABLED=false` until catalogue operations are approved.
 
 ## Route map
 
@@ -25,6 +23,7 @@ Keep the header focused. Put secondary links, account access, policies, and deta
 - `/book` — Consultation options and preparation guidance linking to `/booking`
 - `/shop` — Curated product catalogue
 - `/resources` — Blog, guides, FAQs and downloads
+- `/tools/it-health-check` — Local deterministic technology self-check
 - `/about`
 - `/contact`
 - `/get-a-quote`

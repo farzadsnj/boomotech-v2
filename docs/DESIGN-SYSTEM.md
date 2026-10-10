@@ -1,5 +1,7 @@
 # Design System Direction
 
+The professional redesign architecture, service taxonomy and trust decisions are recorded in `docs/PROFESSIONAL-REDESIGN.md`.
+
 ## Experience goal
 
 Modern, calm and credible—not a generic neon “AI company” and not a crowded repair-shop site. The interface should feel technically capable while remaining friendly to non-technical visitors.

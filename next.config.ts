@@ -10,6 +10,14 @@ const nextConfig: NextConfig = {
   agentRules: false,
   poweredByHeader: false,
   serverExternalPackages: ["@electric-sql/pglite"],
+  async redirects() {
+    return [
+      { source: "/it-support-helpdesk/", destination: "/services/it-support", permanent: true },
+      { source: "/services/social-media-development/", destination: "/services/digital-presence", permanent: true },
+      { source: "/services/digital-marketing/", destination: "/services/digital-presence", permanent: true },
+      { source: "/services/ui-ux-branding-identity/", destination: "/services/ui-ux-branding", permanent: true },
+    ];
+  },
   async headers() {
     const scriptSources = ["'self'", "'unsafe-inline'", ...(process.env.NODE_ENV === "development" ? ["'unsafe-eval'"] : [])];
     const contentSecurityPolicy = [
