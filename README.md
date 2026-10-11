@@ -1,10 +1,10 @@
 # BoomoTech V2
 
-BoomoTech V2 is the planned web platform for BoomoTech: practical IT support, cloud, cybersecurity, AI and automation, web/software services, consultation, service booking, educational content and curated commerce.
+BoomoTech V2 is the current web platform for BoomoTech: practical IT support, cloud, cybersecurity, automation, web/software services, consultation requests, educational content and future curated commerce.
 
-This repository contains the product brief and the Phase 0 / initial Phase 1 application foundation for BoomoTech V2.
+This repository contains the production application, customer/request backend, deployment tooling, server operations documentation and the active security-hardening work for BoomoTech V2.
 
-The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local typed content, reusable page layouts and progressive accessible motion. Phase 1 informational routes are available for review. The consultation form can securely email a booking request when its server configuration is complete. A sample product catalogue and PostgreSQL-backed customer account foundation are available for testing. Support tickets, confirmed appointments, product ordering and payments remain unavailable until their operational requirements are approved.
+The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local typed content, reusable page layouts and progressive accessible motion. The consultation/support request flow persists requests in PostgreSQL, provides customer/admin request conversations and uses a transactional Resend notification outbox. Verified customer accounts and the role-protected administrator workflow are implemented. Confirmed appointments, payments, public file uploads and real commerce remain unavailable until their operational requirements are approved.
 
 ## Start here
 
@@ -15,6 +15,7 @@ The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local 
 
 ## Documentation
 
+- [Current project status](docs/PROJECT-STATUS.md)
 - [Brand direction](docs/BRAND.md)
 - [Site structure](docs/SITE-STRUCTURE.md)
 - [Design system](docs/DESIGN-SYSTEM.md)
@@ -36,6 +37,10 @@ The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local 
 
 No production claims, prices, policies, testimonials, credentials or case studies should be added unless verified by the owner.
 
+## Security release status
+
+The active security-hardening work is tracked in PR #27. Its current release report is **DO NOT RELEASE** because persistent identifier-based account lockout/backoff and mandatory administrator MFA remain open High findings, and the PR currently has a high-severity CodeQL code-scanning alert that must be resolved or proven false-positive before merge. Do not deploy that branch while the release gate or a required security check is failing. See [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md) and [docs/security/release-report-2026-10-11.md](docs/security/release-report-2026-10-11.md).
+
 ## Run locally
 
 Use Node.js 22 and pnpm 11.19.0. Run `pnpm install`. Copy `.env.example` to `.env.local`, change the public URLs to the local origin, generate a private `BETTER_AUTH_SECRET` of at least 32 random bytes, and follow the database setup below before testing account routes. Marketing, catalogue and blog pages can otherwise run with `pnpm dev`.
@@ -48,7 +53,7 @@ The architecture and outstanding assumptions are in [docs/ARCHITECTURE.md](docs/
 
 The public navigation and service catalogue use the Support, Secure, Improve and Build taxonomy in `src/content/service-groups.ts`. This file derives its records from the canonical service catalogue, so the header mega menu, homepage capability layout and services directory do not maintain disconnected service names or URLs.
 
-`/tools/it-health-check` is a deterministic ten-question self-check. It calculates results in component memory, sends no answers to an API, writes no answers to browser storage and makes no diagnostic or security guarantee. Edit its reviewed questions and thresholds in `src/content/health-check.ts`. The typed featured-work model in `src/content/featured-work.ts` deliberately renders a truthful fallback until owner-approved project evidence is available.
+`/tools/it-health-check` is a deterministic six-question self-check. It calculates results in component memory, sends no answers to an API, writes no answers to browser storage and makes no diagnostic or security guarantee. Edit its reviewed questions and thresholds in `src/content/health-check.ts`. The typed featured-work model in `src/content/featured-work.ts` deliberately renders a truthful fallback until owner-approved project evidence is available.
 
 The global shell self-hosts the variable Manrope display face and Inter body face through `next/font`; browsers make no runtime Google Fonts request. The header becomes sticky and gains restrained backdrop depth after scrolling. Long pages expose a reduced-motion-aware “Back to top” control. The homepage technical visual uses a small requestAnimationFrame pointer transform on fine pointers only and keeps all text and controls outside the transformed decoration.
 
