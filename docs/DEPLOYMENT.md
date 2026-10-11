@@ -2,6 +2,27 @@
 
 `scripts/deploy-production.sh` is an operator-run deployment sequence for the planned single Ubuntu host. It does not connect to or modify a production server by itself.
 
+## Security release gate
+
+Application deployment is allowed only after the reviewed release branch has a passing security gate and all required GitHub checks are green. A successful workflow job is not enough if GitHub code scanning reports a new open alert.
+
+As of 11 October 2026, PR #27 (`security/application-hardening-2026`) is **not approved for production**. Its release report says `SECURITY RELEASE GATE: DO NOT RELEASE`; persistent identifier-based account lockout/backoff and mandatory administrator MFA remain High blockers, and the PR currently reports a new High CodeQL alert. Do not merge or deploy this branch until those items are resolved/retested and the release report is regenerated as PASS.
+
+Before every future production deployment, verify at minimum:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:security
+pnpm build
+pnpm security:client-bundle
+pnpm test:e2e
+pnpm audit --prod
+```
+
+Then verify the pull request has no failing required check, no open Critical/High application-security finding, a reviewed rollback point, and an approved current backup. The operator-run production script remains the deployment mechanism only after these release gates pass.
+
 ## Deployment sequence
 
 ### CODEX CREATES
