@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { bookingRequestSchema } from "@/features/booking/booking-schema";
 import { getBookingClientKey, getBookingRateLimiter, RateLimitConfigurationError } from "@/features/booking/rate-limiter";
 import { storeBookingRequest } from "@/features/booking/repository";
+import { recordSecurityEvent } from "@/lib/security/events";
 
 const MAX_BODY_BYTES = 20_000;
 class BodyTooLargeError extends Error {}
@@ -47,7 +48,10 @@ async function getAuthenticatedUserId(request: Request) {
 
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
-  if (!origin || origin !== approvedOrigin(request)) return NextResponse.json({ error: "This request did not come from the approved website." }, { status: 403 });
+  if (!origin || origin !== approvedOrigin(request)) {
+    recordSecurityEvent("origin_rejected", { route: "/api/booking" });
+    return NextResponse.json({ error: "This request did not come from the approved website." }, { status: 403 });
+  }
 
   const contentType = request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
   if (contentType !== "application/json") return NextResponse.json({ error: "Unsupported request content type." }, { status: 415 });
@@ -66,7 +70,10 @@ export async function POST(request: Request) {
   try {
     const limiter = getBookingRateLimiter();
     const result = await limiter.check(getBookingClientKey(request));
-    if (!result.allowed) return NextResponse.json({ error: "Too many attempts. Please try again later." }, { status: 429, headers: { "Retry-After": String(result.retryAfterSeconds) } });
+    if (!result.allowed) {
+      recordSecurityEvent("rate_limit_hit", { route: "/api/booking" });
+      return NextResponse.json({ error: "Too many attempts. Please try again later." }, { status: 429, headers: { "Retry-After": String(result.retryAfterSeconds) } });
+    }
   } catch (error) {
     if (error instanceof RateLimitConfigurationError) return NextResponse.json({ error: "Booking requests are temporarily unavailable. Please try again later." }, { status: 503 });
     return NextResponse.json({ error: "Booking requests are temporarily unavailable. Please try again later." }, { status: 503 });

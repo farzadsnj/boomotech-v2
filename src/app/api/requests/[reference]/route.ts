@@ -5,6 +5,7 @@ import { readLimitedJson, RequestBodyError } from "@/lib/security/json-body";
 import { checkRequestMutationRateLimit } from "@/features/requests/rate-limiter";
 import { customerRequestActionSchema } from "@/features/requests/schemas";
 import { addCustomerMessage, editCustomerRequest, RequestWorkflowError, withdrawCustomerRequest } from "@/features/requests/repository";
+import { recordSecurityEvent } from "@/lib/security/events";
 
 function safeError(error: unknown) {
   if (error instanceof RequestWorkflowError) {
@@ -16,12 +17,21 @@ function safeError(error: unknown) {
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ reference: string }> }) {
-  if (!hasApprovedMutationOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  if (!hasApprovedMutationOrigin(request)) {
+    recordSecurityEvent("origin_rejected", { route: "/api/requests/[reference]" });
+    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  }
   const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user.id || !session.user.emailVerified) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+  if (!session?.user.id || !session.user.emailVerified) {
+    recordSecurityEvent("authorization_denied", { route: "/api/requests/[reference]", reason: "authentication" });
+    return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+  }
   const limit = await checkRequestMutationRateLimit(session.user.id).catch(() => null);
   if (!limit) return NextResponse.json({ error: "Request updates are temporarily unavailable." }, { status: 503 });
-  if (!limit.allowed) return NextResponse.json({ error: "Too many updates. Please try again later." }, { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } });
+  if (!limit.allowed) {
+    recordSecurityEvent("rate_limit_hit", { route: "/api/requests/[reference]" });
+    return NextResponse.json({ error: "Too many updates. Please try again later." }, { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } });
+  }
   let input: unknown;
   try { input = await readLimitedJson(request); } catch (error) { const status = error instanceof RequestBodyError ? error.status : 400; return NextResponse.json({ error: status === 413 ? "Request is too large." : status === 415 ? "Unsupported request content type." : "Invalid request." }, { status }); }
   const parsed = customerRequestActionSchema.safeParse(input);

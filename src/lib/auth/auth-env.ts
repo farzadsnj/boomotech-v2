@@ -1,6 +1,10 @@
 const AUTH_SECRET_MINIMUM_LENGTH = 32;
 const LOCAL_AUTH_URL = "http://localhost:3000";
 
+export function usesSecureAuthenticationCookies(environment: Record<string, string | undefined> = process.env) {
+  return environment.NODE_ENV === "production";
+}
+
 export function requireBetterAuthSecret(environment: Record<string, string | undefined> = process.env) {
   const secret = environment.BETTER_AUTH_SECRET?.trim();
   if (!secret || secret.length < AUTH_SECRET_MINIMUM_LENGTH) {

@@ -231,6 +231,7 @@ test("representative pages and chatbot pass automated accessibility checks", asy
 
 test("security headers are present and X-Powered-By is disabled", async ({ request }) => {
   const response = await request.get("/"); expect(response.headers()["x-powered-by"]).toBeUndefined(); expect(response.headers()["x-content-type-options"]).toBe("nosniff"); expect(response.headers()["referrer-policy"]).toBe("strict-origin-when-cross-origin"); expect(response.headers()["permissions-policy"]).toContain("camera=()"); expect(response.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
+  const reset = await request.get("/reset-password?token=synthetic-test-token"); expect(reset.headers()["referrer-policy"]).toBe("no-referrer"); expect(reset.headers()["cache-control"]).toContain("no-store");
 });
 
 test("unknown routes return HTTP 404 and approved legacy paths redirect", async ({ request }) => { expect((await request.get("/does-not-exist")).status()).toBe(404); expect((await request.get("/services/not-real")).status()).toBe(404); expect((await request.get("/projects/cms-software-solutions/" )).status()).toBe(404); const redirected = await request.get("/it-support-helpdesk/", { maxRedirects: 0 }); expect([301, 308]).toContain(redirected.status()); });

@@ -8,7 +8,8 @@ import { sendAccountVerificationEmail } from "@/features/email-verification/send
 import { verificationTtlMinutes } from "@/features/email-verification/grants";
 import { passwordResetTtlMinutes, sendAccountPasswordResetEmail } from "@/features/password-reset/send";
 import { hashPassword, verifyPassword } from "./password";
-import { getBetterAuthUrl, requireBetterAuthSecret } from "./auth-env";
+import { getBetterAuthUrl, requireBetterAuthSecret, usesSecureAuthenticationCookies } from "./auth-env";
+import { breachedPasswordProtection } from "./breached-password";
 
 const siteOrigin = getSiteUrl().origin;
 const authOrigin = getBetterAuthUrl().origin;
@@ -25,8 +26,10 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    minPasswordLength: 12,
-    maxPasswordLength: 128,
+    minPasswordLength: 15,
+    // The custom policy hook counts Unicode code points and enforces 128.
+    // This larger UTF-16 limit permits up to 128 supplementary characters.
+    maxPasswordLength: 256,
     autoSignIn: false,
     resetPasswordTokenExpiresIn: passwordResetTtlMinutes() * 60,
     revokeSessionsOnPasswordReset: true,
@@ -75,11 +78,12 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    breachedPasswordProtection(),
     username({ minUsernameLength: 3, maxUsernameLength: 32 }),
     admin({ defaultRole: "user", adminRoles: ["admin"] }),
   ],
   advanced: {
-    useSecureCookies: process.env.NODE_ENV === "production",
+    useSecureCookies: usesSecureAuthenticationCookies(),
     database: { validateSchema: true },
   },
 });

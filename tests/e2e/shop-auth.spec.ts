@@ -130,7 +130,7 @@ test.describe("database-backed accounts", () => {
     await expect(page.getByText(customer.email)).toBeVisible();
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${screenshots}/customer-dashboard.png`, fullPage: true });
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
     await expect(page).toHaveURL(/\/login$/);
     await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/login\?next=%2Fdashboard|\/login\?next=\/dashboard/);
@@ -159,7 +159,7 @@ test.describe("database-backed accounts", () => {
     await description.fill("Several office computers and the shared network need a documented support review.");
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText(/documented support review/)).toBeVisible();
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
   });
 
   test("blocks a customer from admin and shows a safe administrator customer list", async ({ page }) => {
@@ -170,7 +170,7 @@ test.describe("database-backed accounts", () => {
     await expect(page).toHaveURL(/\/dashboard$/);
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/dashboard\?access=denied/);
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
     await page.goto("/admin/login");
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${screenshots}/admin-login.png`, fullPage: true });
@@ -202,7 +202,7 @@ test.describe("database-backed accounts", () => {
     await expect(page.getByText("Response sent")).toBeVisible();
     await expect(page.getByText(/ADMIN_|CUSTOMER_/)).toHaveCount(0);
     await page.screenshot({ path: `${screenshots}/admin-request-detail.png`, fullPage: true });
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
   });
 
   test("customer replies to an administrator update and cannot edit the locked description", async ({ page }) => {
@@ -265,7 +265,7 @@ test.describe("database-backed accounts", () => {
     await page.waitForTimeout(900);
     const customerAxe = await new AxeBuilder({ page }).analyze();
     expect(customerAxe.violations.filter(({ impact }) => impact === "critical" || impact === "serious")).toEqual([]);
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
     await page.goto("/admin/login");
     await page.getByLabel("Administrator username").fill("farzadsnj");
     await page.locator('input[name="password"]').fill("SyntheticAdminPassword9");

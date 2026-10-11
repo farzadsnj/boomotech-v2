@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getBetterAuthUrl, requireBetterAuthSecret } from "./auth-env";
+import { getBetterAuthUrl, requireBetterAuthSecret, usesSecureAuthenticationCookies } from "./auth-env";
 import { getDatabaseUrl, validateProductionEnvironment } from "@/lib/config/environment";
 
 describe("authentication environment validation", () => {
@@ -17,6 +17,11 @@ describe("authentication environment validation", () => {
     expect(() => getDatabaseUrl({ NODE_ENV: "production" })).toThrow(/DATABASE_URL/);
     expect(getBetterAuthUrl({ NODE_ENV: "production", BETTER_AUTH_URL: "https://boomotech.com.au" }).origin).toBe("https://boomotech.com.au");
     expect(() => getBetterAuthUrl({ NODE_ENV: "production", SITE_URL: "https://boomotech.com.au", BETTER_AUTH_URL: "http://localhost:3000" })).toThrow(/must match/);
+  });
+
+  it("enables secure authentication cookies in production", () => {
+    expect(usesSecureAuthenticationCookies({ NODE_ENV: "production" })).toBe(true);
+    expect(usesSecureAuthenticationCookies({ NODE_ENV: "development" })).toBe(false);
   });
 
   it("validates the approved production origin and server email configuration", () => {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { SignOutButton } from "@/components/auth/sign-out-button";
+import { SignOutAllDevicesButton, SignOutButton } from "@/components/auth/sign-out-button";
 import { CustomerRequestList } from "@/components/requests/customer-request-list";
 import { brisbaneDateTime } from "@/features/requests/format";
 import { listCustomerRequests } from "@/features/requests/repository";
@@ -36,7 +36,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     <div className="account-dashboard__header"><p className="eyebrow"><span className="eyebrow-line" />Customer dashboard</p><h1>Welcome, {session.user.name}</h1><p>Review your account, complete requests and conversation history from one protected place.</p></div>
     {params.verified === "true" ? <p className="request-success" role="status">Your email address is verified and your account is active.</p> : null}
     {params.access === "denied" ? <p className="request-notice" role="alert">Administrator access is restricted to authorised administrator accounts.</p> : null}
-    <section className="account-panel" aria-labelledby="account-details"><h2 id="account-details">Account details</h2><dl><div><dt>Full name</dt><dd>{session.user.name}</dd></div><div><dt>Email</dt><dd>{session.user.email}</dd></div><div><dt>Email status</dt><dd>Verified</dd></div></dl><SignOutButton /></section>
+    <section className="account-panel" aria-labelledby="account-details"><h2 id="account-details">Account details</h2><dl><div><dt>Full name</dt><dd>{session.user.name}</dd></div><div><dt>Email</dt><dd>{session.user.email}</dd></div><div><dt>Email status</dt><dd>Verified</dd></div></dl><div className="request-actions"><SignOutButton /><SignOutAllDevicesButton /></div></section>
     <section className="account-requests" aria-labelledby="customer-requests"><div className="admin-table__heading"><h2 id="customer-requests">Your requests</h2><p>{result.total} request{result.total === 1 ? "" : "s"} · Page {page} of {result.totalPages}</p></div><CustomerRequestList requests={serialised} /><nav aria-label="Your request pages" className="admin-pagination">{page > 1 ? <Link href={`/dashboard?page=${page - 1}`}>← Previous</Link> : <span />}{page < result.totalPages ? <Link href={`/dashboard?page=${page + 1}`}>Next →</Link> : null}</nav></section>
   </div></section>;
 }

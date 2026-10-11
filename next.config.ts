@@ -6,6 +6,11 @@ const noStoreHeaders = [
   { key: "Expires", value: "0" },
 ];
 
+const tokenPageHeaders = [
+  ...noStoreHeaders,
+  { key: "Referrer-Policy", value: "no-referrer" },
+];
+
 const nextConfig: NextConfig = {
   agentRules: false,
   poweredByHeader: false,
@@ -59,7 +64,10 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: globalSecurityHeaders,
       },
-      ...sensitiveSources.map((source) => ({ source, headers: noStoreHeaders })),
+      ...sensitiveSources.map((source) => ({
+        source,
+        headers: source === "/reset-password" || source === "/verify-email" ? tokenPageHeaders : noStoreHeaders,
+      })),
     ];
   },
 };

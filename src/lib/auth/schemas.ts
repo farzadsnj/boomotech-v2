@@ -1,8 +1,12 @@
 import { z } from "zod";
+import { passwordCodePointLength } from "./password-policy";
 
 const email = z.string().trim().min(1, "Enter your email address.").email("Enter a valid email address.").transform((value) => value.toLocaleLowerCase("en-AU"));
-export const accountPasswordSchema = z.string().min(12, "Use at least 12 characters.").max(128, "Use no more than 128 characters.")
-  .regex(/[a-z]/, "Include a lowercase letter.").regex(/[A-Z]/, "Include an uppercase letter.").regex(/[0-9]/, "Include a number.");
+export const accountPasswordSchema = z.string().superRefine((value, context) => {
+  const length = passwordCodePointLength(value);
+  if (length < 15) context.addIssue({ code: "custom", message: "Use at least 15 characters." });
+  if (length > 128) context.addIssue({ code: "custom", message: "Use no more than 128 characters." });
+});
 
 export const registrationSchema = z.object({
   name: z.string().trim().min(2, "Enter your full name.").max(100, "Use no more than 100 characters."),

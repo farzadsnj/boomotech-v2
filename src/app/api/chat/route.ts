@@ -3,6 +3,7 @@ import { chatRequestSchema } from "@/features/chat/chat-schema";
 import { ChatConfigurationError, ChatProviderError, generateChatResponse } from "@/features/chat/openai";
 import { getChatClientKey, getChatRateLimiter, RateLimitConfigurationError } from "@/features/chat/rate-limiter";
 import { isAiChatEnabled } from "@/lib/config/features";
+import { recordSecurityEvent } from "@/lib/security/events";
 
 const MAX_BODY_BYTES = 16_000;
 class BodyTooLargeError extends Error {}
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
   if (!isAiChatEnabled()) return NextResponse.json({ error: "AI chat is currently unavailable. Browse services or request a consultation." }, { status: 503 });
   const origin = request.headers.get("origin");
   if (!origin || origin !== approvedOrigin(request)) {
+    recordSecurityEvent("origin_rejected", { route: "/api/chat" });
     return NextResponse.json({ error: "This request did not come from the approved website." }, { status: 403 });
   }
 
@@ -80,6 +82,7 @@ export async function POST(request: Request) {
   try {
     const result = await getChatRateLimiter().check(getChatClientKey(request));
     if (!result.allowed) {
+      recordSecurityEvent("rate_limit_hit", { route: "/api/chat" });
       return NextResponse.json(
         { error: "Too many chat requests. Please try again later." },
         { status: 429, headers: { "Retry-After": String(result.retryAfterSeconds) } },

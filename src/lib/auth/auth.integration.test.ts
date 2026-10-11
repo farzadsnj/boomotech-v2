@@ -79,8 +79,17 @@ describe("database-backed account authentication", () => {
 
   it("stores an Argon2id password hash", async () => {
     const records = await db.select({ password: account.password }).from(account);
-    expect(records[0]?.password).toMatch(/^\$argon2id\$/);
-    expect(records[0]?.password).not.toContain("SecurePassword9");
+    const encoded = records[0]?.password ?? "";
+    const parameters = Object.fromEntries((encoded.split("$")[3] ?? "").split(",").map((part) => part.split("=")));
+    expect({ algorithm: encoded.startsWith("$argon2id$"), memory: Number(parameters.m), iterations: Number(parameters.t), parallelism: Number(parameters.p), containsPlaintext: encoded.includes("SecurePassword9") })
+      .toEqual({ algorithm: true, memory: 65_536, iterations: 3, parallelism: 1, containsPlaintext: false });
+  });
+
+  it("does not distinguish an unknown account from a wrong password", async () => {
+    const existing = await call("/sign-in/email", { email: "taylor@example.com", password: "IncorrectPassword9" });
+    const unknown = await call("/sign-in/email", { email: "unknown@example.test", password: "IncorrectPassword9" });
+    expect(unknown.status).toBe(existing.status);
+    expect(await unknown.json()).toEqual(await existing.json());
   });
 
   it("blocks login until the one-time token verifies the email", async () => {
@@ -125,6 +134,19 @@ describe("database-backed account authentication", () => {
     expect(signOut.status).toBe(200);
     const after = await call("/get-session", undefined, cookie);
     expect(await after.json()).toBeNull();
+  });
+
+  it("rotates session material on sign-in and revokes every device session", async () => {
+    const fixedCookie = "better-auth.session_token=synthetic-fixed-session";
+    const firstLogin = await call("/sign-in/email", { email: "taylor@example.com", password: "SecurePassword9" }, fixedCookie);
+    const firstCookie = sessionCookie(firstLogin);
+    const secondLogin = await call("/sign-in/email", { email: "taylor@example.com", password: "SecurePassword9" });
+    const secondCookie = sessionCookie(secondLogin);
+    expect(firstCookie).not.toBe(fixedCookie);
+    expect(secondCookie).not.toBe(firstCookie);
+    expect((await call("/revoke-sessions", {}, firstCookie)).status).toBe(200);
+    expect(await (await call("/get-session", undefined, firstCookie)).json()).toBeNull();
+    expect(await (await call("/get-session", undefined, secondCookie)).json()).toBeNull();
   });
 
   it("rate limits repeated login attempts in shared database storage", async () => {
