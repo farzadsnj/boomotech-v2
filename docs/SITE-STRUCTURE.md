@@ -58,12 +58,13 @@ Healthcare or regulated-industry pages require validated capability and complian
 
 ### Support flow
 
+The current structured request form is `/booking`, backed by `POST /api/booking`. Customer follow-up on an existing account-linked request uses `POST /api/requests/[reference]`; administrator actions use `POST /api/admin/requests/[reference]`. There is no public file-upload route.
+
+
 - `/support` — triage landing page
-- `/support/new` — structured support request
 - `/support/remote` — what remote support involves and consent requirements
 - `/support/onsite` — service area and expectations
 - `/support/safety` — scams, credentials, backups and privacy guidance
-- `/support/confirmation/[reference]` — request receipt without exposing private data
 
 Suggested intake steps:
 
@@ -175,4 +176,4 @@ Policies require owner/legal review before launch.
 
 ## Global requirements
 
-Global search is optional for launch; service finder is higher priority. Every important page needs breadcrumbs where useful, a clear CTA, contact alternative, related content, analytics events, and complete empty/error/success states.
+Global public-content search is implemented as a local read-only index and excludes account, administrator and customer-request data. Every important page needs breadcrumbs where useful, a clear CTA, contact alternative, related content, analytics events, and complete empty/error/success states.
