@@ -1,8 +1,8 @@
-# Phase 0 architecture and assumptions
+# BoomoTech V2 architecture and assumptions
 
 ## Scope of this foundation
 
-The current slice is a responsive marketing shell, complete informational Phase 1 route set, secure consultation request, sample catalogue and first customer account foundation. Operational details remain honest unavailable states where service scope, contact details, policies, or owner decisions are pending. Product ordering, payments, confirmed appointments and support-ticket storage are not connected.
+The current application is a production-backed marketing and service-request platform with public service/solution/resource content, local search, a browser-only IT Health Check, PostgreSQL-backed consultation/support requests, verified customer accounts, customer/admin request conversations and outbound email notifications. Product ordering, payments, confirmed appointments, public file uploads and inbound business mail remain intentionally unavailable until separately reviewed.
 
 ## Application shape
 
@@ -15,6 +15,16 @@ The current slice is a responsive marketing shell, complete informational Phase 
 - `src/app/globals.css` defines semantic colour, typography, spacing, focus, and shared shell styles. Page and motion rules are split into `src/styles/pages.css` and `src/styles/motion.css`.
 - The root layout loads self-hosted Manrope and Inter variable fonts through `next/font`. Small client components own scroll-aware header state, the long-page scroll-to-top control and fine-pointer hero transforms without making the root layout request-bound.
 - Vitest checks content, metadata, product search, authorization, hashing and database-backed authentication. Playwright covers browsers. GitHub Actions applies migrations to PostgreSQL, then runs lint, type-check, tests, a production build and browser checks.
+
+## Security architecture
+
+Authentication uses Better Auth with PostgreSQL-backed sessions and Argon2id password hashes. The active hardening branch adds a 15–128 Unicode-code-point policy, HIBP k-anonymity range screening, revoke-all-sessions UI, redacted structured security events, security-focused regression tests and client-bundle secret scanning. It does not replace Better Auth or introduce custom session cryptography.
+
+Application authorization remains server-side: customer request access is constrained by the authenticated immutable user ID, administrator mutations require the admin role, write payloads use explicit schemas/allowlists and state-changing custom routes require an approved Origin. Sensitive pages use no-store headers; token-bearing pages additionally use `Referrer-Policy: no-referrer`.
+
+The current security release gate is not yet PASS. Per-identifier failed-login lockout/backoff and mandatory administrator MFA are designed but not implemented because they require owner-approved authentication/schema changes. A new High CodeQL alert on PR #27 also blocks release until resolved or proven to be a false positive.
+
+The production network boundary remains Cloudflare Tunnel → loopback Nginx → loopback Next.js → loopback PostgreSQL. Repository documentation treats same-host PostgreSQL TLS, off-site encrypted backup, retention/deletion and external alerting as explicit owner/operations decisions rather than silently claiming compliance.
 
 ## Assumptions pending owner decisions
 
@@ -58,3 +68,10 @@ Password recovery uses Better Auth's database-backed, expiring, single-use reset
 Production requires PostgreSQL with restricted network access, encrypted backups, restore testing and an approved retention/deletion process. Authentication secrets must come from the deployment secret manager and support rotation. Administrator credential rotation, reviewed worker/timer enablement, external alert delivery and owner-approved retention remain outstanding launch controls.
 
 The current application does not persist identifier-level login failures and has no administrator second factor. The schema, transaction boundaries, recovery rules and tests proposed in `docs/security/auth-approval-plan.md` require owner approval before migration. These controls must be implemented and verified before security release approval.
+
+
+## Future inbound email boundary
+
+Inbound BoomoTech business mail is not implemented yet. After the security release gate passes, the intended design is Resend inbound email → provider-signed HTTPS webhook → Cloudflare Tunnel → Next.js → PostgreSQL/admin inbox, with replies sent through the Resend outbound API.
+
+This design keeps the Dell behind the existing outbound Cloudflare Tunnel and does not require exposing SMTP/IMAP services or the home public IP. The future webhook must verify the provider signature over the required raw payload, enforce replay/idempotency controls, bound payload and attachment sizes, allow only approved recipient addresses, render untrusted content safely, isolate attachments, avoid automatically fetching email links/content, redact logs and implement an approved retention/deletion policy.
