@@ -19,6 +19,19 @@ Internet -> Cloudflare -> Cloudflare Tunnel -> loopback Nginx
 
 The repository preserves the current Argon2id credentials, server-side sessions, role and origin checks, rate limits, verified-email flow, single-use password-reset tokens and `no-store` headers. Administrator MFA is a future application change. Evaluate TOTP or WebAuthn/passkeys separately.
 
+## Application release gate
+
+Host hardening and application release approval are separate controls. A clean Ubuntu/server audit does not override an application security failure, and a green application test suite does not prove the host is configured correctly.
+
+As of 11 October 2026, the active application-security PR (#27) is **not approved for deployment**. Its release report remains `DO NOT RELEASE` because persistent account lockout/backoff and mandatory administrator MFA are unresolved High findings. GitHub code scanning also reports a new High CodeQL alert on that PR. Do not merge or deploy the security branch until the application release report is regenerated as PASS and all required checks are green.
+
+For future production changes, require both:
+
+1. the repository/application security release gate and CI/code-scanning checks to pass; and
+2. the read-only host security audit/verification to pass or have every remaining warning explicitly reviewed.
+
+The server should receive application changes only from reviewed `main`; never deploy an unreviewed security feature branch directly.
+
 ## Safety rules
 
 1. Use provider console access before changing SSH or UFW.
