@@ -18,16 +18,19 @@ Statuses reflect repository and local-runtime evidence. Production was not probe
 | SEC-011 | H5, H8 | Low | `next.config.ts`, inline framework scripts | CSP contains `script-src 'unsafe-inline'` and inline JSON/script content | CSP is weaker against injected inline script than a nonce/hash policy | Evaluate Next.js nonce CSP in a separate rendering change; do not weaken current directives | Accepted residual risk | E2E verifies current CSP/header | Yes if architecture changes |
 | SEC-012 | A13 | Low | Reset/verification pages | Global referrer policy could expose only the origin cross-site, but policy requires token-page `no-referrer` | Token-bearing page navigation had weaker-than-required referrer protection | Apply `Referrer-Policy: no-referrer` and no-store to token pages | Fixed | Browser header test | No |
 | SEC-013 | A12 | Informational | Customer dashboard | Provider supported revoke-all endpoint existed without a visible control | Customers could not intentionally terminate every device session | Add progressive UI using Better Auth `revokeSessions` | Fixed | Multi-session integration replay test | No |
-| SEC-014 | S7 | Medium | Full Git history | CI Gitleaks full-history job exists; local executable/daemon was unavailable at initial audit | Historical secret exposure remains unverified until a redacted scan succeeds | Run `gitleaks detect --redact --log-opts=--all` and require the PR check | Pending verification | GitHub workflow configured | No |
+| SEC-014 | S7 | Medium | Full Git history | Redacted full-history Gitleaks scan and the PR secret-scan check completed successfully | No active repository finding was reported by the configured scan | Keep full-history secret scanning and push protection in the release gate | Fixed / verified | GitHub secret-scan check | No |
 | SEC-015 | S4, S5, S8–S10, R2–R9 | Informational | Owner/provider/production controls | Credential separation, limits, rotations, owner 2FA and live header/service state are outside repository evidence | Repository tests cannot prove provider or live-host controls | Complete owner/provider checklist without exposing values | Not verified | Not automatable in this local review | Owner action |
 | SEC-016 | D15 | Informational | `src/content/pages.ts` privacy source | Privacy page describes accounts, requests, browser storage, Resend, Cloudflare, logs, backups and optional AI; final retention/deletion/legal decisions remain open | Public wording may diverge from final operations | Review against approved retention, deletion, AI and provider settings before launch | Open owner review | Content/source comparison completed | Owner/legal review |
+
+| SEC-017 | S12, A4 | Medium | `src/lib/auth/schemas.ts` login/admin-login password validation | Registration/reset enforce the 128-character maximum by Unicode code point, while login/admin-login currently use Zod `.max(128)`, which counts UTF-16 code units | A valid password containing enough non-BMP characters can be accepted at creation but rejected by the application login schema | Reuse code-point-aware maximum validation for login/admin-login while retaining a bounded input size | Open | Add regression test with a valid non-BMP password longer than 64 code points | No schema change |
+| SEC-018 | H17 / release gate | High | GitHub CodeQL result for PR #27 | GitHub reports one new High-severity code-scanning alert on the PR even though the CodeQL workflow job itself completed | A new High code-scanning finding cannot be released without triage; exact location/rule must be reviewed in GitHub Security before deciding fix vs false positive | Inspect the CodeQL alert, fix the root cause or document/dismiss only with concrete false-positive evidence, then rerun CodeQL | Open | GitHub CodeQL result currently failing | No for normal fix; owner review required for dismissal |
 
 ## Counts
 
 - Critical: 0 found, 0 open, 0 fixed.
-- High: 2 found, 2 open, 0 fixed.
-- Medium: 9 found, 8 open/pending or partially fixed, 1 fixed.
+- High: 3 found, 3 open, 0 fixed.
+- Medium: 10 found, 8 open/pending or partially fixed, 2 fixed.
 - Low: 2 found, 1 accepted residual risk, 1 fixed.
 - Informational: 3 found, 1 fixed, 2 open/not verified.
 
-Documentation does not close SEC-001 or SEC-002. They remain technical release blockers until owner-approved controls are implemented and tested.
+Documentation does not close SEC-001, SEC-002 or SEC-018. They remain technical release blockers until the owner-approved controls are implemented/tested and the CodeQL High alert is resolved with evidence. SEC-017 must also be corrected before the revised Unicode password policy is considered internally consistent.
