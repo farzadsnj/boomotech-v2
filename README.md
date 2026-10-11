@@ -30,6 +30,9 @@ The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local 
 - [Production server security](docs/SERVER-SECURITY.md)
 - [Operations handbook](docs/OPERATIONS-HANDBOOK.md)
 - [Notification outbox](docs/NOTIFICATION-OUTBOX.md)
+- [Application security findings](docs/security/findings.md)
+- [Security release report](docs/security/release-report-2026-10-11.md)
+- [Security incident response](docs/security/incident.md)
 
 No production claims, prices, policies, testimonials, credentials or case studies should be added unless verified by the owner.
 
@@ -37,7 +40,7 @@ No production claims, prices, policies, testimonials, credentials or case studie
 
 Use Node.js 22 and pnpm 11.19.0. Run `pnpm install`. Copy `.env.example` to `.env.local`, change the public URLs to the local origin, generate a private `BETTER_AUTH_SECRET` of at least 32 random bytes, and follow the database setup below before testing account routes. Marketing, catalogue and blog pages can otherwise run with `pnpm dev`.
 
-Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` before proposing changes. The same checks run in GitHub Actions.
+Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:security`, `pnpm build`, `pnpm security:client-bundle`, and `pnpm test:e2e` before proposing changes. The same application checks run in GitHub Actions, alongside dependency, secret, and CodeQL scanning.
 
 The architecture and outstanding assumptions are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Search indexing stays disabled until `SITE_URL` is an approved HTTPS origin and `SITE_INDEXING_ENABLED=true` is set after launch review.
 
@@ -63,7 +66,9 @@ Product collections use an accessible horizontal `ProductRow`: desktop shows com
 
 ## Customer accounts and PostgreSQL
 
-Accounts use Better Auth with the Drizzle PostgreSQL adapter. Passwords are hashed with Argon2id. Sessions are stored in the database and delivered through HTTP-only, SameSite cookies; browser storage is not used. Better Auth validates request origins and stores authentication rate-limit counters in PostgreSQL. Public registration receives the `user` role and cannot supply a role value.
+Accounts use Better Auth with the Drizzle PostgreSQL adapter. Passwords are hashed with Argon2id. New and changed passwords must contain 15–128 Unicode code points and are checked against the Have I Been Pwned range API by sending only a five-character SHA-1 prefix. A provider timeout never sends the full password and currently fails open with a redacted security event; this availability tradeoff is recorded in the security findings. Sessions are stored in the database and delivered through HTTP-only, SameSite cookies; browser storage is not used. Better Auth validates request origins and stores authentication rate-limit counters in PostgreSQL. Public registration receives the `user` role and cannot supply a role value.
+
+Customers can revoke every active session from the dashboard. Persistent identifier-based account lockout and mandatory administrator MFA require approved schema and authentication-flow changes and remain release blockers; see [the authentication approval plan](docs/security/auth-approval-plan.md).
 
 Local database setup:
 
