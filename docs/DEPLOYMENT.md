@@ -6,7 +6,7 @@
 
 Application deployment is allowed only after the reviewed release branch has a passing security gate and all required GitHub checks are green. A successful workflow job is not enough if GitHub code scanning reports a new open alert.
 
-As of 11 October 2026, PR #27 (`security/application-hardening-2026`) is **not approved for production**. Its release report says `SECURITY RELEASE GATE: DO NOT RELEASE`; persistent identifier-based account lockout/backoff and mandatory administrator MFA remain High blockers, and the PR currently reports a new High CodeQL alert. Do not merge or deploy this branch until those items are resolved/retested and the release report is regenerated as PASS.
+As of 13 October 2026, the security branch remains **not approved for production**. Persistent account lockout, mandatory administrator TOTP MFA and SEC-017 are implemented locally with additive migration `0005_mushy_bedlam.sql`. The CodeQL High remediation cannot be confirmed until GitHub reruns the real check after an owner-approved commit/push. Do not merge, deploy or run the migration until the complete release gate is reviewed. See `docs/security/auth-remediation-2026-10-13.md`.
 
 Before every future production deployment, verify at minimum:
 
@@ -119,7 +119,7 @@ sudo -u boomotechhost -H bash -lc 'cd /var/www/boomotech && pnpm maintenance:run
 
 The apply command removes only expired verification grants, stale rate-limit buckets, old sent outbox rows and long-expired sessions according to documented environment retention values. It does not delete bookings, messages, audit events or failed notifications.
 
-The defaults are `MAINTENANCE_EXPIRED_GRANT_DAYS=30`, `MAINTENANCE_RATE_LIMIT_DAYS=2`, `MAINTENANCE_SENT_OUTBOX_DAYS=90` and `MAINTENANCE_EXPIRED_SESSION_DAYS=30`. `BOOMOTECH_OUTBOX_WARNING_MINUTES=15` controls the aggregate monitor warning. Review these values against the approved privacy and retention policy before using apply mode.
+The defaults are `MAINTENANCE_EXPIRED_GRANT_DAYS=30`, `MAINTENANCE_RATE_LIMIT_DAYS=2`, `MAINTENANCE_SENT_OUTBOX_DAYS=90`, `MAINTENANCE_EXPIRED_SESSION_DAYS=30` and `MAINTENANCE_LOGIN_GUARD_DAYS=30`. Login-guard cleanup only removes inactive rows whose locks have expired. `BOOMOTECH_OUTBOX_WARNING_MINUTES=15` controls the aggregate monitor warning. Review these values against the approved privacy and retention policy before using apply mode.
 
 ## First deployment review
 

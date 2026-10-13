@@ -77,9 +77,9 @@ The security branch must not be merged or deployed yet.
 
 Open release blockers include:
 
-1. persistent per-identifier account lockout/backoff after repeated failed authentication attempts (A3 / SEC-001);
-2. mandatory administrator MFA using a maintained Better Auth mechanism (A15/R5 / SEC-002);
-3. a new high-severity CodeQL alert reported on PR #27 must be resolved or formally proven to be a false positive before release.
+1. apply and verify the locally implemented account-lockout/MFA migration only in an owner-approved production window;
+2. enrol every existing administrator in TOTP and secure the single-use recovery codes;
+3. rerun GitHub CodeQL to confirm the local `js/insufficient-password-hash` remediation closes the real alert before release.
 
 Additional owner decisions remain for session lifetime, account deletion, database TLS policy, retention automation, alert delivery and encrypted off-site backup. These are tracked under `docs/security/`.
 

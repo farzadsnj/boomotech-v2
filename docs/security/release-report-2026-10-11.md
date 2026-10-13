@@ -1,6 +1,6 @@
 # گزارش انتشار امنیتی — ۱۱ اکتبر ۲۰۲۶
 
-**منتشر نکن.** دو مانع امنیتی سطح High از ممیزی اصلی باز است: قفل/کندسازی پایدار حساب پس از تلاش‌های ناموفق (A3) و MFA اجباری مدیر (A15/R5). بازبینی بعدی PR #27 همچنین یک نتیجه CodeQL سطح High باز را نشان داد؛ تا زمانی که محل/قانون دقیق آن بررسی و با اصلاح فنی یا شاهد معتبر false-positive بسته نشود، انتشار مجاز نیست.
+**به‌روزرسانی ۱۳ اکتبر ۲۰۲۶ — منتشر نکن.** A3، MFA اجباری مدیر و SEC-017 در شاخه محلی پیاده‌سازی شده‌اند، اما migration در تولید اجرا نشده و نتیجه واقعی CodeQL پس از اصلاح هنوز در GitHub دوباره اجرا نشده است. جزئیات در `auth-remediation-2026-10-13.md` است.
 
 این گزارش سه نوع شاهد را جدا می‌کند:
 
@@ -39,8 +39,8 @@
 | # | وضعیت | شاهد | کار لازم |
 |---|---|---|---|
 | A1 | ❌ | body/status خطای کاربر موجود و ناموجود برابر تست شده؛ برابری زمانی/dummy hash اثبات نشده | timing مقاوم به enumeration اندازه‌گیری و تثبیت شود |
-| A2 | ❌ | rate limit دیتابیسی Better Auth وجود دارد، اما محدودیت مستقل IP و identifier برای همه مسیرها اثبات نشده | همراه A3 طراحی و تست شود |
-| A3 | ❌ | counter/lock پایدار در schema نیست | طرح `auth-approval-plan.md` پس از تأیید مالک پیاده شود |
+| A2 | ✅ | Better Auth limiter دیتابیسی per-IP و `auth_login_guard` مستقل per-account/identifier است؛ production فقط `CF-Connecting-IP` را در origin loopback می‌پذیرد | مرز Cloudflare/Nginx در production تأیید شود |
+| A3 | ✅ | پنج خطا در ۱۵ دقیقه با state پایدار PostgreSQL، upsert اتمیک و lock پانزده‌دقیقه‌ای تست شده است | migration تولید هنوز مجاز نیست |
 | A4 | ✅ | policy و HIBP برای signup/change/reset از hook سرور اعمال می‌شود | حفظ شود |
 | A5 | ❌ | eventهای custom API redacted هستند؛ همه login/reset/change و ایمیل هشدار پوشش کامل ندارند | hook و مقصد هشدار تأییدشده اضافه شود |
 | A6 | ✅ | Better Auth cookieهای HttpOnly/SameSite و Secure در production؛ تست env موجود | header واقعی staging نیز بررسی شود |
@@ -52,10 +52,10 @@
 | A12 | ❌ | logout همه دستگاه‌ها و reset پوشش دارد؛ change/delete/disable کامل نیست | lifecycle کامل پس از تأیید طرح deletion تکمیل شود |
 | A13 | ✅ | reset token هش‌شده، یک‌بارمصرف، محدود و صفحه token دارای no-referrer/no-store است | حفظ شود |
 | A14 | ❌ | signup verification وجود دارد؛ تغییر ایمیل با pending/reauth/notify-old وجود ندارد | flow تغییر ایمیل طراحی شود |
-| A15 | ❌ | MFA برای مدیر وجود ندارد | TOTP/recovery طرح‌شده نیازمند تأیید و migration است |
+| A15 | ✅ | TOTP اجباری مدیر، recovery code یک‌بارمصرف و enforcement سمت سرور محلی تست شده است | production enrollment نیازمند تأیید است |
 | A16 | ✅ | تست anonymous/customer/admin، ownership، role و origin اضافه شد | routeهای جدید باید matrix مشابه داشته باشند |
 | A17 | ➖ | social login پیاده نشده است | اگر اضافه شد تمام PKCE/state/nonce قواعد اعمال شود |
-| A-T1 | ❌ | قفل بعد از پنج خطا وجود ندارد | مانع A3 |
+| A-T1 | ✅ | تست integration: خطای پنجم lock می‌کند و رمز درست تا expiry رد می‌شود | در staging پس از migration تکرار شود |
 | A-T2 | ❌ | body/status برابر است؛ timing مشابه اثبات نشده | تست timing کنترل‌شده اضافه شود |
 | A-T3 | ✅ | login، logout و replay cookie قدیمی در integration test | حفظ شود |
 | A-T4 | ✅ | session cookie قبل/بعد و دو login متفاوت تست شد | حفظ شود |
@@ -99,11 +99,11 @@
 | H9 | ✅ | `pnpm audit --prod` بدون Critical/High | lockfile و CI حفظ شود |
 | H10 | ➖ | file upload وجود ندارد | قبل از upload policy کامل لازم است |
 | H11 | ✅ | APIها خطای generic می‌دهند و PII/stack به client نمی‌دهند | request ID آینده مفید است |
-| H12 | ❌ | APIهای booking/chat limiter دارند؛ auth identifier-limit و بعضی admin mutationها پوشش کامل ندارند | همراه A2/A3 تکمیل شود |
+| H12 | ✅ | booking/chat limiter، Better Auth IP limiter و auth account lockout موجودند؛ admin mutationها origin+role+MFA را بررسی می‌کنند | تنظیم proxy تولید تأیید شود |
 | H13 | ❌ | structured redacted events اضافه شد؛ alert مقصد واقعی و همه auth events کامل نیست | کانال هشدار مالک و threshold تعریف شود |
 | H14 | ✅ | lockfile committed و workflow pinned؛ payment/webhook وجود ندارد | branch protection میزبان تأیید شود |
 | H15 | ✅ | AI server-side، محدود، بدون tool/data خصوصی و پیش‌فرض خاموش | model output فقط متن نمایش داده شود |
-| H16 | ❌ | S11–S13 پاس؛ A3/A9/A15 و live S14 باز است | blockerها بسته شوند |
+| H16 | ❌ | S11–S13 و A3/A15 محلی پاس؛ A9 و live S14 همچنان تصمیم/شاهد می‌خواهند | موارد باقیمانده جداگانه بررسی شوند |
 | H17 | ❌ | `findings.md` دو High باز دارد | release ممنوع تا رفع و retest |
 | H18 | ✅ | safe fixes بدون migration انجام و هر کدام تست شدند | risky changes منتظر تأیید ماندند |
 | H19 | ✅ | سطح تغییرکرده دوباره بازبینی و موارد ناشناخته صادقانه ثبت شد | پس از هر fix تکرار شود |
@@ -117,7 +117,7 @@
 | R2 | ➖ | prod env عمداً خوانده یا چاپ نشد | روی میزبان با checker غیرنمایشی تأیید شود |
 | R3 | ➖ | production probe ممنوع بود | certificate و redirect روی live تأیید شود |
 | R4 | ➖ | loopback architecture مستند است؛ firewall/DB زنده بررسی نشد | audit میزبان اجرا شود |
-| R5 | ❌ | admin role protected است، ولی MFA ندارد | مانع A15 رفع شود |
+| R5 | ❌ | TOTP اجباری مدیر و recovery code محلی پیاده‌سازی و تست شده؛ production enrollment انجام نشده | migration و enrollment فقط با تأیید مالک، سپس retest |
 | R6 | ❌ | shop/sample content feature-flagged است؛ وضعیت production زنده بررسی نشد | flags و seed/test records تأیید شوند |
 | R7 | ❌ | backup script وجود دارد؛ latest backup/restore واقعی بررسی نشد | restore test ثبت‌شده لازم است |
 | R8 | ❌ | monitoring scripts وجود دارد؛ alerts واقعی اثبات نشده | مقصد و escalation تأیید شود |
@@ -128,20 +128,19 @@
 
 ## یافته‌های بازبینی پس از Codex
 
-- GitHub برای PR #27 یک CodeQL alert جدید با شدت High گزارش می‌کند. اجرای job مربوط به CodeQL به‌تنهایی کافی نیست؛ نتیجه code-scanning باید بدون High باز باشد یا false-positive آن با شاهد مشخص بررسی و بسته شود.
-- در `src/lib/auth/schemas.ts` سقف رمز برای ثبت‌نام/reset بر اساس Unicode code point محاسبه می‌شود، اما login و admin-login از `.max(128)` Zod استفاده می‌کنند که UTF-16 code unit را می‌شمارد. در نتیجه یک رمز معتبر با تعداد کافی کاراکتر non-BMP ممکن است موقع ساخت پذیرفته ولی موقع ورود رد شود. این مورد با شناسه SEC-017 ثبت شد و قبل از نهایی کردن سیاست جدید رمز باید اصلاح و تست شود.
+- CodeQL check `114418909498` قانون `js/insufficient-password-hash` را روی SHA-1 سفارشی HIBP در فایل حذف‌شده `breached-password.ts` گزارش کرد. اجرای سفارشی حذف و plugin رسمی Better Auth جایگزین شد؛ بسته‌شدن alert نیازمند rerun واقعی GitHub است.
+- SEC-017 اصلاح شد: login و admin-login اکنون سقف ۱۲۸ را با Unicode code point می‌شمارند و regression test برای ۱۲۸/۱۲۹ کاراکتر non-BMP اضافه شده است.
 - اسکن full-history Gitleaks و check مربوط به secret-scan پاس شده است؛ SEC-014 به «Fixed / verified» به‌روزرسانی شد.
 
 ## سه مشکل اصلی
 
-1. **A3:** قفل/کندسازی پایدار مبتنی بر identifier وجود ندارد.
-2. **A15/R5:** حساب مدیر MFA اجباری ندارد.
-3. **H17 / CodeQL:** یک High code-scanning alert جدید روی PR #27 باز است. بعد از آن، D6/D12/R7 (TLS دیتابیس، offsite backup و restore واقعی) نیز نیازمند تصمیم و شاهد تولید هستند.
+1. **H17 / CodeQL:** اصلاح محلی انجام شده ولی check واقعی GitHub هنوز rerun نشده است.
+2. **Production evidence:** migration و enrollment مدیر، TLS دیتابیس، offsite backup و restore واقعی نیازمند تأیید/شاهد تولید هستند.
 
 ## نتیجه
 
 - مخزن و تست محلی بهبود یافته‌اند، ولی این کار مجوز انتشار نیست.
 - هیچ سرور تولید، حساب واقعی، کلید، backup یا provider تغییر نکرد.
-- طرح‌های نیازمند migration یا تغییر flow احراز هویت فقط مستند شده‌اند و اجرا نشده‌اند.
+- migration و تغییر flow احراز هویت فقط در کد/دیتابیس تست محلی اجرا شده‌اند؛ production تغییر نکرده است.
 
 SECURITY RELEASE GATE: DO NOT RELEASE

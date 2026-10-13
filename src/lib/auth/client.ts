@@ -1,8 +1,8 @@
 "use client";
 
 import { createAuthClient } from "better-auth/react";
-import { adminClient, usernameClient } from "better-auth/client/plugins";
+import { adminClient, twoFactorClient, usernameClient } from "better-auth/client/plugins";
 
 export const authClient = createAuthClient({
-  plugins: [usernameClient(), adminClient()],
+  plugins: [usernameClient(), adminClient(), twoFactorClient({ twoFactorPage: "/admin/mfa" })],
 });

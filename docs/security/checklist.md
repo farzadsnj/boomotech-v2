@@ -27,7 +27,7 @@ Rules for the check:
 - [ ] **S9** No real secret was pasted into AI chats, issues, or screenshots
 - [ ] **S10** Passwords of hosting/DB/GitHub/email are in a password manager with 2FA on
 - [ ] **S11** Passwords hashed with Argon2id (or scrypt / PBKDF2 for FIPS; bcrypt legacy only), real parameters verified, no truncation, no plaintext/MD5/SHA1 **[BLOCKER]**
-- [ ] **S12** Password policy follows NIST rev. 4 (15+ chars if password-only, 8+ only with enforced MFA, 64+ allowed, no truncation, breached check, no forced composition/rotation)
+- [x] **S12** Password policy follows NIST rev. 4 (15+ chars if password-only, 8+ only with enforced MFA, 64+ allowed, no truncation, breached check, no forced composition/rotation) — repository and local tests; production not changed
 - [ ] **S13** Tokens/IDs come from a secure random generator
 - [ ] **S14** HTTPS only, HTTP redirects, HSTS header present (staged rollout; `includeSubDomains`/preload only after a subdomain inventory) **[BLOCKER]**
 - [ ] **S15** All DB queries parameterized **[BLOCKER]**
@@ -38,7 +38,7 @@ Rules for the check:
 
 - [ ] **A1** Generic error for wrong email/password; no account enumeration (login, sign-up, reset)
 - [ ] **A2** Rate limiting on login, sign-up, reset, OTP
-- [ ] **A3** Lockout/backoff: 5 failures in 15 min → 15 min lock, stored server-side **[BLOCKER]**
+- [x] **A3** Lockout/backoff: 5 failures in 15 min → 15 min lock, stored server-side — repository and local tests; migration not applied in production
 - [ ] **A4** Breached-password check on sign-up/change/reset
 - [ ] **A5** Failed logins and password changes are logged (without secrets) and the user is notified
 - [ ] **A6** Cookies: `HttpOnly`, `Secure`, `SameSite` (`__Host-` prefix: `Path=/`, no `Domain`) **[BLOCKER]**
@@ -50,7 +50,7 @@ Rules for the check:
 - [ ] **A12** "Log out all devices"; all sessions/tokens end after password change, reset, account deletion and disablement
 - [ ] **A13** Reset tokens: single-use, hashed, expiring (15–60 min) **[BLOCKER]**
 - [ ] **A14** Email verification; re-auth for sensitive actions
-- [ ] **A15** 2FA available; required for admin accounts
+- [x] **A15** TOTP and single-use recovery codes available; required server-side for admin accounts — local test database only
 - [ ] **A16** Server-side authorization on every request; CSRF protection on state-changing routes **[BLOCKER]**
 - [ ] **A17** If social login is used: PKCE S256 + state, exact redirect URIs; OIDC: nonce + ID token validated, user keyed on (iss, sub); no email-only account merging
 - [ ] **A-T** The 8 tests listed in `auth.md` were run and passed

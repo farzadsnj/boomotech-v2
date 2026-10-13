@@ -39,7 +39,7 @@ No production claims, prices, policies, testimonials, credentials or case studie
 
 ## Security release status
 
-The active security-hardening work is tracked in PR #27. Its current release report is **DO NOT RELEASE** because persistent identifier-based account lockout/backoff and mandatory administrator MFA remain open High findings, and the PR currently has a high-severity CodeQL code-scanning alert that must be resolved or proven false-positive before merge. Do not deploy that branch while the release gate or a required security check is failing. See [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md) and [docs/security/release-report-2026-10-11.md](docs/security/release-report-2026-10-11.md).
+The active security-hardening work is tracked in PR #27. Persistent identifier-based account lockout, mandatory administrator TOTP MFA and SEC-017 are implemented on the local security branch, with additive migration `drizzle/0005_mushy_bedlam.sql`. The release remains **DO NOT RELEASE** until the real GitHub CodeQL check confirms the High alert is closed, the migration and administrator enrolment are reviewed, and the owner approves a controlled rollout. See [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md), [docs/security/auth-remediation-2026-10-13.md](docs/security/auth-remediation-2026-10-13.md) and [docs/security/release-report-2026-10-11.md](docs/security/release-report-2026-10-11.md).
 
 ## Run locally
 
@@ -71,9 +71,9 @@ Product collections use an accessible horizontal `ProductRow`: desktop shows com
 
 ## Customer accounts and PostgreSQL
 
-Accounts use Better Auth with the Drizzle PostgreSQL adapter. Passwords are hashed with Argon2id. New and changed passwords must contain 15–128 Unicode code points and are checked against the Have I Been Pwned range API by sending only a five-character SHA-1 prefix. A provider timeout never sends the full password and currently fails open with a redacted security event; this availability tradeoff is recorded in the security findings. Sessions are stored in the database and delivered through HTTP-only, SameSite cookies; browser storage is not used. Better Auth validates request origins and stores authentication rate-limit counters in PostgreSQL. Public registration receives the `user` role and cannot supply a role value.
+Accounts use Better Auth with the Drizzle PostgreSQL adapter. Passwords are hashed with Argon2id. New and changed passwords must contain 15–128 Unicode code points and Better Auth's maintained Have I Been Pwned plugin checks them through the k-anonymous range API without sending the full password. A breach-provider failure rejects the password operation instead of silently bypassing the control. Sessions are stored in the database and delivered through HTTP-only, SameSite cookies; browser storage is not used. Better Auth validates request origins and stores authentication rate-limit counters in PostgreSQL. Public registration receives the `user` role and cannot supply a role value.
 
-Customers can revoke every active session from the dashboard. Persistent identifier-based account lockout and mandatory administrator MFA require approved schema and authentication-flow changes and remain release blockers; see [the authentication approval plan](docs/security/auth-approval-plan.md).
+Customers can revoke every active session from the dashboard. Five invalid passwords within 15 minutes create a persistent HMAC-keyed database lock for 15 minutes, while Better Auth's database rate limiter supplies complementary per-client throttling. Administrators must complete TOTP or use a single-use recovery code before any privileged page or API is available. See [the authentication remediation record](docs/security/auth-remediation-2026-10-13.md).
 
 Local database setup:
 
@@ -109,13 +109,13 @@ ADMIN_EMAIL=<approved-administrator-email>
 ADMIN_TEMP_PASSWORD=<strong-temporary-password>
 ```
 
-Run `pnpm admin:seed`. The command hashes the password, creates or updates the `admin` role, invalidates prior sessions and never prints the password. Remove `ADMIN_TEMP_PASSWORD` immediately afterwards. Re-run the seed with a new strong private password if a temporary or previously shared value was used, then remove it again before `pnpm prod:check`.
+Run `pnpm admin:seed`. The command hashes the password, creates or updates the `admin` role, invalidates prior sessions and factors, and never prints the password. Remove `ADMIN_TEMP_PASSWORD` immediately afterwards. Sign in at `/admin/login`, enrol an authenticator at `/admin/mfa/setup`, save the one-time recovery codes in an approved password manager, and verify TOTP before using administrator features. Re-run the seed only through the approved recovery procedure because it deliberately removes the current MFA enrolment.
 
 After registration, customers are sent to `/check-email`. Better Auth creates a signed expiring token, while BoomoTech stores only its SHA-256 digest in a single-use grant. The public `/verify-email` route consumes that grant before Better Auth marks the email verified. Direct access to Better Auth's verification endpoint is blocked so the one-time check cannot be bypassed. Unverified customers cannot sign in or enter `/dashboard`. Resend requests are rate-limited and use generic responses to reduce account enumeration. Existing accounts present when migration `0002` is applied are marked verified so the migration does not lock out current development users.
 
 `/forgot-password` and `/reset-password` use Better Auth's expiring, single-use reset records and the same isolated authentication-email adapter. Reset responses are generic, delivery is server-only, and a successful reset revokes existing sessions. Invalid, expired and reused links show a safe recovery path.
 
-Administrators sign in with their seeded username at `/admin/login` and are redirected to `/admin`. Both destinations enforce the session and role again on the server. Tests use an isolated capture adapter through `AUTH_EMAIL_CAPTURE_PATH`; never configure that test-only path in production.
+Administrators sign in with their seeded username at `/admin/login`, complete `/admin/mfa`, and are then redirected to `/admin`. Admin pages, application APIs and Better Auth administrator endpoints enforce role plus completed MFA on the server. Tests use isolated email capture and a synthetic MFA enrolment under ignored `.test-db/`; never configure either test mechanism in production.
 
 Database backups must be encrypted, access controlled, tested for restoration and covered by an owner-approved retention/deletion policy. The database contains customer names, normalized email addresses, password hashes, session data, booking contact details and timestamps. Privacy and legal text still requires owner/legal approval.
 

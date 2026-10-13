@@ -9,6 +9,7 @@ import { serviceLabel } from "@/features/booking/booking-schema";
 import { brisbaneDateTime, formatRequestEvent } from "@/features/requests/format";
 import { getAdminRequest, RequestWorkflowError } from "@/features/requests/repository";
 import { auth } from "@/lib/auth/auth";
+import { canAccessAdminDashboard } from "@/lib/auth/access";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Request details", robots: { index: false, follow: false } };
@@ -16,7 +17,8 @@ export const metadata: Metadata = { title: "Request details", robots: { index: f
 export default async function AdminRequestPage({ params }: { params: Promise<{ reference: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/admin/login");
-  if (session.user.role !== "admin") redirect("/dashboard?access=denied");
+  if (session.user.role === "admin" && !session.user.twoFactorEnabled) redirect("/admin/mfa/setup");
+  if (!canAccessAdminDashboard(session)) redirect("/dashboard?access=denied");
   const { reference } = await params;
   let request: Awaited<ReturnType<typeof getAdminRequest>>;
   try { request = await getAdminRequest(reference); } catch (error) { if (error instanceof RequestWorkflowError && error.code === "not-found") notFound(); throw error; }

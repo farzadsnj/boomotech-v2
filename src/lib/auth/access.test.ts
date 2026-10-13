@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canAccessAdminDashboard, canAccessCustomerDashboard } from "./access";
+import { canAccessAdminDashboard, canAccessCustomerDashboard, isAdministrator } from "./access";
 
 describe("account route authorization", () => {
   it("requires a session for the customer dashboard", () => {
@@ -11,6 +11,8 @@ describe("account route authorization", () => {
   it("allows only administrators into the admin dashboard", () => {
     expect(canAccessAdminDashboard(null)).toBe(false);
     expect(canAccessAdminDashboard({ user: { role: "user" } })).toBe(false);
-    expect(canAccessAdminDashboard({ user: { role: "admin" } })).toBe(true);
+    expect(canAccessAdminDashboard({ user: { role: "admin" } })).toBe(false);
+    expect(canAccessAdminDashboard({ user: { role: "admin", twoFactorEnabled: true } })).toBe(true);
+    expect(isAdministrator({ user: { role: "admin" } })).toBe(true);
   });
 });

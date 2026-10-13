@@ -20,6 +20,10 @@ describe("account validation", () => {
   it("validates customer and administrator credentials", () => {
     expect(loginSchema.safeParse({ email: "bad", password: "x" }).success).toBe(false);
     expect(adminLoginSchema.safeParse({ username: "fa", password: "" }).success).toBe(false);
+    const supplementaryPassword = "😀".repeat(128);
+    expect(loginSchema.safeParse({ email: "person@example.com", password: supplementaryPassword }).success).toBe(true);
+    expect(adminLoginSchema.safeParse({ username: "administrator", password: supplementaryPassword }).success).toBe(true);
+    expect(loginSchema.safeParse({ email: "person@example.com", password: `${supplementaryPassword}x` }).success).toBe(false);
   });
 
   it("validates password recovery fields and matching strong passwords", () => {

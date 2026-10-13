@@ -140,9 +140,9 @@ The current security branch improves password policy, breached-password screenin
 
 This phase does **not** exit until the application security release report is PASS and required CI/code-scanning checks are green. Current blockers are:
 
-- persistent per-identifier failed-login lockout/backoff;
-- mandatory administrator MFA;
-- resolution or justified closure of the new High CodeQL alert on PR #27;
+- owner-approved rollout of the implemented persistent failed-login lockout and administrator MFA migration;
+- enrolment of each existing administrator with protected recovery-code custody;
+- GitHub verification that the local CodeQL High remediation closes the real alert;
 - owner decisions for session lifetime, account deletion, database TLS, retention, alert destination and off-site backup where required by the security policy.
 
 After this gate passes, the next scoped feature is secure inbound business email through Resend and the existing Cloudflare Tunnel/Dell application path. The inbound-email work is deliberately separate from this security branch.

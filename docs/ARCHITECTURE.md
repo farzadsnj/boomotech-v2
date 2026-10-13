@@ -22,7 +22,7 @@ Authentication uses Better Auth with PostgreSQL-backed sessions and Argon2id pas
 
 Application authorization remains server-side: customer request access is constrained by the authenticated immutable user ID, administrator mutations require the admin role, write payloads use explicit schemas/allowlists and state-changing custom routes require an approved Origin. Sensitive pages use no-store headers; token-bearing pages additionally use `Referrer-Policy: no-referrer`.
 
-The current security release gate is not yet PASS. Per-identifier failed-login lockout/backoff and mandatory administrator MFA are designed but not implemented because they require owner-approved authentication/schema changes. A new High CodeQL alert on PR #27 also blocks release until resolved or proven to be a false positive.
+The current security release gate is not yet PASS. Per-identifier failed-login lockout, mandatory administrator TOTP MFA and SEC-017 are implemented on the local security branch with an additive migration. Release remains blocked until the real GitHub CodeQL check confirms the High alert is closed, the migration and administrator enrolment are reviewed, and the owner approves a controlled rollout.
 
 The production network boundary remains Cloudflare Tunnel → loopback Nginx → loopback Next.js → loopback PostgreSQL. Repository documentation treats same-host PostgreSQL TLS, off-site encrypted backup, retention/deletion and external alerting as explicit owner/operations decisions rather than silently claiming compliance.
 

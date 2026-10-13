@@ -8,6 +8,10 @@ export const accountPasswordSchema = z.string().superRefine((value, context) => 
   if (length > 128) context.addIssue({ code: "custom", message: "Use no more than 128 characters." });
 });
 
+const loginPasswordSchema = z.string().min(1, "Enter your password.").superRefine((value, context) => {
+  if (passwordCodePointLength(value) > 128) context.addIssue({ code: "custom", message: "Password is too long." });
+});
+
 export const registrationSchema = z.object({
   name: z.string().trim().min(2, "Enter your full name.").max(100, "Use no more than 100 characters."),
   email,
@@ -19,12 +23,12 @@ export const registrationSchema = z.object({
 
 export const loginSchema = z.object({
   email,
-  password: z.string().min(1, "Enter your password.").max(128, "Password is too long."),
+  password: loginPasswordSchema,
 });
 
 export const adminLoginSchema = z.object({
   username: z.string().trim().min(3, "Enter your administrator username.").max(32, "Username is too long."),
-  password: z.string().min(1, "Enter your password.").max(128, "Password is too long."),
+  password: loginPasswordSchema,
 });
 
 export const forgotPasswordSchema = z.object({ email });

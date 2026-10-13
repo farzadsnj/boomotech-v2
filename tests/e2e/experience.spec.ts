@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { signInAdministrator } from "./auth-helpers";
 
 async function fillContact(page: Page) {
   await page.getByLabel(/Full name/).fill("Taylor Smith");
@@ -159,11 +160,7 @@ test("a guest request is stored and an administrator can respond without a guest
   const reference = referenceText?.match(/BT-[A-F0-9]{10}/)?.[0];
   expect(reference).toBeTruthy();
 
-  await page.goto("/admin/login");
-  await page.getByLabel("Administrator username").fill("farzadsnj");
-  await page.locator('input[name="password"]').fill("SyntheticAdminPassword9");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/admin$/);
+  await signInAdministrator(page);
   await page.goto(`/admin/requests/${reference}`);
   await page.getByLabel("Response to customer").fill("Thank you. We have reviewed the request and will use the supplied details to discuss the next step.");
   await page.getByRole("button", { name: "Send response", exact: true }).click();

@@ -17,13 +17,13 @@ Internet -> Cloudflare -> Cloudflare Tunnel -> loopback Nginx
 - PostgreSQL must listen only on loopback and use SCRAM for TCP password authentication.
 - `boomotech.service` runs as `boomotechhost`, never root. Root owns system configuration and server backups.
 
-The repository preserves the current Argon2id credentials, server-side sessions, role and origin checks, rate limits, verified-email flow, single-use password-reset tokens and `no-store` headers. Administrator MFA is a future application change. Evaluate TOTP or WebAuthn/passkeys separately.
+The repository preserves Argon2id credentials, server-side sessions, role and origin checks, rate limits, verified-email flow, single-use password-reset tokens and `no-store` headers. The current security branch adds mandatory Better Auth TOTP MFA for administrators with encrypted, single-use recovery codes. Production enrolment remains pending approval and migration.
 
 ## Application release gate
 
 Host hardening and application release approval are separate controls. A clean Ubuntu/server audit does not override an application security failure, and a green application test suite does not prove the host is configured correctly.
 
-As of 11 October 2026, the active application-security PR (#27) is **not approved for deployment**. Its release report remains `DO NOT RELEASE` because persistent account lockout/backoff and mandatory administrator MFA are unresolved High findings. GitHub code scanning also reports a new High CodeQL alert on that PR. Do not merge or deploy the security branch until the application release report is regenerated as PASS and all required checks are green.
+As of 13 October 2026, the active application-security branch is **not approved for deployment**. The lockout and administrator MFA code is locally implemented, but the real GitHub CodeQL result has not rerun and production migration/enrolment have not been authorised. Keep the release blocked until the complete suite and GitHub security checks are green and the owner approves rollout.
 
 For future production changes, require both:
 

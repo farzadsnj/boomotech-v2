@@ -34,11 +34,13 @@ describe("administrator request API authorization", () => {
     expect((await POST(request({ action: "status", status: "RESOLVED" }), { params: Promise.resolve({ reference: "BT-AAAAAAAAAA" }) })).status).toBe(401);
     mocks.getSession.mockResolvedValue({ user: { id: "user-a", role: "user" } });
     expect((await POST(request({ action: "status", status: "RESOLVED" }), { params: Promise.resolve({ reference: "BT-AAAAAAAAAA" }) })).status).toBe(403);
+    mocks.getSession.mockResolvedValue({ user: { id: "admin-without-mfa", role: "admin", twoFactorEnabled: false } });
+    expect((await POST(request({ action: "status", status: "RESOLVED" }), { params: Promise.resolve({ reference: "BT-AAAAAAAAAA" }) })).status).toBe(403);
     expect(mocks.changeStatus).not.toHaveBeenCalled();
   });
 
   it("permits an administrator and derives the actor from the session", async () => {
-    mocks.getSession.mockResolvedValue({ user: { id: "admin-a", role: "admin" } });
+    mocks.getSession.mockResolvedValue({ user: { id: "admin-a", role: "admin", twoFactorEnabled: true } });
     const response = await POST(request({ action: "status", status: "RESOLVED", actorUserId: "attacker" }), { params: Promise.resolve({ reference: "BT-AAAAAAAAAA" }) });
     expect(response.status).toBe(200);
     expect(mocks.changeStatus).toHaveBeenCalledWith("BT-AAAAAAAAAA", "admin-a", "RESOLVED");

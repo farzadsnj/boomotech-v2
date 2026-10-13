@@ -1216,9 +1216,9 @@ Before enabling indexing, verify the HTTPS canonical origin, production copy, pu
 
 ## 27. Application security hardening status
 
-The active application-security review is PR #27 on `security/application-hardening-2026`. Safe repository changes include the 15–128 Unicode-code-point password policy, HIBP k-anonymity password screening, a customer “sign out all devices” action, structured redacted security events, ownership/mass-assignment regression tests, stronger token-page headers and a post-build client-bundle secret check.
+The active application-security review is on `security/application-hardening-2026`. It includes the 15–128 Unicode-code-point password policy, Better Auth HIBP screening, persistent account lockout, mandatory administrator TOTP MFA, a customer “sign out all devices” action, structured redacted security events, authorization regression tests, stronger token-page headers and a post-build client-bundle secret check.
 
-The branch is **not deployable yet**. The current security release report says `DO NOT RELEASE`. Two High findings require owner-approved authentication changes: persistent identifier-based failed-login lockout/backoff and mandatory administrator MFA. GitHub code scanning also reports a new High CodeQL alert on the PR; it must be fixed or formally demonstrated to be a false positive before merge.
+The branch is **not deployable yet**. The owner-approved lockout and MFA implementation is local only. Migration `0005_mushy_bedlam.sql`, administrator enrolment and rollback preparation require a controlled production window. The CodeQL High remediation must be confirmed by a real GitHub rerun before merge or release. Follow `docs/security/auth-remediation-2026-10-13.md`.
 
 The following owner decisions are also tracked in `docs/security/`: session lifetime, self-service account deletion, PostgreSQL TLS policy, retention automation, external alert delivery and encrypted off-site backup. These decisions must be kept separate from unrelated feature work so that security changes remain reviewable and reversible.
 

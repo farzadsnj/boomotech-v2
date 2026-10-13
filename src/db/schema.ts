@@ -13,6 +13,7 @@ export const user = pgTable("user", {
   banned: boolean("banned").default(false).notNull(),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires", { withTimezone: true }),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
@@ -84,6 +85,24 @@ export const rateLimit = pgTable("rate_limit", {
   count: integer("count").notNull(),
   lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 }, (table) => [uniqueIndex("rate_limit_key_unique").on(table.key)]);
+
+export const twoFactor = pgTable("two_factor", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  secret: text("secret").notNull(),
+  backupCodes: text("backup_codes").notNull(),
+  verified: boolean("verified").default(false).notNull(),
+  failedVerificationCount: integer("failed_verification_count").default(0).notNull(),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
+}, (table) => [uniqueIndex("two_factor_user_id_unique").on(table.userId)]);
+
+export const authLoginGuard = pgTable("auth_login_guard", {
+  identifierHash: text("identifier_hash").primaryKey(),
+  failedAttempts: integer("failed_attempts").default(0).notNull(),
+  windowStartedAt: timestamp("window_started_at", { withTimezone: true }).defaultNow().notNull(),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index("auth_login_guard_locked_until_idx").on(table.lockedUntil)]);
 
 export const bookingRequest = pgTable("booking_request", {
   id: text("id").primaryKey(),
@@ -168,4 +187,4 @@ export const notificationOutbox = pgTable("notification_outbox", {
   index("notification_outbox_booking_kind_idx").on(table.bookingId, table.kind),
 ]);
 
-export const authSchema = { user, session, account, verification, rateLimit };
+export const authSchema = { user, session, account, verification, rateLimit, twoFactor };

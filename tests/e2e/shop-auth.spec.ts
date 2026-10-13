@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { signInAdministrator } from "./auth-helpers";
 
 const screenshots = "artifacts/screenshots";
 
@@ -174,10 +175,7 @@ test.describe("database-backed accounts", () => {
     await page.goto("/admin/login");
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${screenshots}/admin-login.png`, fullPage: true });
-    await page.getByLabel("Administrator username").fill("farzadsnj");
-    await page.locator('input[name="password"]').fill("SyntheticAdminPassword9");
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/admin$/);
+    await signInAdministrator(page);
     await expect(page.getByRole("heading", { level: 1, name: "Operations dashboard" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "Registered customers" })).toBeVisible();
     await expect(page.locator(".admin-summary li").filter({ hasText: "New" }).locator("strong")).toHaveText(/\d+/);
@@ -266,10 +264,7 @@ test.describe("database-backed accounts", () => {
     const customerAxe = await new AxeBuilder({ page }).analyze();
     expect(customerAxe.violations.filter(({ impact }) => impact === "critical" || impact === "serious")).toEqual([]);
     await page.getByRole("button", { name: "Sign out", exact: true }).click();
-    await page.goto("/admin/login");
-    await page.getByLabel("Administrator username").fill("farzadsnj");
-    await page.locator('input[name="password"]').fill("SyntheticAdminPassword9");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await signInAdministrator(page);
     await page.goto(`/admin/requests/${requestReference}`);
     for (const viewport of [{ width: 320, height: 800 }, { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1280, height: 800 }]) {
       await page.setViewportSize(viewport);

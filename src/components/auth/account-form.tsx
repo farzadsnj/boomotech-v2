@@ -55,6 +55,10 @@ export function AccountForm({ mode }: { mode: Mode }) {
           }
           throw new Error("login");
         }
+        if (result.data && "twoFactorRedirect" in result.data && result.data.twoFactorRedirect) {
+          router.push("/admin/mfa");
+          return;
+        }
         router.push("/admin");
       } else {
         const parsed = loginSchema.parse(values);
@@ -64,6 +68,10 @@ export function AccountForm({ mode }: { mode: Mode }) {
           return;
         }
         if (result.error) throw new Error("login");
+        if (result.data && "twoFactorRedirect" in result.data && result.data.twoFactorRedirect) {
+          router.push("/admin/mfa");
+          return;
+        }
         router.push(result.data?.user.role === "admin" ? "/admin" : "/dashboard");
       }
       router.refresh();

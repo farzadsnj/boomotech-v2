@@ -11,12 +11,14 @@ const grantsDays = days("MAINTENANCE_EXPIRED_GRANT_DAYS", 30);
 const rateLimitDays = days("MAINTENANCE_RATE_LIMIT_DAYS", 2);
 const outboxDays = days("MAINTENANCE_SENT_OUTBOX_DAYS", 90);
 const sessionDays = days("MAINTENANCE_EXPIRED_SESSION_DAYS", 30);
+const loginGuardDays = days("MAINTENANCE_LOGIN_GUARD_DAYS", 30);
 
 const queries = [
   ["expired email verification grants", sql`SELECT count(*)::int AS count FROM email_verification_grant WHERE expires_at < now() - (${grantsDays} * interval '1 day') OR used_at < now() - (${grantsDays} * interval '1 day')`, sql`DELETE FROM email_verification_grant WHERE expires_at < now() - (${grantsDays} * interval '1 day') OR used_at < now() - (${grantsDays} * interval '1 day')`],
   ["stale rate-limit buckets", sql`SELECT count(*)::int AS count FROM rate_limit WHERE last_request < (extract(epoch from now() - (${rateLimitDays} * interval '1 day')) * 1000)::bigint`, sql`DELETE FROM rate_limit WHERE last_request < (extract(epoch from now() - (${rateLimitDays} * interval '1 day')) * 1000)::bigint`],
   ["sent notification outbox records", sql`SELECT count(*)::int AS count FROM notification_outbox WHERE status = 'sent' AND sent_at < now() - (${outboxDays} * interval '1 day')`, sql`DELETE FROM notification_outbox WHERE status = 'sent' AND sent_at < now() - (${outboxDays} * interval '1 day')`],
   ["expired sessions", sql`SELECT count(*)::int AS count FROM session WHERE expires_at < now() - (${sessionDays} * interval '1 day')`, sql`DELETE FROM session WHERE expires_at < now() - (${sessionDays} * interval '1 day')`],
+  ["expired login-guard records", sql`SELECT count(*)::int AS count FROM auth_login_guard WHERE updated_at < now() - (${loginGuardDays} * interval '1 day') AND (locked_until IS NULL OR locked_until < now())`, sql`DELETE FROM auth_login_guard WHERE updated_at < now() - (${loginGuardDays} * interval '1 day') AND (locked_until IS NULL OR locked_until < now())`],
 ] as const;
 
 try {
