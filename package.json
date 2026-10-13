@@ -39,19 +39,19 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@electric-sql/pglite": "^0.5.8",
-    "@next/env": "16.3.8",
-    "@playwright/test": "^1.63.0",
+    "@next/env": "16.4.0",
+    "@playwright/test": "^1.64.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9.0.0",
-    "eslint-config-next": "16.3.8",
+    "eslint-config-next": "16.4.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^5.0.0",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.3"
   },
   "packageManager": "pnpm@11.19.0"
 }
