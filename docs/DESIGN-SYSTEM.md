@@ -34,7 +34,7 @@ Manrope is the display face for headings and identity moments; Inter is the body
 ## Layout
 
 - Mobile-first responsive grid
-- Maximum content width around 1200–1280 px, subject to testing
+- Fluid shared content width up to 1440 px, with narrower reading measures inside text components
 - Narrow reading width for articles and legal content
 - 8 px base spacing rhythm with semantic tokens
 - Consistent section spacing; avoid excessive empty hero height
@@ -67,6 +67,12 @@ Manrope is the display face for headings and identity moments; Inter is the body
 Motion communicates hierarchy and state. Keep transitions roughly 150–300 ms. Respect `prefers-reduced-motion`. Avoid scroll hijacking, autoplay background video, cursor effects, parallax-heavy pages, and animations that delay a task.
 
 The implemented motion layer lives in `src/styles/motion.css` and uses CSS for page entry, hero sequencing, interactive feedback and mobile navigation. A small Intersection Observer component adds section reveals only after JavaScript is available; content remains visible when JavaScript fails. Reduced-motion mode removes movement and leaves all content visible.
+
+The homepage and About orbital diagrams use a shared keyboard and touch capable
+component. CSS transforms move the stages while counter rotation keeps labels
+readable. Hover, focus and an open stage pause movement; reduced-motion mode
+removes it. The Services discovery prompt follows the same pause and reduced
+motion rules without announcing every typed character to screen readers.
 
 The sticky header adds depth only after scrolling. The homepage illustration permits a restrained 6–14 px pointer response through requestAnimationFrame on fine pointers; it resets on leave and is disabled for coarse pointers and reduced motion. The scroll-to-top control appears only on long pages after meaningful scrolling and uses instant scrolling when reduced motion is requested.
 

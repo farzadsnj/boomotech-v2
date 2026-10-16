@@ -4,12 +4,13 @@
 
 - Services
 - Solutions
-- Resources
+- Resources & Learning
+- Pricing
 - About
 - Support
 - Book a consultation
 
-Blog and the IT Health Check sit under Resources. Detailed services sit in the Services mega menu. Client portal and booking are labelled utility actions. Shop stays behind `SHOP_ENABLED=false` until catalogue operations are approved.
+Blog posts, the future learning portal, FAQs and the IT Health Check sit under Resources & Learning. Detailed services sit in the Services mega menu. Client portal and booking are labelled utility actions. Shop stays behind `SHOP_ENABLED=false` until catalogue operations are approved.
 
 ## Route map
 
@@ -23,6 +24,8 @@ Blog and the IT Health Check sit under Resources. Detailed services sit in the S
 - `/book` — Consultation options and preparation guidance linking to `/booking`
 - `/shop` — Curated product catalogue
 - `/resources` — Blog, guides, FAQs and downloads
+- `/learning` — Future learning portal structure; reviewed courses are not active yet
+- `/pricing` — Service pricing approach and quote pathways without unapproved fixed rates
 - `/tools/it-health-check` — Local deterministic technology self-check
 - `/about`
 - `/contact`

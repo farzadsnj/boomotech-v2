@@ -57,10 +57,11 @@ There is no destructive Git reset and no automatic database rollback. Production
 At minimum, the deployment preflight requires:
 
 ```env
-SITE_URL=https://approved.example
+SITE_URL=https://boomotech.com.au
+SITE_INDEXING_ENABLED=false
 DATABASE_URL=postgres://...
 BETTER_AUTH_SECRET=...
-BETTER_AUTH_URL=https://approved.example
+BETTER_AUTH_URL=https://boomotech.com.au
 BOOKING_NOTIFICATION_EMAIL=...
 BOOKING_FROM_EMAIL=...
 RESEND_API_KEY=...
@@ -78,6 +79,31 @@ CUSTOMER_REPLY_TO_EMAIL=
 Keep the file outside Git, readable only by the application user and approved administrators. The reverse proxy must overwrite forwarded client headers before `BOOKING_TRUST_PROXY=true` is used.
 
 `OPENAI_CHAT_ENABLED` and `SHOP_ENABLED` affect server-rendered navigation, routes, sitemap output and client bundles. Changing either flag requires a reviewed application rebuild and redeployment; editing `.env.production` and restarting the existing build is not sufficient for every UI change. Keep both flags `false` until their separate launch decisions are approved.
+
+`SITE_INDEXING_ENABLED` has the same build and redeployment requirement. Keep it
+`false` until public copy, contact details and legal review are approved. The
+application accepts public indexing only for the exact `https://boomotech.com.au`
+origin. After the reviewed rebuild, purge or revalidate Cloudflare for `/`,
+`/robots.txt` and `/sitemap.xml`; then verify the public HTML, response headers,
+robots rules and sitemap before Search Console submission.
+
+## Caching and compression boundary
+
+The application sends immutable caching only for versioned `/_next/static/`
+assets. It uses short, revalidated caching for robots and sitemap responses and
+private `no-store` headers for APIs, authentication, account, administrator and
+token pages. Do not create a Cloudflare “Cache Everything” rule that includes
+HTML, `/api/*`, `/admin/*`, `/dashboard*` or authentication routes.
+
+The reviewed Nginx example enables gzip for text, CSS, JavaScript, JSON, XML and
+SVG responses on the loopback origin hop. Confirm effective compression with
+`curl --compressed -I` and use Cloudflare's visitor-facing Brotli setting only
+after checking actual response headers. HTTP/2 or HTTP/3 is terminated at
+Cloudflare; the existing tunnel-to-Nginx-to-Next.js boundary remains loopback.
+
+Before rollout, compare the active Nginx and Cloudflare configuration with the
+repository examples. Ensure neither layer injects a conflicting `X-Robots-Tag`,
+rewrites canonical hosts, or publicly caches private responses.
 
 ## Dry run and deployment
 

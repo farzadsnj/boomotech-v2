@@ -38,5 +38,6 @@ describe("authentication environment validation", () => {
     expect(() => validateProductionEnvironment({ ...environment, OPENAI_CHAT_ENABLED: "true" })).toThrow(/OPENAI_API_KEY/);
     expect(validateProductionEnvironment({ ...environment, OPENAI_CHAT_ENABLED: "true", OPENAI_API_KEY: "server-only-test-key" })).toEqual({ authUrl: "https://boomotech.com.au", siteUrl: "https://boomotech.com.au" });
     expect(() => validateProductionEnvironment({ ...environment, SHOP_ENABLED: "yes" })).toThrow(/SHOP_ENABLED must be true or false/);
+    expect(() => validateProductionEnvironment({ ...environment, SITE_INDEXING_ENABLED: "yes" })).toThrow(/SITE_INDEXING_ENABLED must be true or false/);
   });
 });

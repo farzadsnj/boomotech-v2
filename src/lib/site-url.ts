@@ -1,3 +1,5 @@
+export const PRODUCTION_SITE_ORIGIN = "https://boomotech.com.au";
+
 export function getSiteUrl(): URL {
   const candidate = process.env.SITE_URL?.trim();
   if (!candidate && process.env.NODE_ENV === "production") {
@@ -12,5 +14,5 @@ export function getSiteUrl(): URL {
 }
 
 export function isIndexingEnabled(): boolean {
-  return process.env.SITE_INDEXING_ENABLED === "true" && getSiteUrl().protocol === "https:";
+  return process.env.SITE_INDEXING_ENABLED === "true" && getSiteUrl().origin === PRODUCTION_SITE_ORIGIN;
 }

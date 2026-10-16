@@ -17,6 +17,10 @@ import { ServiceQuestions } from "./service-questions";
 import { SupportRequestForm } from "@/features/booking/support-request-form";
 import { FounderProfile } from "./founder-profile";
 import { getSiteUrl } from "@/lib/site-url";
+import { businessIdentity } from "@/content/business";
+import { OrbitDiagram } from "@/components/ui/orbit-diagram";
+import { PricingOverview } from "./pricing-overview";
+import { LearningPortal } from "./learning-portal";
 
 function Hero({ page, detail }: { page: PageRecord; detail?: string }) {
   const visual = "visual" in page ? page.visual : null;
@@ -91,7 +95,9 @@ function InfoPageView({ page }: { page: InfoPage }) {
   const founderSection = page.path === "/about" ? page.sections?.find(({ title }) => title === "Meet the founder") : undefined;
   const sections = page.path === "/about" ? page.sections?.filter(({ title }) => title !== "Meet the founder") : page.sections;
   return <><Hero page={page} />
-    {page.path === "/about" ? <section className="about-story"><div className="container about-story__grid"><div><p className="eyebrow"><span className="eyebrow-line" />WHY BOOMOTECH</p><h2>Technical capability should make the next decision clearer.</h2><p>BoomoTech connects hands-on problem solving with thoughtful systems work. The goal is to understand what matters, explain the trade-offs and build a practical path forward.</p></div><div className="about-story__visual" aria-hidden="true"><span>Listen</span><span>Clarify</span><span>Build</span><i>BT</i></div></div></section> : null}
+    {page.path === "/about" ? <section className="about-story"><div className="container about-story__grid"><div><p className="eyebrow"><span className="eyebrow-line" />WHY BOOMOTECH</p><h2>Technical capability should make the next decision clearer.</h2><p>BoomoTech connects hands-on problem solving with thoughtful systems work. The goal is to understand what matters, explain the trade-offs and build a practical path forward.</p></div><OrbitDiagram centre="BoomoTech" label="BoomoTech approach: Listen, Clarify and Build" stages={[{ label: "Listen", description: "Understand the people, problem and impact before choosing a tool." }, { label: "Clarify", description: "Make the options, dependencies and boundaries easier to understand." }, { label: "Build", description: "Deliver an agreed practical step and review what comes next." }]} variant="about" /></div></section> : null}
+    {page.path === "/pricing" ? <PricingOverview /> : null}
+    {page.path === "/learning" ? <LearningPortal /> : null}
     {founderSection?.description ? <FounderProfile description={founderSection.description} /> : null}
     {page.notice ? <div className="container notice-wrap"><Notice {...page.notice} /></div> : null}
     {page.resources?.length ? <Resources page={page} /> : null}
@@ -110,6 +116,17 @@ function InfoPageView({ page }: { page: InfoPage }) {
 export function PageRenderer({ page }: { page: PageRecord }) {
   const siteUrl = getSiteUrl();
   const breadcrumbs = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Home", item: new URL("/", siteUrl).toString() }, ...page.path.split("/").filter(Boolean).map((part, index, parts) => ({ "@type": "ListItem", position: index + 2, name: index === parts.length - 1 ? page.title : part.replaceAll("-", " "), item: new URL(`/${parts.slice(0, index + 1).join("/")}`, siteUrl).toString() }))] };
+  const structured: Array<Record<string, unknown>> = [breadcrumbs];
+  if (page.kind === "service") structured.push({
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: page.name,
+    description: page.metaDescription,
+    url: new URL(page.path, siteUrl).toString(),
+    provider: { "@type": "Organization", name: businessIdentity.tradingName, url: siteUrl.toString() },
+    areaServed: [{ "@type": "City", name: businessIdentity.baseLocality }, { "@type": "Country", name: businessIdentity.remoteArea }],
+    audience: { "@type": "Audience", audienceType: page.audience },
+  });
   let content: React.ReactNode;
   switch (page.kind) {
     case "service": content = <ServicePage page={page} />; break;
@@ -118,5 +135,5 @@ export function PageRenderer({ page }: { page: PageRecord }) {
     case "solutions-hub": content = <HubPageView page={page} />; break;
     default: content = <InfoPageView page={page} />;
   }
-  return <><script dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs).replaceAll("<", "\\u003c") }} type="application/ld+json" />{content}</>;
+  return <><script dangerouslySetInnerHTML={{ __html: JSON.stringify(structured).replaceAll("<", "\\u003c") }} type="application/ld+json" />{content}</>;
 }

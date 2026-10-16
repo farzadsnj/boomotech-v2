@@ -20,9 +20,10 @@ const serviceProcess: ProcessStep[] = [
   { number: "03", title: "Improve", description: "Complete the agreed work, explain the result and identify useful next steps." },
 ];
 
-const service = (record: Omit<ServiceRecord, "kind" | "eyebrow" | "process" | "visual">): ServiceRecord => ({
+const service = (record: Omit<ServiceRecord, "kind" | "indexing" | "eyebrow" | "process" | "visual">): ServiceRecord => ({
   ...record,
   kind: "service",
+  indexing: "public",
   eyebrow: "BoomoTech service",
   process: serviceProcess,
   visual: serviceVisuals[record.path],

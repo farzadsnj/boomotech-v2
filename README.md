@@ -47,7 +47,7 @@ Use Node.js 22 and pnpm 11.19.0. Run `pnpm install`. Copy `.env.example` to `.en
 
 Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:security`, `pnpm build`, `pnpm security:client-bundle`, and `pnpm test:e2e` before proposing changes. The same application checks run in GitHub Actions, alongside dependency, secret, and CodeQL scanning.
 
-The architecture and outstanding assumptions are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Search indexing stays disabled until `SITE_URL` is an approved HTTPS origin and `SITE_INDEXING_ENABLED=true` is set after launch review.
+The architecture and outstanding assumptions are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Search indexing stays disabled until `SITE_URL=https://boomotech.com.au` and `SITE_INDEXING_ENABLED=true` are applied to a reviewed production rebuild after launch approval. Preview and staging origins remain non-indexable. See [docs/WEBSITE-OPTIMISATION.md](docs/WEBSITE-OPTIMISATION.md) for the measured performance and SEO audit, and [docs/UI-UX-IMPROVEMENTS.md](docs/UI-UX-IMPROVEMENTS.md) for the wider layout, service discovery, orbital interactions, pricing and learning architecture.
 
 ## Interface and content system
 
