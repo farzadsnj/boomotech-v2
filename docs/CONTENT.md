@@ -134,3 +134,16 @@ Each page should offer one context-matched next action. Educational content can 
 The resources hub groups real routes by customer need. Each card records a topic, format, approximate reading time, related service and clear action. A resource must resolve to an existing reviewed article, service, support guide, booking preparation page or the explicitly labelled sample catalogue; unfinished downloads are not presented as available.
 
 Verified founder copy may state that Farzad Sanjarani is a Brisbane-based IT professional with a Master of Information Technology in Software Development from QUT and practical experience across IT support, endpoint deployment, networking, Microsoft 365, cloud, websites, software and automation. Employer names, client names, tenure, awards and unverified credentials remain excluded.
+
+## Learning and pricing content
+
+The future learning portal uses typed categories in `src/content/learning.ts`.
+Until reviewed course material exists, `/learning` must describe the planned
+structure honestly and direct visitors to current articles and services. Do not
+present future courses, quizzes, certificates or progress tracking as active.
+
+Pricing presentation uses `src/content/pricing.ts`. Each record explains the
+pricing basis, possible inclusions and limitations. Numeric rates, starting
+prices, travel charges, subscriptions and response commitments require owner
+approval before publication. A quote or booking request never confirms work,
+availability or an appointment.

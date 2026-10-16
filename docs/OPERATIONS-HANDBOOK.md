@@ -1,6 +1,6 @@
 # BoomoTech Project Operations Handbook
 
-Last updated: 7 October 2026
+Last updated: 11 October 2026
 
 ## Purpose
 
@@ -1212,3 +1212,20 @@ Future product expansion still requires separate owner approval for confirmed ap
 - Install `scripts/server/logrotate-boomotech` through its installer so backup, monitoring and deployment logs use bounded retention and the required service ownership.
 
 Before enabling indexing, verify the HTTPS canonical origin, production copy, public legal information, current sitemap, robots response and a fresh crawl of support and contact. Authentication, booking, preview shop, administrator and draft terms routes remain noindex.
+
+
+## 27. Application security hardening status
+
+The active application-security review is on `security/application-hardening-2026`. It includes the 15–128 Unicode-code-point password policy, Better Auth HIBP screening, persistent account lockout, mandatory administrator TOTP MFA, a customer “sign out all devices” action, structured redacted security events, authorization regression tests, stronger token-page headers and a post-build client-bundle secret check.
+
+The branch is **not deployable yet**. The owner-approved lockout and MFA implementation is local only. Migration `0005_mushy_bedlam.sql`, administrator enrolment and rollback preparation require a controlled production window. The CodeQL High remediation must be confirmed by a real GitHub rerun before merge or release. Follow `docs/security/auth-remediation-2026-10-13.md`.
+
+The following owner decisions are also tracked in `docs/security/`: session lifetime, self-service account deletion, PostgreSQL TLS policy, retention automation, external alert delivery and encrypted off-site backup. These decisions must be kept separate from unrelated feature work so that security changes remain reviewable and reversible.
+
+For a future release, run the complete local suite, require all GitHub checks green, regenerate the security release report, take/verify the production backup, record the current production SHA and only then use `scripts/deploy-production.sh` from `main`.
+
+## 28. Next milestone after the security gate
+
+After the security branch reaches PASS and is deployed safely, the next planned project is secure inbound business email using Resend. The intended design is Resend inbound → signed webhook → Cloudflare Tunnel → Next.js on the Dell → PostgreSQL/admin web inbox. It must not expose the Dell as a public SMTP/IMAP server and must not require opening mail ports on the home connection.
+
+The first inbound-email version should support approved addresses such as `farzad@boomotech.com.au`, `hello@boomotech.com.au` and `support@boomotech.com.au`, with provider-signature verification, replay/idempotency protection, recipient allowlisting, safe message rendering, attachment isolation and documented retention before activation.

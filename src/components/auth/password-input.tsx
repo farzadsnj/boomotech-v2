@@ -8,11 +8,10 @@ export function PasswordInput({ id, name, autoComplete, error, onValue }: { id: 
 }
 
 export function PasswordRequirements({ password, confirmation }: { password: string; confirmation?: string }) {
+  const codePoints = Array.from(password).length;
   const checks: [boolean, string][] = [
-    [password.length >= 12 && password.length <= 128, "12–128 characters"],
-    [/[A-Z]/.test(password), "An uppercase letter"],
-    [/[a-z]/.test(password), "A lowercase letter"],
-    [/[0-9]/.test(password), "A number"],
+    [codePoints >= 15 && codePoints <= 128, "15–128 characters"],
+    [codePoints >= 15, "A long, unique phrase is easier to remember and harder to guess"],
   ];
   if (confirmation !== undefined) checks.push([Boolean(confirmation) && password === confirmation, "Passwords match"]);
   return <ul className="password-requirements" aria-label="Password requirements">{checks.map(([met, label]) => <li className={met ? "is-met" : ""} key={label}><span aria-hidden="true">{met ? "✓" : "○"}</span>{label}</li>)}</ul>;

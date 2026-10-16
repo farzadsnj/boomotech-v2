@@ -35,7 +35,7 @@ await db.transaction(async (tx) => {
   const [existing] = matches;
   const userId = existing?.id ?? crypto.randomUUID();
   if (existing) {
-    await tx.update(schema.user).set({ name: "BoomoTech Administrator", email, username, displayUsername: username, role: "admin", banned: false, updatedAt: new Date() }).where(eq(schema.user.id, userId));
+    await tx.update(schema.user).set({ name: "BoomoTech Administrator", email, username, displayUsername: username, role: "admin", banned: false, twoFactorEnabled: false, updatedAt: new Date() }).where(eq(schema.user.id, userId));
   } else {
     await tx.insert(schema.user).values({ id: userId, name: "BoomoTech Administrator", email, username, displayUsername: username, role: "admin", emailVerified: true });
   }
@@ -47,7 +47,8 @@ await db.transaction(async (tx) => {
     await tx.insert(schema.account).values({ id: crypto.randomUUID(), accountId: userId, providerId: "credential", userId, password: passwordHash });
   }
   await tx.delete(schema.session).where(eq(schema.session.userId, userId));
+  await tx.delete(schema.twoFactor).where(eq(schema.twoFactor.userId, userId));
 });
 
 await closeDatabase();
-console.log("Administrator account created or updated. Remove ADMIN_TEMP_PASSWORD from the environment now.");
+console.log("Administrator account created or updated. Remove ADMIN_TEMP_PASSWORD from the environment now, then sign in to enrol MFA before using administrator features.");

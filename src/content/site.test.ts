@@ -4,6 +4,8 @@ import { services } from "./services";
 import { solutions } from "./solutions";
 import { homeContent, site } from "./site";
 import { publishedArticles } from "./blog";
+import { pricingOptions } from "./pricing";
+import { learningCategories } from "./learning";
 
 const requiredPaths = [
   "/services", "/services/it-support", "/services/managed-it", "/services/microsoft-365",
@@ -14,7 +16,7 @@ const requiredPaths = [
   "/solutions/home-office-individuals", "/solutions/remote-work", "/support",
   "/support/remote", "/support/onsite", "/support/safety", "/book",
   "/book/consultation", "/book/remote-support", "/book/onsite-support",
-  "/book/project-discovery", "/resources", "/faq", "/about", "/contact",
+  "/book/project-discovery", "/resources", "/learning", "/pricing", "/faq", "/about", "/contact",
   "/get-a-quote", "/privacy", "/cookies", "/terms",
 ];
 
@@ -28,7 +30,9 @@ describe("local Phase 1 content", () => {
     expect(intendedPublicRoutes).toContain("/tools/it-health-check");
     expect(intendedPublicRoutes).not.toContain("/privacy");
     expect(intendedPublicRoutes).not.toContain("/shop");
-    expect(intendedPublicRoutes).toHaveLength(1 + 2 + services.length + solutions.length + 7 + publishedArticles.length);
+    expect(intendedPublicRoutes).toHaveLength(1 + 2 + services.length + solutions.length + 9 + publishedArticles.length);
+    expect(allPages.every((page) => page.indexing === "public" || page.indexing === "noindex")).toBe(true);
+    expect(allPages.filter((page) => page.indexing === "noindex").every((page) => !intendedPublicRoutes.includes(page.path))).toBe(true);
   });
 
   it("gives every service the required useful content", () => {
@@ -74,6 +78,16 @@ describe("local Phase 1 content", () => {
     expect(resources && "resources" in resources ? resources.resources : []).toHaveLength(10);
     expect(JSON.stringify(about)).toContain("Farzad Sanjarani");
     expect(JSON.stringify(about)).toContain("QUT");
+    expect(JSON.stringify(allPages)).not.toMatch(/Marvin McKinney|Sophia Rodriguez/i);
+  });
+
+  it("provides reviewed FAQ, learning and pricing structures without invented rates", () => {
+    const faq = allPages.find(({ path }) => path === "/faq");
+    expect(faq && "faqs" in faq ? faq.faqs : []).toHaveLength(15);
+    expect(learningCategories).toHaveLength(7);
+    expect(pricingOptions).toHaveLength(7);
+    expect(pricingOptions.every((option) => option.pricingBasis.length > 20 && option.includes.length >= 3)).toBe(true);
+    expect(JSON.stringify(pricingOptions)).not.toMatch(/\$\s*\d|AUD\s*\d|per hour|hourly rate/i);
   });
 
   it("keeps homepage and navigation actions attached to known routes", () => {

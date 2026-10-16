@@ -8,7 +8,6 @@
 .hero-stagger--5 { animation-delay: .36s; }
 
 .hero-visual { animation: hero-visual-enter .85s .18s cubic-bezier(.2,.7,.2,1) both; }
-.hero-visual__core { will-change: transform; }
 .hero-visual__orbit--one { animation: orbit-pulse 4.5s ease-in-out infinite; }
 .hero-visual__orbit--two { animation: orbit-pulse 4.5s 1.2s ease-in-out infinite; }
 

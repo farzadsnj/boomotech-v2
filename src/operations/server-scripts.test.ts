@@ -73,6 +73,8 @@ describe("server operations scripts", () => {
 
   it("keeps the deployment safety steps in the required order", () => {
     const script = read("scripts/deploy-production.sh");
+    expect(script).toContain('SITE_INDEXING_ENABLED must be true or false');
+    expect(script).toContain('[[ "$SITE_URL" == "https://boomotech.com.au" ]]');
     const ordered = [
       "git status --porcelain",
       "backup-boomotech.sh",
@@ -95,6 +97,16 @@ describe("server operations scripts", () => {
       expect(position, `${value} should be present`).toBeGreaterThan(previous);
       previous = position;
     }
+  });
+
+  it("documents safe origin compression without changing the loopback boundary", () => {
+    const nginx = read("scripts/server/security/nginx-boomotech-origin.conf.example");
+    expect(nginx).toContain("gzip on;");
+    expect(nginx).toContain("gzip_vary on;");
+    expect(nginx).toContain("application/javascript");
+    expect(nginx).toContain("image/svg+xml");
+    expect(nginx).toContain("proxy_pass http://127.0.0.1:3000");
+    expect(nginx).toContain("listen 127.0.0.1:80");
   });
 
   it("isolates production credentials and origins from deployment unit tests", () => {

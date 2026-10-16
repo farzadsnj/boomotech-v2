@@ -1,14 +1,18 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { admin, username } from "better-auth/plugins";
+import { admin, haveIBeenPwned, twoFactor, username } from "better-auth/plugins";
 import { db } from "@/db";
-import { authSchema } from "@/db/schema";
+import { authSchema, session as sessionTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { getSiteUrl } from "@/lib/site-url";
 import { sendAccountVerificationEmail } from "@/features/email-verification/send";
 import { verificationTtlMinutes } from "@/features/email-verification/grants";
 import { passwordResetTtlMinutes, sendAccountPasswordResetEmail } from "@/features/password-reset/send";
 import { hashPassword, verifyPassword } from "./password";
-import { getBetterAuthUrl, requireBetterAuthSecret } from "./auth-env";
+import { getBetterAuthUrl, requireBetterAuthSecret, usesSecureAuthenticationCookies } from "./auth-env";
+import { persistentLoginLockout } from "./login-lockout";
+import { passwordLengthProtection } from "./password-protection";
+import { administratorMfaEnforcement } from "./admin-mfa";
 
 const siteOrigin = getSiteUrl().origin;
 const authOrigin = getBetterAuthUrl().origin;
@@ -25,8 +29,10 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    minPasswordLength: 12,
-    maxPasswordLength: 128,
+    minPasswordLength: 15,
+    // The custom policy hook counts Unicode code points and enforces 128.
+    // This larger UTF-16 limit permits up to 128 supplementary characters.
+    maxPasswordLength: 256,
     autoSignIn: false,
     resetPasswordTokenExpiresIn: passwordResetTtlMinutes() * 60,
     revokeSessionsOnPasswordReset: true,
@@ -60,6 +66,17 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24,
     cookieCache: { enabled: false },
   },
+  databaseHooks: {
+    user: {
+      update: {
+        after: async (updatedUser, context) => {
+          if (context?.path === "/two-factor/verify-totp" && updatedUser.twoFactorEnabled === true) {
+            await db.delete(sessionTable).where(eq(sessionTable.userId, updatedUser.id));
+          }
+        },
+      },
+    },
+  },
   rateLimit: {
     enabled: true,
     storage: "database",
@@ -75,12 +92,33 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    passwordLengthProtection(),
+    haveIBeenPwned({
+      enabled: process.env.AUTH_EMAIL_CAPTURE_MODE !== "test",
+      customPasswordCompromisedMessage: "Choose a password that has not appeared in known data breaches.",
+    }),
     username({ minUsernameLength: 3, maxUsernameLength: 32 }),
     admin({ defaultRole: "user", adminRoles: ["admin"] }),
+    administratorMfaEnforcement(),
+    persistentLoginLockout(),
+    twoFactor({
+      issuer: "BoomoTech",
+      twoFactorCookieMaxAge: 300,
+      trustDeviceMaxAge: 1,
+      accountLockout: { enabled: true, maxFailedAttempts: 5, durationSeconds: 900 },
+      backupCodeOptions: { amount: 10, length: 12, storeBackupCodes: "encrypted" },
+    }),
   ],
   advanced: {
-    useSecureCookies: process.env.NODE_ENV === "production",
+    useSecureCookies: usesSecureAuthenticationCookies(),
     database: { validateSchema: true },
+    ipAddress: {
+      ipAddressHeaders: process.env.NODE_ENV === "production"
+        ? ["cf-connecting-ip"]
+        : ["x-forwarded-for", "x-real-ip"],
+      disableIpTracking: false,
+      ipv6Subnet: 64,
+    },
   },
 });
 

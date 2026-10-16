@@ -1,8 +1,8 @@
-# Phase 0 architecture and assumptions
+# BoomoTech V2 architecture and assumptions
 
 ## Scope of this foundation
 
-The current slice is a responsive marketing shell, complete informational Phase 1 route set, secure consultation request, sample catalogue and first customer account foundation. Operational details remain honest unavailable states where service scope, contact details, policies, or owner decisions are pending. Product ordering, payments, confirmed appointments and support-ticket storage are not connected.
+The current application is a production-backed marketing and service-request platform with public service/solution/resource content, local search, a browser-only IT Health Check, PostgreSQL-backed consultation/support requests, verified customer accounts, customer/admin request conversations and outbound email notifications. Product ordering, payments, confirmed appointments, public file uploads and inbound business mail remain intentionally unavailable until separately reviewed.
 
 ## Application shape
 
@@ -15,6 +15,16 @@ The current slice is a responsive marketing shell, complete informational Phase 
 - `src/app/globals.css` defines semantic colour, typography, spacing, focus, and shared shell styles. Page and motion rules are split into `src/styles/pages.css` and `src/styles/motion.css`.
 - The root layout loads self-hosted Manrope and Inter variable fonts through `next/font`. Small client components own scroll-aware header state, the long-page scroll-to-top control and fine-pointer hero transforms without making the root layout request-bound.
 - Vitest checks content, metadata, product search, authorization, hashing and database-backed authentication. Playwright covers browsers. GitHub Actions applies migrations to PostgreSQL, then runs lint, type-check, tests, a production build and browser checks.
+
+## Security architecture
+
+Authentication uses Better Auth with PostgreSQL-backed sessions and Argon2id password hashes. The active hardening branch adds a 15–128 Unicode-code-point policy, HIBP k-anonymity range screening, revoke-all-sessions UI, redacted structured security events, security-focused regression tests and client-bundle secret scanning. It does not replace Better Auth or introduce custom session cryptography.
+
+Application authorization remains server-side: customer request access is constrained by the authenticated immutable user ID, administrator mutations require the admin role, write payloads use explicit schemas/allowlists and state-changing custom routes require an approved Origin. Sensitive pages use no-store headers; token-bearing pages additionally use `Referrer-Policy: no-referrer`.
+
+The current security release gate is not yet PASS. Per-identifier failed-login lockout, mandatory administrator TOTP MFA and SEC-017 are implemented on the local security branch with an additive migration. Release remains blocked until the real GitHub CodeQL check confirms the High alert is closed, the migration and administrator enrolment are reviewed, and the owner approves a controlled rollout.
+
+The production network boundary remains Cloudflare Tunnel → loopback Nginx → loopback Next.js → loopback PostgreSQL. Repository documentation treats same-host PostgreSQL TLS, off-site encrypted backup, retention/deletion and external alerting as explicit owner/operations decisions rather than silently claiming compliance.
 
 ## Assumptions pending owner decisions
 
@@ -45,7 +55,7 @@ The floating assistant is a client-side interface over approved local service co
 
 `ProductRow` owns horizontal catalogue behaviour and end-state controls. It uses complete-card tracks on desktop and inline mandatory scroll snapping on mobile; `/shop?view=all` provides the non-carousel full grid. Service, solution and blog records own their local visual assets and alternative text, keeping image choice out of page templates.
 
-Better Auth is mounted at `/api/auth/[...all]` with the Drizzle PostgreSQL adapter, username and admin plugins, origin validation, HTTP-only cookies and database-backed rate limits. Customer email login and administrator username login use the same credential store. Argon2id parameters are defined centrally in `src/lib/auth/password.ts`. Only the administrator seed command can assign the `admin` role. New customer accounts require email verification. The authentication provider signs the expiring token; `email_verification_grant` stores a SHA-256 digest and enforces one-time use through the application `/verify-email` route. Authentication email delivery is isolated from booking notifications.
+Better Auth is mounted at `/api/auth/[...all]` with the Drizzle PostgreSQL adapter, username and admin plugins, origin validation, HTTP-only cookies and database-backed rate limits. Customer email login and administrator username login use the same credential store. Argon2id parameters are defined centrally in `src/lib/auth/password.ts`. Password validation uses Unicode code-point length and an HIBP k-anonymity range lookup; the full password is never transmitted or logged. A breach-service timeout fails open with a redacted security event so an external outage cannot block all account access. Only the administrator seed command can assign the `admin` role. New customer accounts require email verification. The authentication provider signs the expiring token; `email_verification_grant` stores a SHA-256 digest and enforces one-time use through the application `/verify-email` route. Authentication email delivery is isolated from booking notifications.
 
 `src/lib/auth/auth-env.ts` validates `BETTER_AUTH_SECRET` and the Better Auth origin before Better Auth is instantiated. `src/lib/config/environment.ts` rejects a missing production PostgreSQL URL and powers the pre-deployment `pnpm prod:check` command. Production has no authentication-secret, application-origin or database connection fallback.
 
@@ -56,3 +66,12 @@ The request domain lives in `src/features/requests`. Database transactions enfor
 Password recovery uses Better Auth's database-backed, expiring, single-use reset tokens. Authentication templates and booking notification templates remain separate while sharing one server-only Resend transport. Successful password resets revoke existing sessions.
 
 Production requires PostgreSQL with restricted network access, encrypted backups, restore testing and an approved retention/deletion process. Authentication secrets must come from the deployment secret manager and support rotation. Administrator credential rotation, reviewed worker/timer enablement, external alert delivery and owner-approved retention remain outstanding launch controls.
+
+The current application does not persist identifier-level login failures and has no administrator second factor. The schema, transaction boundaries, recovery rules and tests proposed in `docs/security/auth-approval-plan.md` require owner approval before migration. These controls must be implemented and verified before security release approval.
+
+
+## Future inbound email boundary
+
+Inbound BoomoTech business mail is not implemented yet. After the security release gate passes, the intended design is Resend inbound email → provider-signed HTTPS webhook → Cloudflare Tunnel → Next.js → PostgreSQL/admin inbox, with replies sent through the Resend outbound API.
+
+This design keeps the Dell behind the existing outbound Cloudflare Tunnel and does not require exposing SMTP/IMAP services or the home public IP. The future webhook must verify the provider signature over the required raw payload, enforce replay/idempotency controls, bound payload and attachment sizes, allow only approved recipient addresses, render untrusted content safely, isolate attachments, avoid automatically fetching email links/content, redact logs and implement an approved retention/deletion policy.

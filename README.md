@@ -1,10 +1,10 @@
 # BoomoTech V2
 
-BoomoTech V2 is the planned web platform for BoomoTech: practical IT support, cloud, cybersecurity, AI and automation, web/software services, consultation, service booking, educational content and curated commerce.
+BoomoTech V2 is the current web platform for BoomoTech: practical IT support, cloud, cybersecurity, automation, web/software services, consultation requests, educational content and future curated commerce.
 
-This repository contains the product brief and the Phase 0 / initial Phase 1 application foundation for BoomoTech V2.
+This repository contains the production application, customer/request backend, deployment tooling, server operations documentation and the active security-hardening work for BoomoTech V2.
 
-The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local typed content, reusable page layouts and progressive accessible motion. Phase 1 informational routes are available for review. The consultation form can securely email a booking request when its server configuration is complete. A sample product catalogue and PostgreSQL-backed customer account foundation are available for testing. Support tickets, confirmed appointments, product ordering and payments remain unavailable until their operational requirements are approved.
+The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local typed content, reusable page layouts and progressive accessible motion. The consultation/support request flow persists requests in PostgreSQL, provides customer/admin request conversations and uses a transactional Resend notification outbox. Verified customer accounts and the role-protected administrator workflow are implemented. Confirmed appointments, payments, public file uploads and real commerce remain unavailable until their operational requirements are approved.
 
 ## Start here
 
@@ -15,6 +15,7 @@ The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local 
 
 ## Documentation
 
+- [Current project status](docs/PROJECT-STATUS.md)
 - [Brand direction](docs/BRAND.md)
 - [Site structure](docs/SITE-STRUCTURE.md)
 - [Design system](docs/DESIGN-SYSTEM.md)
@@ -30,22 +31,29 @@ The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local 
 - [Production server security](docs/SERVER-SECURITY.md)
 - [Operations handbook](docs/OPERATIONS-HANDBOOK.md)
 - [Notification outbox](docs/NOTIFICATION-OUTBOX.md)
+- [Application security findings](docs/security/findings.md)
+- [Security release report](docs/security/release-report-2026-10-11.md)
+- [Security incident response](docs/security/incident.md)
 
 No production claims, prices, policies, testimonials, credentials or case studies should be added unless verified by the owner.
+
+## Security release status
+
+The active security-hardening work is tracked in PR #27. Persistent identifier-based account lockout, mandatory administrator TOTP MFA and SEC-017 are implemented on the local security branch, with additive migration `drizzle/0005_mushy_bedlam.sql`. The release remains **DO NOT RELEASE** until the real GitHub CodeQL check confirms the High alert is closed, the migration and administrator enrolment are reviewed, and the owner approves a controlled rollout. See [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md), [docs/security/auth-remediation-2026-10-13.md](docs/security/auth-remediation-2026-10-13.md) and [docs/security/release-report-2026-10-11.md](docs/security/release-report-2026-10-11.md).
 
 ## Run locally
 
 Use Node.js 22 and pnpm 11.19.0. Run `pnpm install`. Copy `.env.example` to `.env.local`, change the public URLs to the local origin, generate a private `BETTER_AUTH_SECRET` of at least 32 random bytes, and follow the database setup below before testing account routes. Marketing, catalogue and blog pages can otherwise run with `pnpm dev`.
 
-Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` before proposing changes. The same checks run in GitHub Actions.
+Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:security`, `pnpm build`, `pnpm security:client-bundle`, and `pnpm test:e2e` before proposing changes. The same application checks run in GitHub Actions, alongside dependency, secret, and CodeQL scanning.
 
-The architecture and outstanding assumptions are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Search indexing stays disabled until `SITE_URL` is an approved HTTPS origin and `SITE_INDEXING_ENABLED=true` is set after launch review.
+The architecture and outstanding assumptions are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Search indexing stays disabled until `SITE_URL=https://boomotech.com.au` and `SITE_INDEXING_ENABLED=true` are applied to a reviewed production rebuild after launch approval. Preview and staging origins remain non-indexable. See [docs/WEBSITE-OPTIMISATION.md](docs/WEBSITE-OPTIMISATION.md) for the measured performance and SEO audit, and [docs/UI-UX-IMPROVEMENTS.md](docs/UI-UX-IMPROVEMENTS.md) for the wider layout, service discovery, orbital interactions, pricing and learning architecture.
 
 ## Interface and content system
 
 The public navigation and service catalogue use the Support, Secure, Improve and Build taxonomy in `src/content/service-groups.ts`. This file derives its records from the canonical service catalogue, so the header mega menu, homepage capability layout and services directory do not maintain disconnected service names or URLs.
 
-`/tools/it-health-check` is a deterministic ten-question self-check. It calculates results in component memory, sends no answers to an API, writes no answers to browser storage and makes no diagnostic or security guarantee. Edit its reviewed questions and thresholds in `src/content/health-check.ts`. The typed featured-work model in `src/content/featured-work.ts` deliberately renders a truthful fallback until owner-approved project evidence is available.
+`/tools/it-health-check` is a deterministic six-question self-check. It calculates results in component memory, sends no answers to an API, writes no answers to browser storage and makes no diagnostic or security guarantee. Edit its reviewed questions and thresholds in `src/content/health-check.ts`. The typed featured-work model in `src/content/featured-work.ts` deliberately renders a truthful fallback until owner-approved project evidence is available.
 
 The global shell self-hosts the variable Manrope display face and Inter body face through `next/font`; browsers make no runtime Google Fonts request. The header becomes sticky and gains restrained backdrop depth after scrolling. Long pages expose a reduced-motion-aware “Back to top” control. The homepage technical visual uses a small requestAnimationFrame pointer transform on fine pointers only and keeps all text and controls outside the transformed decoration.
 
@@ -63,7 +71,9 @@ Product collections use an accessible horizontal `ProductRow`: desktop shows com
 
 ## Customer accounts and PostgreSQL
 
-Accounts use Better Auth with the Drizzle PostgreSQL adapter. Passwords are hashed with Argon2id. Sessions are stored in the database and delivered through HTTP-only, SameSite cookies; browser storage is not used. Better Auth validates request origins and stores authentication rate-limit counters in PostgreSQL. Public registration receives the `user` role and cannot supply a role value.
+Accounts use Better Auth with the Drizzle PostgreSQL adapter. Passwords are hashed with Argon2id. New and changed passwords must contain 15–128 Unicode code points and Better Auth's maintained Have I Been Pwned plugin checks them through the k-anonymous range API without sending the full password. A breach-provider failure rejects the password operation instead of silently bypassing the control. Sessions are stored in the database and delivered through HTTP-only, SameSite cookies; browser storage is not used. Better Auth validates request origins and stores authentication rate-limit counters in PostgreSQL. Public registration receives the `user` role and cannot supply a role value.
+
+Customers can revoke every active session from the dashboard. Five invalid passwords within 15 minutes create a persistent HMAC-keyed database lock for 15 minutes, while Better Auth's database rate limiter supplies complementary per-client throttling. Administrators must complete TOTP or use a single-use recovery code before any privileged page or API is available. See [the authentication remediation record](docs/security/auth-remediation-2026-10-13.md).
 
 Local database setup:
 
@@ -99,13 +109,13 @@ ADMIN_EMAIL=<approved-administrator-email>
 ADMIN_TEMP_PASSWORD=<strong-temporary-password>
 ```
 
-Run `pnpm admin:seed`. The command hashes the password, creates or updates the `admin` role, invalidates prior sessions and never prints the password. Remove `ADMIN_TEMP_PASSWORD` immediately afterwards. Re-run the seed with a new strong private password if a temporary or previously shared value was used, then remove it again before `pnpm prod:check`.
+Run `pnpm admin:seed`. The command hashes the password, creates or updates the `admin` role, invalidates prior sessions and factors, and never prints the password. Remove `ADMIN_TEMP_PASSWORD` immediately afterwards. Sign in at `/admin/login`, enrol an authenticator at `/admin/mfa/setup`, save the one-time recovery codes in an approved password manager, and verify TOTP before using administrator features. Re-run the seed only through the approved recovery procedure because it deliberately removes the current MFA enrolment.
 
 After registration, customers are sent to `/check-email`. Better Auth creates a signed expiring token, while BoomoTech stores only its SHA-256 digest in a single-use grant. The public `/verify-email` route consumes that grant before Better Auth marks the email verified. Direct access to Better Auth's verification endpoint is blocked so the one-time check cannot be bypassed. Unverified customers cannot sign in or enter `/dashboard`. Resend requests are rate-limited and use generic responses to reduce account enumeration. Existing accounts present when migration `0002` is applied are marked verified so the migration does not lock out current development users.
 
 `/forgot-password` and `/reset-password` use Better Auth's expiring, single-use reset records and the same isolated authentication-email adapter. Reset responses are generic, delivery is server-only, and a successful reset revokes existing sessions. Invalid, expired and reused links show a safe recovery path.
 
-Administrators sign in with their seeded username at `/admin/login` and are redirected to `/admin`. Both destinations enforce the session and role again on the server. Tests use an isolated capture adapter through `AUTH_EMAIL_CAPTURE_PATH`; never configure that test-only path in production.
+Administrators sign in with their seeded username at `/admin/login`, complete `/admin/mfa`, and are then redirected to `/admin`. Admin pages, application APIs and Better Auth administrator endpoints enforce role plus completed MFA on the server. Tests use isolated email capture and a synthetic MFA enrolment under ignored `.test-db/`; never configure either test mechanism in production.
 
 Database backups must be encrypted, access controlled, tested for restoration and covered by an owner-approved retention/deletion policy. The database contains customer names, normalized email addresses, password hashes, session data, booking contact details and timestamps. Privacy and legal text still requires owner/legal approval.
 

@@ -10,6 +10,9 @@ let closeDatabase: (typeof import("@/db"))["closeDatabase"];
 let db: (typeof import("@/db"))["db"];
 let account: (typeof import("@/db/schema"))["account"];
 let verification: (typeof import("@/db/schema"))["verification"];
+let userTable: (typeof import("@/db/schema"))["user"];
+let authLoginGuard: (typeof import("@/db/schema"))["authLoginGuard"];
+let rateLimitTable: (typeof import("@/db/schema"))["rateLimit"];
 let listCustomers: (typeof import("./customers"))["listCustomers"];
 let testDirectory = "";
 let capturePath = "";
@@ -33,6 +36,20 @@ function sessionCookie(response: Response) {
   return session.split(";", 1)[0];
 }
 
+function responseCookie(response: Response, fragment: string) {
+  const value = response.headers.getSetCookie().find((cookie) => cookie.includes(fragment));
+  if (!value) throw new Error(`Cookie containing ${fragment} is missing from auth response.`);
+  return value.split(";", 1)[0];
+}
+
+function decodeBase32(value: string) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = "";
+  for (const character of value.toUpperCase()) bits += alphabet.indexOf(character).toString(2).padStart(5, "0");
+  const bytes = Array.from({ length: Math.floor(bits.length / 8) }, (_, index) => Number.parseInt(bits.slice(index * 8, index * 8 + 8), 2));
+  return new TextDecoder().decode(Uint8Array.from(bytes));
+}
+
 beforeAll(async () => {
   testDirectory = await mkdtemp(path.join(tmpdir(), "boomotech-auth-"));
   capturePath = path.resolve(process.cwd(), ".test-db", `auth-verification-${Date.now()}.jsonl`);
@@ -52,7 +69,7 @@ beforeAll(async () => {
   process.env.AUTH_EMAIL_CAPTURE_MODE = "test";
   ({ auth } = await import("./auth"));
   ({ db, closeDatabase } = await import("@/db"));
-  ({ account, verification } = await import("@/db/schema"));
+  ({ account, verification, user: userTable, authLoginGuard, rateLimit: rateLimitTable } = await import("@/db/schema"));
   ({ listCustomers } = await import("./customers"));
 });
 
@@ -79,8 +96,17 @@ describe("database-backed account authentication", () => {
 
   it("stores an Argon2id password hash", async () => {
     const records = await db.select({ password: account.password }).from(account);
-    expect(records[0]?.password).toMatch(/^\$argon2id\$/);
-    expect(records[0]?.password).not.toContain("SecurePassword9");
+    const encoded = records[0]?.password ?? "";
+    const parameters = Object.fromEntries((encoded.split("$")[3] ?? "").split(",").map((part) => part.split("=")));
+    expect({ algorithm: encoded.startsWith("$argon2id$"), memory: Number(parameters.m), iterations: Number(parameters.t), parallelism: Number(parameters.p), containsPlaintext: encoded.includes("SecurePassword9") })
+      .toEqual({ algorithm: true, memory: 65_536, iterations: 3, parallelism: 1, containsPlaintext: false });
+  });
+
+  it("does not distinguish an unknown account from a wrong password", async () => {
+    const existing = await call("/sign-in/email", { email: "taylor@example.com", password: "IncorrectPassword9" });
+    const unknown = await call("/sign-in/email", { email: "unknown@example.test", password: "IncorrectPassword9" });
+    expect(unknown.status).toBe(existing.status);
+    expect(await unknown.json()).toEqual(await existing.json());
   });
 
   it("blocks login until the one-time token verifies the email", async () => {
@@ -125,6 +151,19 @@ describe("database-backed account authentication", () => {
     expect(signOut.status).toBe(200);
     const after = await call("/get-session", undefined, cookie);
     expect(await after.json()).toBeNull();
+  });
+
+  it("rotates session material on sign-in and revokes every device session", async () => {
+    const fixedCookie = "better-auth.session_token=synthetic-fixed-session";
+    const firstLogin = await call("/sign-in/email", { email: "taylor@example.com", password: "SecurePassword9" }, fixedCookie);
+    const firstCookie = sessionCookie(firstLogin);
+    const secondLogin = await call("/sign-in/email", { email: "taylor@example.com", password: "SecurePassword9" });
+    const secondCookie = sessionCookie(secondLogin);
+    expect(firstCookie).not.toBe(fixedCookie);
+    expect(secondCookie).not.toBe(firstCookie);
+    expect((await call("/revoke-sessions", {}, firstCookie)).status).toBe(200);
+    expect(await (await call("/get-session", undefined, firstCookie)).json()).toBeNull();
+    expect(await (await call("/get-session", undefined, secondCookie)).json()).toBeNull();
   });
 
   it("rate limits repeated login attempts in shared database storage", async () => {
@@ -177,5 +216,96 @@ describe("database-backed account authentication", () => {
     expect(expired.status).toBe(302);
     expect(expired.headers.get("location")).toContain("error=INVALID_TOKEN");
     expect((await call("/reset-password", { newPassword: "ReplacementPassword8", token: "invalid-token" })).status).toBe(400);
+  });
+
+  it("locks an account after five password failures, expires safely and resets on success", async () => {
+    await db.delete(authLoginGuard);
+    await db.delete(rateLimitTable);
+    const { hashPassword } = await import("./password");
+    const id = "lockout-customer";
+    await db.insert(userTable).values({ id, name: "Lockout Customer", email: "lockout@example.test", emailVerified: true });
+    await db.insert(account).values({ id: "lockout-account", accountId: id, providerId: "credential", userId: id, password: await hashPassword("CorrectPassword99") });
+    let fifth: Response | undefined;
+    for (let attempt = 0; attempt < 5; attempt += 1) fifth = await call("/sign-in/email", { email: "lockout@example.test", password: "IncorrectPassword99" });
+    const locked = await call("/sign-in/email", { email: "lockout@example.test", password: "CorrectPassword99" });
+    expect(locked.status).toBe(401);
+    expect(await locked.json()).toEqual(await fifth!.json());
+    const [guard] = await db.select().from(authLoginGuard);
+    expect(guard.failedAttempts).toBe(5);
+    expect(guard.lockedUntil?.getTime()).toBeGreaterThan(Date.now());
+    await db.update(authLoginGuard).set({ lockedUntil: new Date(Date.now() - 1_000), windowStartedAt: new Date(Date.now() - 31 * 60_000) });
+    const succeeded = await call("/sign-in/email", { email: "lockout@example.test", password: "CorrectPassword99" });
+    expect(succeeded.status).toBe(200);
+    expect(await db.select().from(authLoginGuard)).toHaveLength(0);
+  });
+
+  it("records concurrent password failures atomically", async () => {
+    await db.delete(authLoginGuard);
+    await db.delete(rateLimitTable);
+    const { hashPassword } = await import("./password");
+    const id = "concurrent-lockout-customer";
+    await db.insert(userTable).values({ id, name: "Concurrent Customer", email: "concurrent@example.test", emailVerified: true });
+    await db.insert(account).values({ id: "concurrent-account", accountId: id, providerId: "credential", userId: id, password: await hashPassword("CorrectPassword88") });
+    await Promise.all(Array.from({ length: 5 }, () => call("/sign-in/email", { email: "concurrent@example.test", password: "IncorrectPassword88" })));
+    const guards = await db.select().from(authLoginGuard);
+    expect(guards.find((guard) => guard.failedAttempts === 5)?.lockedUntil?.getTime()).toBeGreaterThan(Date.now());
+    expect((await call("/sign-in/email", { email: "concurrent@example.test", password: "CorrectPassword88" })).status).toBe(401);
+  });
+
+  it("requires administrator TOTP, revokes pre-enrolment sessions and consumes recovery codes once", async () => {
+    await db.delete(authLoginGuard);
+    await db.delete(rateLimitTable);
+    const { hashPassword } = await import("./password");
+    const adminId = "mfa-administrator";
+    await db.insert(userTable).values({ id: adminId, name: "MFA Administrator", email: "mfa-admin@example.test", emailVerified: true, username: "mfaadmin", displayUsername: "mfaadmin", role: "admin" });
+    await db.insert(account).values({ id: "mfa-admin-account", accountId: adminId, providerId: "credential", userId: adminId, password: await hashPassword("AdministratorPassword99") });
+
+    const firstLogin = await call("/sign-in/username", { username: "mfaadmin", password: "AdministratorPassword99" });
+    expect(firstLogin.status, await firstLogin.clone().text()).toBe(200);
+    const firstCookie = sessionCookie(firstLogin);
+    const secondCookie = sessionCookie(await call("/sign-in/username", { username: "mfaadmin", password: "AdministratorPassword99" }));
+    expect((await call("/admin/list-users", undefined, firstCookie)).status).toBe(403);
+
+    const enabled = await call("/two-factor/enable", { password: "AdministratorPassword99", method: "totp", issuer: "BoomoTech" }, firstCookie);
+    expect(enabled.status).toBe(200);
+    const enrolment = await enabled.json() as { totpURI: string; backupCodes: string[] };
+    const secret = new URL(enrolment.totpURI).searchParams.get("secret");
+    expect(secret).toBeTruthy();
+    const rawSecret = decodeBase32(secret!);
+    const generated = await auth.api.generateTOTP({ body: { secret: rawSecret } });
+    expect(generated.code).toMatch(/^\d{6}$/);
+    const verified = await call("/two-factor/verify-totp", { code: generated.code, trustDevice: false }, firstCookie);
+    expect(verified.status, await verified.clone().text()).toBe(200);
+    expect(await (await call("/get-session", undefined, secondCookie)).json()).toBeNull();
+
+    const expiredLogin = await call("/sign-in/username", { username: "mfaadmin", password: "AdministratorPassword99" });
+    const expiredChallenge = responseCookie(expiredLogin, "two_factor");
+    await db.update(verification).set({ expiresAt: new Date(Date.now() - 1_000) });
+    const expiredCode = await auth.api.generateTOTP({ body: { secret: rawSecret } });
+    expect((await call("/two-factor/verify-totp", { code: expiredCode.code, trustDevice: false }, expiredChallenge)).status).toBe(401);
+
+    const challenged = await call("/sign-in/username", { username: "mfaadmin", password: "AdministratorPassword99" });
+    expect(await challenged.clone().json()).toMatchObject({ twoFactorRedirect: true });
+    const pendingCookies = challenged.headers.getSetCookie().map((cookie) => cookie.split(";", 1)[0]).join("; ");
+    expect(await (await call("/get-session", undefined, pendingCookies)).json()).toBeNull();
+    const challengeCookie = responseCookie(challenged, "two_factor");
+    const challengeCode = await auth.api.generateTOTP({ body: { secret: rawSecret } });
+    const completed = await call("/two-factor/verify-totp", { code: challengeCode.code, trustDevice: false }, challengeCookie);
+    expect(completed.status).toBe(200);
+    const completedCookie = sessionCookie(completed);
+    expect((await call("/admin/list-users", undefined, completedCookie)).status).toBe(200);
+    expect((await call("/two-factor/disable", { password: "AdministratorPassword99" }, completedCookie)).status).toBe(403);
+
+    const regenerated = await call("/two-factor/generate-backup-codes", { password: "AdministratorPassword99" }, completedCookie);
+    expect(regenerated.status).toBe(200);
+    const replacementCodes = (await regenerated.json() as { backupCodes: string[] }).backupCodes;
+    expect(await (await call("/get-session", undefined, completedCookie)).json()).toBeNull();
+
+    const recoveryLogin = await call("/sign-in/username", { username: "mfaadmin", password: "AdministratorPassword99" });
+    const recoveryChallenge = responseCookie(recoveryLogin, "two_factor");
+    expect((await call("/two-factor/verify-backup-code", { code: replacementCodes[0], trustDevice: false }, recoveryChallenge)).status).toBe(200);
+    const replayLogin = await call("/sign-in/username", { username: "mfaadmin", password: "AdministratorPassword99" });
+    const replayChallenge = responseCookie(replayLogin, "two_factor");
+    expect((await call("/two-factor/verify-backup-code", { code: replacementCodes[0], trustDevice: false }, replayChallenge)).status).toBe(401);
   });
 });

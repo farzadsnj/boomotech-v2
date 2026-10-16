@@ -21,7 +21,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: page.title,
     description: page.metaDescription,
     alternates: { canonical: page.path },
-    openGraph: { title: page.title, description: page.metaDescription, url: page.path },
+    openGraph: { title: page.title, description: page.metaDescription, url: page.path, images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "BoomoTech practical technology support and smarter systems" }] },
+    twitter: { card: "summary_large_image", title: page.title, description: page.metaDescription, images: ["/opengraph-image"] },
     robots: { index: isIndexingEnabled() && isPageIndexable(page.path), follow: isIndexingEnabled() && isPageIndexable(page.path) },
   };
 }

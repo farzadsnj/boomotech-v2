@@ -16,16 +16,19 @@ describe("search indexing gate", () => {
     expect(sitemap()).toEqual([]);
   });
 
-  it("requires both explicit approval and an HTTPS origin", () => {
+  it("requires both explicit approval and the exact production origin", () => {
     vi.stubEnv("SITE_URL", "http://example.com");
     vi.stubEnv("SITE_INDEXING_ENABLED", "true");
     expect(isIndexingEnabled()).toBe(false);
 
-    vi.stubEnv("SITE_URL", "https://example.com");
+    vi.stubEnv("SITE_URL", "https://preview.boomotech.com.au");
+    expect(isIndexingEnabled()).toBe(false);
+
+    vi.stubEnv("SITE_URL", "https://boomotech.com.au");
     expect(isIndexingEnabled()).toBe(true);
-    expect(robots().sitemap).toBe("https://example.com/sitemap.xml");
+    expect(robots().sitemap).toBe("https://boomotech.com.au/sitemap.xml");
     const entries = sitemap();
     expect(entries).toHaveLength(intendedPublicRoutes.length);
-    expect(entries[0]).toEqual({ url: "https://example.com/", changeFrequency: "monthly", priority: 1 });
+    expect(entries[0]).toEqual({ url: "https://boomotech.com.au/", changeFrequency: "monthly", priority: 1 });
   });
 });

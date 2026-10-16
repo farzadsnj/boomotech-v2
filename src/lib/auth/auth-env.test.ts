@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getBetterAuthUrl, requireBetterAuthSecret } from "./auth-env";
+import { getBetterAuthUrl, requireBetterAuthSecret, usesSecureAuthenticationCookies } from "./auth-env";
 import { getDatabaseUrl, validateProductionEnvironment } from "@/lib/config/environment";
 
 describe("authentication environment validation", () => {
@@ -19,6 +19,11 @@ describe("authentication environment validation", () => {
     expect(() => getBetterAuthUrl({ NODE_ENV: "production", SITE_URL: "https://boomotech.com.au", BETTER_AUTH_URL: "http://localhost:3000" })).toThrow(/must match/);
   });
 
+  it("enables secure authentication cookies in production", () => {
+    expect(usesSecureAuthenticationCookies({ NODE_ENV: "production" })).toBe(true);
+    expect(usesSecureAuthenticationCookies({ NODE_ENV: "development" })).toBe(false);
+  });
+
   it("validates the approved production origin and server email configuration", () => {
     const environment = {
       NODE_ENV: "production", SITE_URL: "https://boomotech.com.au", BETTER_AUTH_URL: "https://boomotech.com.au",
@@ -33,5 +38,6 @@ describe("authentication environment validation", () => {
     expect(() => validateProductionEnvironment({ ...environment, OPENAI_CHAT_ENABLED: "true" })).toThrow(/OPENAI_API_KEY/);
     expect(validateProductionEnvironment({ ...environment, OPENAI_CHAT_ENABLED: "true", OPENAI_API_KEY: "server-only-test-key" })).toEqual({ authUrl: "https://boomotech.com.au", siteUrl: "https://boomotech.com.au" });
     expect(() => validateProductionEnvironment({ ...environment, SHOP_ENABLED: "yes" })).toThrow(/SHOP_ENABLED must be true or false/);
+    expect(() => validateProductionEnvironment({ ...environment, SITE_INDEXING_ENABLED: "yes" })).toThrow(/SITE_INDEXING_ENABLED must be true or false/);
   });
 });

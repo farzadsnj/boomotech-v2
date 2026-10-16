@@ -1,6 +1,3 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { ChatBookingButton } from "./chat-booking-button";
@@ -13,15 +10,8 @@ function AccountIcon() {
 }
 
 export function SiteHeader({ shopEnabled = false }: { shopEnabled?: boolean }) {
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const update = () => setScrolled(window.scrollY > 18);
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    return () => window.removeEventListener("scroll", update);
-  }, []);
   return (
-    <header className={`site-header${scrolled ? " is-scrolled" : ""}`}>
+    <header className="site-header">
       <div className="site-header__inner container">
         <BrandLogo />
         <DesktopNavigation />

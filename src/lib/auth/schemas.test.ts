@@ -11,9 +11,19 @@ describe("account validation", () => {
     expect(registrationSchema.safeParse({ name: "Taylor Morgan", email: "t@example.com", password: "short", confirmPassword: "different" }).success).toBe(false);
   });
 
+  it("allows Unicode, spaces and password-manager generated values without composition rules", () => {
+    expect(registrationSchema.safeParse({ name: "Taylor Morgan", email: "t@example.com", password: "a long phrase with spaces", confirmPassword: "a long phrase with spaces" }).success).toBe(true);
+    expect(registrationSchema.safeParse({ name: "Taylor Morgan", email: "t@example.com", password: "🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️", confirmPassword: "🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️" }).success).toBe(true);
+    expect(registrationSchema.safeParse({ name: "Taylor Morgan", email: "t@example.com", password: "lowercase-only-but-long", confirmPassword: "lowercase-only-but-long" }).success).toBe(true);
+  });
+
   it("validates customer and administrator credentials", () => {
     expect(loginSchema.safeParse({ email: "bad", password: "x" }).success).toBe(false);
     expect(adminLoginSchema.safeParse({ username: "fa", password: "" }).success).toBe(false);
+    const supplementaryPassword = "😀".repeat(128);
+    expect(loginSchema.safeParse({ email: "person@example.com", password: supplementaryPassword }).success).toBe(true);
+    expect(adminLoginSchema.safeParse({ username: "administrator", password: supplementaryPassword }).success).toBe(true);
+    expect(loginSchema.safeParse({ email: "person@example.com", password: `${supplementaryPassword}x` }).success).toBe(false);
   });
 
   it("validates password recovery fields and matching strong passwords", () => {

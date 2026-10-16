@@ -37,3 +37,12 @@ The redesign keeps the approved BoomoTech blue and ink palette while increasing 
 ## Founder portrait
 
 The About page includes a deliberately sized founder portrait slot. Until an approved photograph is supplied it renders a branded placeholder without layout shift. Add the approved image at `public/images/founder/farzad-sanjarani.jpg`, then set `founderProfile.image` in `src/content/founder.ts` to that path with a concise, meaningful alt description. Use a portrait crop with enough resolution for the rendered 4:5 frame and confirm usage rights before publishing.
+
+
+## Current implementation status
+
+The October 2026 implementation includes the redesigned header with Search, Client portal and consultation actions; accessible Services/Resources navigation; local public-content search; the expanded IT Health Check panel with six practical questions; browser-only service preparation questions that lead to the support request flow; reduced excess section spacing; and the About-page founder portrait slot. The Resources and Support pages no longer use the earlier large notice panels that interrupted the page flow.
+
+Search is intentionally local/build-time and indexes only approved public content. It does not search customer requests, administrator data, private messages or credentials. No-result search paths direct visitors toward support rather than exposing internal routes.
+
+Health Check and service-question answers remain in browser memory and are not automatically submitted or placed in URLs. The support request form remains the explicit point where a visitor chooses to send information to BoomoTech.

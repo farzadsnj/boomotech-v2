@@ -42,9 +42,11 @@ for command_name in git pnpm curl flock sudo env; do require_command "$command_n
   for variable in "${required_variables[@]}"; do [[ -n "${!variable:-}" ]] || fail "$variable is missing from $ENV_FILE"; done
   ai_chat_enabled="${OPENAI_CHAT_ENABLED:-false}"
   shop_enabled="${SHOP_ENABLED:-false}"
+  indexing_enabled="${SITE_INDEXING_ENABLED:-false}"
   case "${ai_chat_enabled,,}" in true) [[ -n "${OPENAI_API_KEY:-}" ]] || fail "OPENAI_API_KEY is required when OPENAI_CHAT_ENABLED=true" ;; false) ;; *) fail "OPENAI_CHAT_ENABLED must be true or false" ;; esac
   case "${shop_enabled,,}" in true|false) ;; *) fail "SHOP_ENABLED must be true or false" ;; esac
-  [[ "$SITE_URL" =~ ^https:// ]] || fail "SITE_URL must be the approved HTTPS production origin."
+  case "${indexing_enabled,,}" in true|false) ;; *) fail "SITE_INDEXING_ENABLED must be true or false" ;; esac
+  [[ "$SITE_URL" == "https://boomotech.com.au" ]] || fail "SITE_URL must be the approved HTTPS production origin https://boomotech.com.au."
   [[ "$BETTER_AUTH_URL" == "$SITE_URL" ]] || fail "BETTER_AUTH_URL must exactly match SITE_URL."
   [[ "${BOOKING_TRUST_PROXY:-false}" == "true" ]] || fail "BOOKING_TRUST_PROXY must be true behind the approved production proxy."
 )

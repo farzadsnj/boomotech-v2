@@ -8,6 +8,7 @@ body:has(.shop-hero, .product-hero, .auth-page, .account-dashboard, .admin-page)
 .chat-welcome { position: relative; width: min(20rem, calc(100vw - 2rem)); padding: 1rem 2.5rem 1rem 1rem; border: 1px solid var(--color-border); border-radius: 1rem 1rem .25rem 1rem; background: white; box-shadow: var(--shadow-card); animation: chat-enter .25s ease both; }
 .chat-welcome p { margin: 0; line-height: 1.5; } .chat-welcome button { position: absolute; top: .35rem; right: .45rem; width: 2rem; height: 2rem; border: 0; background: transparent; color: var(--color-ink); cursor: pointer; font-size: 1.35rem; }
 .chat-panel { width: min(27rem, calc(100vw - 2rem)); max-height: min(43rem, calc(100dvh - 6rem - env(safe-area-inset-bottom))); overflow: hidden; border: 1px solid var(--color-border); border-radius: 1.1rem; background: white; box-shadow: 0 20px 65px rgb(13 42 59 / 24%); animation: chat-enter .22s ease both; }
+.chat-panel--loading { min-height: 7rem; padding: 1.5rem; color: var(--color-ink-soft); }
 .chat-panel > header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.1rem; background: var(--color-ink); color: white; }
 .chat-panel header p, .chat-panel header h2 { margin: 0; } .chat-panel header p { color: var(--color-accent); font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; } .chat-panel header h2 { font-size: 1.1rem; }
 .chat-close { width: 2.75rem; height: 2.75rem; border: 1px solid #ffffff55; border-radius: 50%; background: transparent; color: white; cursor: pointer; font-size: 1.5rem; }
@@ -37,7 +38,7 @@ body:has(.shop-hero, .product-hero, .auth-page, .account-dashboard, .admin-page)
 .booking-review h2 { margin-top: 0; } .booking-review dl { display: grid; gap: .8rem; } .booking-review dl div { padding-bottom: .7rem; border-bottom: 1px solid var(--color-border); } .booking-review dt { color: var(--color-ink-soft); font-size: .78rem; font-weight: 800; text-transform: uppercase; } .booking-review dd { margin: .25rem 0 0; overflow-wrap: anywhere; white-space: pre-wrap; } .fine-print, .form-error { font-size: .9rem; line-height: 1.5; } .form-error { color: var(--color-danger); font-weight: 700; }
 .booking-success { padding: 1.25rem; border: 1px solid #8bcab5; border-radius: .7rem; background: #effaf6; } .booking-success h2 { margin-top: 0; } .booking-success__actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1.2rem; } .booking-success__actions .button-link { display: inline-flex; }
 .header-cta.header-cta--primary { border-color: var(--color-primary); background: var(--color-primary); color: white; cursor: pointer; } .header-cta.header-cta--primary:hover { background: var(--color-primary-dark); color: white; }
-@keyframes chat-enter { from { opacity: 0; transform: translateY(.6rem) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes chat-enter { from { transform: translateY(.6rem) scale(.98); } to { transform: none; } }
 @keyframes chat-attention { 0%, 100% { box-shadow: 0 12px 35px rgb(0 63 104 / 25%); } 50% { box-shadow: 0 12px 35px rgb(0 63 104 / 25%), 0 0 0 8px rgb(120 200 232 / 18%); } }
 @media (max-width: 600px) {
   .chatbot { right: max(.5rem, env(safe-area-inset-right)); bottom: max(.5rem, env(safe-area-inset-bottom)); left: max(.5rem, env(safe-area-inset-left)); }

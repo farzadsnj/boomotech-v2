@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button-link";
 import { ArrowIcon } from "@/components/ui/arrow-icon";
@@ -5,10 +6,20 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { Reveal } from "@/components/motion/reveal";
 import { HeroVisual } from "@/components/home/hero-visual";
 import { ServicePathfinder } from "@/components/home/service-pathfinder";
-import { homeContent } from "@/content/site";
 import { serviceGroups } from "@/content/service-groups";
 import { featuredWorkFallback } from "@/content/featured-work";
 import { calculateReadingTime, publishedArticles } from "@/content/blog";
+import { homeContent, site } from "@/content/site";
+import { isIndexingEnabled } from "@/lib/site-url";
+import { OrbitDiagram } from "@/components/ui/orbit-diagram";
+
+export const metadata: Metadata = {
+  title: "BoomoTech | Practical technology help",
+  description: site.description,
+  alternates: { canonical: "/" },
+  openGraph: { type: "website", title: "BoomoTech | Practical technology help", description: site.description, url: "/" },
+  robots: { index: isIndexingEnabled(), follow: isIndexingEnabled() },
+};
 
 const trustItems = ["Brisbane based", "Remote options across Australia", "Clear scope before work begins", "Support, systems and digital projects"];
 const faqs = [
@@ -32,7 +43,7 @@ export default function HomePage() {
 
     <section className="section-space capability-section"><Reveal className="container"><div className="capability-section__header"><SectionHeading eyebrow="CAPABILITIES" title="Support, secure, improve and build." description="One connected view of the technology that keeps work moving and creates room to improve." /><Link className="text-link" href="/services">Explore every service <ArrowIcon diagonal /></Link></div><div className="capability-bento">{serviceGroups.map((group, index) => <article className={`capability-card capability-card--${group.accent} capability-card--${index + 1}`} key={group.id}><div className="capability-card__index">0{index + 1}</div><p className="capability-card__label">{group.label}</p><h3>{group.heading}</h3><p>{group.description}</p><ul>{group.services.map((service) => <li key={service.path}><Link href={service.path}>{service.name}<ArrowIcon diagonal /></Link></li>)}</ul></article>)}</div></Reveal></section>
 
-    <section className="section-space work-section"><Reveal className="container work-section__grid"><div className="work-visual" aria-hidden="true"><span>Understand</span><span>Plan</span><span>Improve</span><i /></div><div><p className="eyebrow"><span className="eyebrow-line" />{featuredWorkFallback.eyebrow}</p><h2>{featuredWorkFallback.title}</h2><p>{featuredWorkFallback.description}</p><Link className="text-link" href={featuredWorkFallback.action.href}>{featuredWorkFallback.action.label}<ArrowIcon diagonal /></Link></div></Reveal></section>
+    <section className="section-space work-section"><Reveal className="container work-section__grid"><OrbitDiagram centre="BT" label="BoomoTech improvement process: Understand, Plan and Improve" stages={[{ label: "Understand", description: "Identify the problem, requirements and expected outcome." }, { label: "Plan", description: "Choose a practical solution with clear steps and priorities." }, { label: "Improve", description: "Implement, review and refine the technology." }]} /><div><p className="eyebrow"><span className="eyebrow-line" />{featuredWorkFallback.eyebrow}</p><h2>{featuredWorkFallback.title}</h2><p>{featuredWorkFallback.description}</p><Link className="text-link" href={featuredWorkFallback.action.href}>{featuredWorkFallback.action.label}<ArrowIcon diagonal /></Link></div></Reveal></section>
 
     <section className="section-space health-promo"><Reveal className="container health-promo__inner"><div><p className="eyebrow"><span className="eyebrow-line" />FREE IT HEALTH CHECK</p><h2>Ten questions. A clearer list of priorities.</h2><p>Review the foundations around access, devices, backups, security and support. Answers stay in your browser and the result is immediate.</p><ButtonLink href="/tools/it-health-check">Start the health check</ButtonLink></div><div className="health-promo__dial" aria-hidden="true"><div><span>10</span><small>practical<br />questions</small></div></div></Reveal></section>
 

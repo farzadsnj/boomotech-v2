@@ -2,6 +2,27 @@
 
 `scripts/deploy-production.sh` is an operator-run deployment sequence for the planned single Ubuntu host. It does not connect to or modify a production server by itself.
 
+## Security release gate
+
+Application deployment is allowed only after the reviewed release branch has a passing security gate and all required GitHub checks are green. A successful workflow job is not enough if GitHub code scanning reports a new open alert.
+
+As of 13 October 2026, the security branch remains **not approved for production**. Persistent account lockout, mandatory administrator TOTP MFA and SEC-017 are implemented locally with additive migration `0005_mushy_bedlam.sql`. The CodeQL High remediation cannot be confirmed until GitHub reruns the real check after an owner-approved commit/push. Do not merge, deploy or run the migration until the complete release gate is reviewed. See `docs/security/auth-remediation-2026-10-13.md`.
+
+Before every future production deployment, verify at minimum:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:security
+pnpm build
+pnpm security:client-bundle
+pnpm test:e2e
+pnpm audit --prod
+```
+
+Then verify the pull request has no failing required check, no open Critical/High application-security finding, a reviewed rollback point, and an approved current backup. The operator-run production script remains the deployment mechanism only after these release gates pass.
+
 ## Deployment sequence
 
 ### CODEX CREATES
@@ -36,10 +57,11 @@ There is no destructive Git reset and no automatic database rollback. Production
 At minimum, the deployment preflight requires:
 
 ```env
-SITE_URL=https://approved.example
+SITE_URL=https://boomotech.com.au
+SITE_INDEXING_ENABLED=false
 DATABASE_URL=postgres://...
 BETTER_AUTH_SECRET=...
-BETTER_AUTH_URL=https://approved.example
+BETTER_AUTH_URL=https://boomotech.com.au
 BOOKING_NOTIFICATION_EMAIL=...
 BOOKING_FROM_EMAIL=...
 RESEND_API_KEY=...
@@ -57,6 +79,31 @@ CUSTOMER_REPLY_TO_EMAIL=
 Keep the file outside Git, readable only by the application user and approved administrators. The reverse proxy must overwrite forwarded client headers before `BOOKING_TRUST_PROXY=true` is used.
 
 `OPENAI_CHAT_ENABLED` and `SHOP_ENABLED` affect server-rendered navigation, routes, sitemap output and client bundles. Changing either flag requires a reviewed application rebuild and redeployment; editing `.env.production` and restarting the existing build is not sufficient for every UI change. Keep both flags `false` until their separate launch decisions are approved.
+
+`SITE_INDEXING_ENABLED` has the same build and redeployment requirement. Keep it
+`false` until public copy, contact details and legal review are approved. The
+application accepts public indexing only for the exact `https://boomotech.com.au`
+origin. After the reviewed rebuild, purge or revalidate Cloudflare for `/`,
+`/robots.txt` and `/sitemap.xml`; then verify the public HTML, response headers,
+robots rules and sitemap before Search Console submission.
+
+## Caching and compression boundary
+
+The application sends immutable caching only for versioned `/_next/static/`
+assets. It uses short, revalidated caching for robots and sitemap responses and
+private `no-store` headers for APIs, authentication, account, administrator and
+token pages. Do not create a Cloudflare “Cache Everything” rule that includes
+HTML, `/api/*`, `/admin/*`, `/dashboard*` or authentication routes.
+
+The reviewed Nginx example enables gzip for text, CSS, JavaScript, JSON, XML and
+SVG responses on the loopback origin hop. Confirm effective compression with
+`curl --compressed -I` and use Cloudflare's visitor-facing Brotli setting only
+after checking actual response headers. HTTP/2 or HTTP/3 is terminated at
+Cloudflare; the existing tunnel-to-Nginx-to-Next.js boundary remains loopback.
+
+Before rollout, compare the active Nginx and Cloudflare configuration with the
+repository examples. Ensure neither layer injects a conflicting `X-Robots-Tag`,
+rewrites canonical hosts, or publicly caches private responses.
 
 ## Dry run and deployment
 
@@ -98,7 +145,7 @@ sudo -u boomotechhost -H bash -lc 'cd /var/www/boomotech && pnpm maintenance:run
 
 The apply command removes only expired verification grants, stale rate-limit buckets, old sent outbox rows and long-expired sessions according to documented environment retention values. It does not delete bookings, messages, audit events or failed notifications.
 
-The defaults are `MAINTENANCE_EXPIRED_GRANT_DAYS=30`, `MAINTENANCE_RATE_LIMIT_DAYS=2`, `MAINTENANCE_SENT_OUTBOX_DAYS=90` and `MAINTENANCE_EXPIRED_SESSION_DAYS=30`. `BOOMOTECH_OUTBOX_WARNING_MINUTES=15` controls the aggregate monitor warning. Review these values against the approved privacy and retention policy before using apply mode.
+The defaults are `MAINTENANCE_EXPIRED_GRANT_DAYS=30`, `MAINTENANCE_RATE_LIMIT_DAYS=2`, `MAINTENANCE_SENT_OUTBOX_DAYS=90`, `MAINTENANCE_EXPIRED_SESSION_DAYS=30` and `MAINTENANCE_LOGIN_GUARD_DAYS=30`. Login-guard cleanup only removes inactive rows whose locks have expired. `BOOMOTECH_OUTBOX_WARNING_MINUTES=15` controls the aggregate monitor warning. Review these values against the approved privacy and retention policy before using apply mode.
 
 ## First deployment review
 

@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { signInAdministrator } from "./auth-helpers";
 
 async function fillContact(page: Page) {
   await page.getByLabel(/Full name/).fill("Taylor Smith");
@@ -35,20 +36,18 @@ test("header booking progressively opens shared form and restores its opener", a
   await page.getByRole("button", { name: "Close service assistant" }).click(); await expect(booking).toBeFocused();
 });
 
-test("global fonts, sticky header, scroll-to-top and hero pointer treatment behave progressively", async ({ page, browser }) => {
+test("global fonts, server-rendered sticky header, scroll-to-top and reduced motion behave progressively", async ({ page, browser }) => {
   await page.goto("/");
   const fonts = await page.locator("body").evaluate((node) => ({ body: getComputedStyle(node).fontFamily, heading: getComputedStyle(document.querySelector("h1")!).fontFamily }));
   expect(fonts.body).toContain("Inter"); expect(fonts.heading).toContain("Manrope");
   await expect(page.locator(".site-header")).toHaveCSS("position", "sticky");
-  const visual = page.getByTestId("hero-visual"); const box = await visual.boundingBox(); expect(box).not.toBeNull();
-  await page.mouse.move(box!.x + box!.width * .8, box!.y + box!.height * .25);
-  await expect.poll(() => visual.evaluate((node) => getComputedStyle(node).getPropertyValue("--hero-x").trim())).not.toBe("0px");
-  await page.locator(".hero__copy").hover(); await expect.poll(() => visual.evaluate((node) => getComputedStyle(node).getPropertyValue("--hero-x").trim())).toBe("0px");
-  await page.evaluate(() => window.scrollTo(0, 900)); await expect(page.locator(".site-header")).toHaveClass(/is-scrolled/); await expect(page.getByRole("button", { name: "Back to top" })).toBeVisible();
+  const visual = page.getByTestId("hero-visual"); expect(await visual.boundingBox()).not.toBeNull();
+  await expect(visual).toHaveCSS("pointer-events", "none");
+  await page.evaluate(() => window.scrollTo(0, 900)); await expect(page.locator(".site-header")).toHaveClass("site-header"); await expect(page.getByRole("button", { name: "Back to top" })).toBeVisible();
   await page.getByRole("button", { name: "Back to top" }).click(); await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(10);
   const reduced = await browser.newContext({ reducedMotion: "reduce" }); const reducedPage = await reduced.newPage(); await reducedPage.goto("/");
-  const reducedVisual = reducedPage.getByTestId("hero-visual"); const reducedBox = await reducedVisual.boundingBox(); await reducedPage.mouse.move(reducedBox!.x + reducedBox!.width * .8, reducedBox!.y + 20);
-  expect(await reducedVisual.evaluate((node) => getComputedStyle(node).getPropertyValue("--hero-x").trim())).toBe("0px"); await reduced.close();
+  const reducedVisual = reducedPage.getByTestId("hero-visual");
+  expect(await reducedVisual.evaluate((node) => getComputedStyle(node).animationName)).toBe("none"); await reduced.close();
 });
 
 test("chat sound preference is explicit and optional audio failure cannot close the assistant", async ({ page }) => {
@@ -86,12 +85,28 @@ test("mobile navigation supports active Blog state, route changes and Escape", a
   await menu.click(); await navigation.getByRole("link", { name: "Services" }).click(); await expect(page).toHaveURL(/\/services$/);
 });
 
-test("desktop services and resources menus expose grouped destinations", async ({ page }) => {
+test("desktop services and resources menus expose guided destinations", async ({ page }) => {
   await page.goto("/");
   const servicesMenu = page.getByRole("button", { name: "Show services menu" }); await servicesMenu.focus(); await page.keyboard.press("Enter");
-  await expect(page.getByRole("heading", { name: "Technology that supports what comes next." })).toBeVisible(); await expect(page.getByRole("link", { name: "Cybersecurity" }).first()).toBeVisible();
-  await page.keyboard.press("Escape"); await expect(page.getByRole("heading", { name: "Technology that supports what comes next." })).toHaveCount(0); await expect(servicesMenu).toBeFocused();
-  await page.getByRole("button", { name: "Show resources menu" }).click(); await expect(page.getByRole("link", { name: /Free IT Health Check/ })).toBeVisible(); await expect(page.getByRole("link", { name: /Practical articles/ })).toBeVisible();
+  await expect(page.getByText("What can we help with?")).toBeVisible(); await expect(page.getByRole("link", { name: "Cybersecurity" }).first()).toBeVisible();
+  await expect(page.locator(".service-discovery__prompt")).toContainText("Computer running slowly?", { timeout: 4_000 });
+  const suggested = page.getByRole("link", { name: "Explore IT support" }); await suggested.focus(); const pausedText = await page.locator(".service-discovery__prompt").textContent(); await page.waitForTimeout(350); expect(await page.locator(".service-discovery__prompt").textContent()).toBe(pausedText);
+  await page.keyboard.press("Escape"); await expect(page.getByText("What can we help with?")).toHaveCount(0); await expect(servicesMenu).toBeFocused();
+  await page.getByRole("button", { name: "Show resources and learning menu" }).click(); const resourceMenu = page.locator(".mega-menu--resources"); await expect(resourceMenu.getByRole("link", { name: /Free IT Health Check/ })).toBeVisible(); await expect(resourceMenu.getByRole("link", { name: /Blog posts/ })).toBeVisible(); await expect(resourceMenu.getByRole("link", { name: /Learning portal/ })).toBeVisible();
+});
+
+test("orbital diagrams support focus, dismissal and reduced motion", async ({ page, browser }) => {
+  await page.goto("/"); const understand = page.getByRole("button", { name: "Understand" }); await understand.focus();
+  await expect(understand).toHaveAttribute("aria-expanded", "true"); await expect(page.getByRole("region", { name: "Stage details" })).toContainText("Identify the problem");
+  await expect(page.locator(".orbit-diagram__track").first()).toHaveCSS("animation-play-state", "paused"); await page.keyboard.press("Escape"); await expect(understand).toHaveAttribute("aria-expanded", "false");
+  await page.goto("/about"); const clarify = page.getByRole("button", { name: "Clarify" }); await clarify.focus(); await expect(page.getByRole("region", { name: "Stage details" })).toContainText("dependencies and boundaries");
+  const reduced = await browser.newContext({ reducedMotion: "reduce" }); const reducedPage = await reduced.newPage(); await reducedPage.goto("/"); await expect(reducedPage.locator(".orbit-diagram__track").first()).toHaveCSS("animation-name", "none"); await reduced.close();
+});
+
+test("pricing and learning routes are clear, linked and honest", async ({ page }) => {
+  await page.goto("/pricing"); await expect(page.getByRole("heading", { name: "Understand how service pricing is prepared" })).toBeVisible(); await expect(page.locator(".pricing-card")).toHaveCount(7); await expect(page.getByText("Request a scoped quote")).toBeVisible(); await expect(page.locator("main")).not.toContainText(/\$\s*\d|AUD\s*\d/);
+  await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Pricing" })).toHaveAttribute("aria-current", "page");
+  await page.goto("/learning"); await expect(page.getByText("Courses are not open yet")).toBeVisible(); await expect(page.locator(".learning-grid article")).toHaveCount(7); await expect(page.getByRole("link", { name: "Read current articles" })).toHaveAttribute("href", "/blog");
 });
 
 test("service categories preselect an approved service", async ({ page }) => {
@@ -159,11 +174,7 @@ test("a guest request is stored and an administrator can respond without a guest
   const reference = referenceText?.match(/BT-[A-F0-9]{10}/)?.[0];
   expect(reference).toBeTruthy();
 
-  await page.goto("/admin/login");
-  await page.getByLabel("Administrator username").fill("farzadsnj");
-  await page.locator('input[name="password"]').fill("SyntheticAdminPassword9");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/admin$/);
+  await signInAdministrator(page);
   await page.goto(`/admin/requests/${reference}`);
   await page.getByLabel("Response to customer").fill("Thank you. We have reviewed the request and will use the supplied details to discuss the next step.");
   await page.getByRole("button", { name: "Send response", exact: true }).click();
@@ -183,7 +194,7 @@ test("mobile chatbot fits short menus and completes booking at compact sizes", a
   for (const viewport of [{ width: 320, height: 568 }, { width: 320, height: 800 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport); await page.goto("/"); await page.getByRole("button", { name: "Chat with BoomoTech" }).click();
     const panel = page.locator(".chat-panel"); const box = await panel.boundingBox();
-    expect(box).not.toBeNull(); expect(box!.height).toBeLessThan(viewport.height - 16); expect(await page.locator("body").evaluate((node) => getComputedStyle(node).overflow)).toBe("hidden");
+    expect(box).not.toBeNull(); expect(box!.height).toBeLessThan(viewport.height - 16); await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
     await page.getByRole("button", { name: "Book a consultation" }).click(); await fillContact(page);
     await page.getByLabel(/Service required/).selectOption("/services/it-support"); await page.getByLabel(/Problem or requested work/).fill("Several office computers need practical troubleshooting support."); await page.getByLabel(/I agree/).check(); await page.getByRole("button", { name: "Continue" }).click();
     await page.getByRole("button", { name: "Send booking request" }).click(); await expect(page.getByRole("heading", { name: "Request received" })).toBeVisible();
@@ -225,12 +236,13 @@ test("blog articles expose canonical, Open Graph, updated and structured metadat
 });
 
 test("representative pages and chatbot pass automated accessibility checks", async ({ page }) => {
-  for (const path of ["/", "/services", "/services/cybersecurity", "/tools/it-health-check", "/booking", "/blog", "/blog/essential-it-support-checklist-small-business"]) { await page.goto(path); await page.waitForTimeout(900); expect((await new AxeBuilder({ page }).analyze()).violations.filter(({ impact }) => impact === "critical" || impact === "serious")).toEqual([]); }
+  for (const path of ["/", "/services", "/services/cybersecurity", "/tools/it-health-check", "/booking", "/pricing", "/learning", "/blog", "/blog/essential-it-support-checklist-small-business"]) { await page.goto(path); await page.waitForTimeout(900); expect((await new AxeBuilder({ page }).analyze()).violations.filter(({ impact }) => impact === "critical" || impact === "serious")).toEqual([]); }
   await page.goto("/"); await page.getByRole("button", { name: "Chat with BoomoTech" }).click(); await page.waitForTimeout(300); expect((await new AxeBuilder({ page }).include(".chat-panel").analyze()).violations.filter(({ impact }) => impact === "critical" || impact === "serious")).toEqual([]);
 });
 
 test("security headers are present and X-Powered-By is disabled", async ({ request }) => {
   const response = await request.get("/"); expect(response.headers()["x-powered-by"]).toBeUndefined(); expect(response.headers()["x-content-type-options"]).toBe("nosniff"); expect(response.headers()["referrer-policy"]).toBe("strict-origin-when-cross-origin"); expect(response.headers()["permissions-policy"]).toContain("camera=()"); expect(response.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
+  const reset = await request.get("/reset-password?token=synthetic-test-token"); expect(reset.headers()["referrer-policy"]).toBe("no-referrer"); expect(reset.headers()["cache-control"]).toContain("no-store");
 });
 
 test("unknown routes return HTTP 404 and approved legacy paths redirect", async ({ request }) => { expect((await request.get("/does-not-exist")).status()).toBe(404); expect((await request.get("/services/not-real")).status()).toBe(404); expect((await request.get("/projects/cms-software-solutions/" )).status()).toBe(404); const redirected = await request.get("/it-support-helpdesk/", { maxRedirects: 0 }); expect([301, 308]).toContain(redirected.status()); });
@@ -242,7 +254,18 @@ test("reveals remain visible without JavaScript and reduced motion", async ({ br
 
 for (const viewport of [{ width: 320, height: 568 }, { width: 375, height: 812 }, { width: 390, height: 844 }, { width: 430, height: 932 }, { width: 768, height: 1024 }, { width: 1024, height: 768 }, { width: 1280, height: 800 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) test(`has no horizontal overflow at ${viewport.width}x${viewport.height}`, async ({ page }) => {
   await page.setViewportSize(viewport);
-  for (const path of ["/", "/services", "/solutions", "/support", "/resources", "/tools/it-health-check", "/booking", "/blog", "/blog/essential-it-support-checklist-small-business", "/shop", "/about"]) { await page.goto(path); expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true); }
+  for (const path of ["/", "/services", "/solutions", "/support", "/resources", "/learning", "/pricing", "/tools/it-health-check", "/booking", "/blog", "/blog/essential-it-support-checklist-small-business", "/shop", "/about"]) {
+    await page.goto(path);
+    const measurement = await page.evaluate(() => ({
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      offenders: [...document.querySelectorAll<HTMLElement>("body *")]
+        .filter((node) => { const box = node.getBoundingClientRect(); return box.left < -0.5 || box.right > document.documentElement.clientWidth + 0.5; })
+        .slice(0, 5)
+        .map((node) => ({ element: `${node.tagName.toLowerCase()}.${node.className}`, box: node.getBoundingClientRect().toJSON() })),
+    }));
+    expect(measurement.scrollWidth, `${path}: ${JSON.stringify(measurement.offenders)}`).toBeLessThanOrEqual(measurement.clientWidth);
+  }
 });
 
 test("service pathfinder and IT Health Check work without submitting personal data", async ({ page }) => {
@@ -272,8 +295,11 @@ test("support form safely accepts an approved service context", async ({ page })
 
 test("public breadcrumbs use absolute structured-data URLs", async ({ page }) => {
   for (const path of ["/services/it-support", "/tools/it-health-check"]) {
-    await page.goto(path); const data = JSON.parse(await page.locator('main script[type="application/ld+json"]').first().textContent() ?? "{}") as { itemListElement?: { item: string }[] };
-    expect(data.itemListElement?.every(({ item }) => /^https?:\/\//.test(item))).toBe(true);
+    await page.goto(path); const raw = JSON.parse(await page.locator('main script[type="application/ld+json"]').first().textContent() ?? "{}") as { "@type"?: string; itemListElement?: { item: string }[] } | { "@type"?: string; itemListElement?: { item: string }[] }[];
+    const entries = Array.isArray(raw) ? raw : [raw];
+    const breadcrumbs = entries.find((entry) => entry["@type"] === "BreadcrumbList");
+    expect(breadcrumbs?.itemListElement?.every(({ item }) => /^https?:\/\//.test(item))).toBe(true);
+    if (path.startsWith("/services/")) expect(entries).toContainEqual(expect.objectContaining({ "@type": "Service", name: expect.any(String) }));
   }
 });
 

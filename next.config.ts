@@ -4,6 +4,12 @@ const noStoreHeaders = [
   { key: "Cache-Control", value: "private, no-store, max-age=0, must-revalidate" },
   { key: "Pragma", value: "no-cache" },
   { key: "Expires", value: "0" },
+  { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+];
+
+const tokenPageHeaders = [
+  ...noStoreHeaders,
+  { key: "Referrer-Policy", value: "no-referrer" },
 ];
 
 const nextConfig: NextConfig = {
@@ -59,7 +65,18 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: globalSecurityHeaders,
       },
-      ...sensitiveSources.map((source) => ({ source, headers: noStoreHeaders })),
+      ...sensitiveSources.map((source) => ({
+        source,
+        headers: source === "/reset-password" || source === "/verify-email" ? tokenPageHeaders : noStoreHeaders,
+      })),
+      {
+        source: "/robots.txt",
+        headers: [{ key: "Cache-Control", value: "public, max-age=300, must-revalidate" }],
+      },
+      {
+        source: "/sitemap.xml",
+        headers: [{ key: "Cache-Control", value: "public, max-age=300, must-revalidate" }],
+      },
     ];
   },
 };

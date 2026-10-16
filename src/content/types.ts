@@ -1,5 +1,5 @@
 export type SiteLink = { label: string; href: `/${string}` };
-export type Faq = { question: string; answer: string };
+export type Faq = { question: string; answer: string; links?: SiteLink[] };
 export type ProcessStep = { number: string; title: string; description: string };
 export type Feature = { title: string; description: string; href?: `/${string}`; action?: string };
 export type ResourceCard = Feature & { href: `/${string}`; action: string; topic: string; format: string; readTime: string; relatedService: string; featured?: boolean };
@@ -7,6 +7,7 @@ export type VisualAsset = { src: string; alt: string };
 
 export type PageBase = {
   path: `/${string}`;
+  indexing: "public" | "noindex";
   eyebrow: string;
   title: string;
   description: string;

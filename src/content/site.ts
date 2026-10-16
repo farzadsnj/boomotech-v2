@@ -7,7 +7,8 @@ export const site = {
   navigation: [
     { label: "Services", href: "/services" },
     { label: "Solutions", href: "/solutions" },
-    { label: "Resources", href: "/resources" },
+    { label: "Resources & Learning", href: "/resources" },
+    { label: "Pricing", href: "/pricing" },
     { label: "About", href: "/about" },
     { label: "Support", href: "/support" },
   ] satisfies SiteLink[],
@@ -17,9 +18,11 @@ export const site = {
       links: [
         { label: "Services", href: "/services" },
         { label: "Solutions", href: "/solutions" },
-        { label: "Resources", href: "/resources" },
-        { label: "Blog", href: "/blog" },
+        { label: "Resources & Learning", href: "/resources" },
+        { label: "Blog posts", href: "/blog" },
+        { label: "Learning portal", href: "/learning" },
         { label: "IT Health Check", href: "/tools/it-health-check" },
+        { label: "Pricing", href: "/pricing" },
         { label: "Shop", href: "/shop" },
       ],
     },

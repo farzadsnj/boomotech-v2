@@ -101,3 +101,31 @@ Do not send support descriptions, names, emails, phone numbers, uploaded files, 
 - Configure privacy-safe analytics and consent
 - Connect search tooling
 - Establish baseline conversions
+
+## Production indexing control
+
+Indexing is fail closed. `SITE_INDEXING_ENABLED=true` is honoured only when
+`SITE_URL` resolves to the exact approved origin `https://boomotech.com.au`.
+Local, preview and staging hosts continue to emit `noindex, nofollow`, disallow
+crawling and return an empty sitemap even if the flag is copied accidentally.
+
+Page records carry an explicit `indexing` value. Only approved public records,
+published articles and explicitly approved standalone routes enter the sitemap.
+Authentication, dashboards, administrator routes, APIs, the consultation request,
+draft legal content and unavailable workflows stay out of the sitemap. Sensitive
+responses also carry an `X-Robots-Tag` defence in depth header.
+
+Changing an environment variable does not alter an existing Next.js build. After
+owner and legal approval, build and restart the reviewed commit with:
+
+```env
+SITE_URL=https://boomotech.com.au
+SITE_INDEXING_ENABLED=true
+```
+
+Then purge or revalidate the Cloudflare cache for `/`, `/robots.txt` and
+`/sitemap.xml`. Verify the final public responses before submitting
+`https://boomotech.com.au/sitemap.xml` in Google Search Console. Use URL Inspection
+for the homepage and representative service/article pages and request indexing only
+after the live canonical, robots meta and status code are correct. Google decides
+when and whether to index a page; sitemap submission is not confirmation.

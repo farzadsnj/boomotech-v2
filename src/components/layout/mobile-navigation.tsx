@@ -46,11 +46,14 @@ export function MobileNavigation({ shopEnabled = false }: { shopEnabled?: boolea
       <nav aria-label="Mobile primary">
         <NavigationLink href="/services"><span className="mobile-nav__link-label">Services</span><ArrowIcon diagonal /></NavigationLink>
         <NavigationLink href="/solutions"><span className="mobile-nav__link-label">Solutions</span><ArrowIcon diagonal /></NavigationLink>
-        <NavigationLink href="/resources"><span className="mobile-nav__link-label">Resources</span><ArrowIcon diagonal /></NavigationLink>
+        <NavigationLink href="/resources"><span className="mobile-nav__link-label">Resources &amp; Learning</span><ArrowIcon diagonal /></NavigationLink>
         <div className="mobile-nav__subnav" aria-label="Resource links">
-          <NavigationLink href="/blog"><span className="mobile-nav__link-label"><ArticleIcon />Blog</span><ArrowIcon diagonal /></NavigationLink>
+          <NavigationLink href="/blog"><span className="mobile-nav__link-label"><ArticleIcon />Blog posts</span><ArrowIcon diagonal /></NavigationLink>
+          <NavigationLink href="/learning"><span className="mobile-nav__link-label">Learning portal</span><ArrowIcon diagonal /></NavigationLink>
           <NavigationLink href="/tools/it-health-check"><span className="mobile-nav__link-label">IT Health Check</span><ArrowIcon diagonal /></NavigationLink>
+          <NavigationLink href="/faq"><span className="mobile-nav__link-label">FAQ</span><ArrowIcon diagonal /></NavigationLink>
         </div>
+        <NavigationLink href="/pricing"><span className="mobile-nav__link-label">Pricing</span><ArrowIcon diagonal /></NavigationLink>
         <NavigationLink href="/about"><span className="mobile-nav__link-label">About</span><ArrowIcon diagonal /></NavigationLink>
         <NavigationLink href="/support"><span className="mobile-nav__link-label">Support</span><ArrowIcon diagonal /></NavigationLink>
         <button className="mobile-nav__action" onClick={() => { if (detailsRef.current) detailsRef.current.open = false; window.dispatchEvent(new Event("boomotech:open-search")); }} type="button"><span className="mobile-nav__link-label">Search</span><ArrowIcon diagonal /></button>

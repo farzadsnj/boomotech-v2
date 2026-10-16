@@ -4,6 +4,8 @@ import { hasApprovedMutationOrigin } from "@/lib/security/origin";
 import { readLimitedJson, RequestBodyError } from "@/lib/security/json-body";
 import { adminRequestActionSchema } from "@/features/requests/schemas";
 import { addAdminMessage, changeRequestPriority, changeRequestStatus, markRequestRead, RequestWorkflowError, updateRequestInternalNotes } from "@/features/requests/repository";
+import { recordSecurityEvent } from "@/lib/security/events";
+import { canAccessAdminDashboard } from "@/lib/auth/access";
 
 function safeError(error: unknown) {
   if (error instanceof RequestWorkflowError) {
@@ -16,10 +18,19 @@ function safeError(error: unknown) {
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ reference: string }> }) {
-  if (!hasApprovedMutationOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  if (!hasApprovedMutationOrigin(request)) {
+    recordSecurityEvent("origin_rejected", { route: "/api/admin/requests/[reference]" });
+    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  }
   const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user.id) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  if (session.user.role !== "admin") return NextResponse.json({ error: "Administrator access required." }, { status: 403 });
+  if (!session?.user.id) {
+    recordSecurityEvent("authorization_denied", { route: "/api/admin/requests/[reference]", reason: "authentication" });
+    return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+  }
+  if (!canAccessAdminDashboard(session)) {
+    recordSecurityEvent("authorization_denied", { route: "/api/admin/requests/[reference]", reason: session.user.role === "admin" ? "mfa" : "role" });
+    return NextResponse.json({ error: "Verified administrator access required." }, { status: 403 });
+  }
   let input: unknown;
   try { input = await readLimitedJson(request); } catch (error) { const status = error instanceof RequestBodyError ? error.status : 400; return NextResponse.json({ error: status === 413 ? "Request is too large." : status === 415 ? "Unsupported request content type." : "Invalid request." }, { status }); }
   const parsed = adminRequestActionSchema.safeParse(input);
