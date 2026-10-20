@@ -21,7 +21,7 @@ export default defineConfig({
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",
-  use: { baseURL: "http://localhost:3100", trace: "on-first-retry", extraHTTPHeaders: { "x-forwarded-for": "127.0.0.1" } },
+  use: { baseURL: "http://localhost:3100", trace: "on-first-retry", extraHTTPHeaders: { "cf-connecting-ip": "127.0.0.1", "x-forwarded-for": "127.0.0.1" } },
   webServer: {
     command: "pnpm test:e2e:prepare && pnpm exec next start --hostname localhost --port 3100",
     env: e2eEnvironment,

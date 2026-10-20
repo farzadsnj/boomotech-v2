@@ -63,6 +63,13 @@ describe("authorised request workflow", () => {
     expect(records[0]).not.toHaveProperty("priority");
   });
 
+  it("summarises only requests linked to the authenticated customer id", async () => {
+    const firstCustomer = await repository.getCustomerRequestOverview(customerOne);
+    const secondCustomer = await repository.getCustomerRequestOverview(customerTwo);
+    expect(firstCustomer).toMatchObject({ total: 2, active: 2, awaitingUser: 0, resolved: 0, awaitingRequests: [] });
+    expect(secondCustomer).toMatchObject({ total: 1, active: 1, awaitingUser: 0, resolved: 0, awaitingRequests: [] });
+  });
+
   it("stores administrator notes privately and records an audit event", async () => {
     await repository.updateRequestInternalNotes(firstReference, adminId, "Internal diagnostic context for authorised staff only.");
     const adminRecord = await repository.getAdminRequest(firstReference);
@@ -143,5 +150,30 @@ describe("authorised request workflow", () => {
     expect(secondPage.records).toHaveLength(3);
     expect([...firstPage.records, ...secondPage.records].every(({ userId }) => userId === customerOne)).toBe(true);
     expect([...firstPage.records, ...secondPage.records].some(({ userId }) => userId === customerTwo)).toBe(false);
+    const secondPageReference = secondPage.records[0].reference;
+    expect(await repository.findCustomerRequestPage(customerOne, secondPageReference)).toBe(2);
+    expect(await repository.findCustomerRequestPage(customerTwo, secondPageReference)).toBeNull();
+  });
+
+  it("filters request descriptions and applies stable submitted and updated date sorting", async () => {
+    const marker = `Filter marker ${randomUUID()}`;
+    const earlier = new Date("2026-01-02T01:00:00.000Z");
+    const later = new Date("2026-01-03T01:00:00.000Z");
+    await db.insert(tables.bookingRequest).values([
+      { id: randomUUID(), reference: "BT-F17E000001", fullName: "Sorting One", email: "sorting-one@example.test", phone: "+61400000000", servicePath: "/services/network-wifi", message: `${marker} earlier request description for network help.`, source: "booking-page", status: "NEW", priority: "LOW", consentVersion: "test", createdAt: earlier, updatedAt: later },
+      { id: randomUUID(), reference: "BT-F17E000002", fullName: "Sorting Two", email: "sorting-two@example.test", phone: "+61400000000", servicePath: "/services/network-wifi", message: `${marker} later request description for network help.`, source: "booking-page", status: "NEW", priority: "HIGH", consentVersion: "test", createdAt: later, updatedAt: earlier },
+    ]);
+    const created = await repository.listAdminRequests({ page: 1, search: marker, service: "/services/network-wifi", sort: "created-asc" });
+    expect(created.records.map(({ reference }) => reference)).toEqual(["BT-F17E000001", "BT-F17E000002"]);
+    const updated = await repository.listAdminRequests({ page: 1, search: marker, sort: "updated-desc" });
+    expect(updated.records.map(({ reference }) => reference)).toEqual(["BT-F17E000001", "BT-F17E000002"]);
+  });
+
+  it("rejects a stale administrator version before it can overwrite newer work", async () => {
+    const before = await repository.getAdminRequest(otherReference);
+    const priorityResult = await repository.changeRequestPriority(otherReference, adminId, "HIGH", before.version);
+    expect(priorityResult.version).toBe(before.version + 1);
+    await expect(repository.updateRequestInternalNotes(otherReference, adminId, "This stale update must not be saved.", before.version)).rejects.toMatchObject({ code: "conflict" });
+    expect((await repository.getAdminRequest(otherReference)).internalNotes).toBeNull();
   });
 });

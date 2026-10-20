@@ -1,6 +1,6 @@
 # Authentication remediation — 13 October 2026
 
-Status: implemented and locally testable on `security/application-hardening-2026`; not committed, deployed or migrated in production.
+Status updated 20 October 2026: merged into `main` through PR #27 and locally testable; not deployed or migrated in production.
 
 ## Persistent login lockout (A3)
 

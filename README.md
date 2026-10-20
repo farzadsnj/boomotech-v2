@@ -2,7 +2,7 @@
 
 BoomoTech V2 is the current web platform for BoomoTech: practical IT support, cloud, cybersecurity, automation, web/software services, consultation requests, educational content and future curated commerce.
 
-This repository contains the production application, customer/request backend, deployment tooling, server operations documentation and the active security-hardening work for BoomoTech V2.
+This repository contains the production application, customer/request backend, deployment tooling, server operations documentation and merged security controls for BoomoTech V2.
 
 The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local typed content, reusable page layouts and progressive accessible motion. The consultation/support request flow persists requests in PostgreSQL, provides customer/admin request conversations and uses a transactional Resend notification outbox. Verified customer accounts and the role-protected administrator workflow are implemented. Confirmed appointments, payments, public file uploads and real commerce remain unavailable until their operational requirements are approved.
 
@@ -31,6 +31,8 @@ The application uses Next.js App Router, strict TypeScript, Tailwind CSS, local 
 - [Production server security](docs/SERVER-SECURITY.md)
 - [Operations handbook](docs/OPERATIONS-HANDBOOK.md)
 - [Notification outbox](docs/NOTIFICATION-OUTBOX.md)
+- [In-app notifications](docs/IN-APP-NOTIFICATIONS.md)
+- [Administrator request activity calendar](docs/ACTIVITY-CALENDAR.md)
 - [Application security findings](docs/security/findings.md)
 - [Security release report](docs/security/release-report-2026-10-11.md)
 - [Security incident response](docs/security/incident.md)
@@ -39,7 +41,7 @@ No production claims, prices, policies, testimonials, credentials or case studie
 
 ## Security release status
 
-The active security-hardening work is tracked in PR #27. Persistent identifier-based account lockout, mandatory administrator TOTP MFA and SEC-017 are implemented on the local security branch, with additive migration `drizzle/0005_mushy_bedlam.sql`. The release remains **DO NOT RELEASE** until the real GitHub CodeQL check confirms the High alert is closed, the migration and administrator enrolment are reviewed, and the owner approves a controlled rollout. See [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md), [docs/security/auth-remediation-2026-10-13.md](docs/security/auth-remediation-2026-10-13.md) and [docs/security/release-report-2026-10-11.md](docs/security/release-report-2026-10-11.md).
+Security hardening from PR #27 is merged into `main`. Persistent identifier-based account lockout, mandatory administrator TOTP MFA and SEC-017 are present in the repository, with additive migration `drizzle/0005_mushy_bedlam.sql`. The release remains **DO NOT RELEASE** until the live CodeQL alert state is confirmed, the migration and administrator enrolment are reviewed, and the owner approves a controlled rollout. See [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md), [docs/security/auth-remediation-2026-10-13.md](docs/security/auth-remediation-2026-10-13.md) and [docs/security/release-report-2026-10-11.md](docs/security/release-report-2026-10-11.md).
 
 ## Run locally
 
@@ -74,6 +76,8 @@ Product collections use an accessible horizontal `ProductRow`: desktop shows com
 Accounts use Better Auth with the Drizzle PostgreSQL adapter. Passwords are hashed with Argon2id. New and changed passwords must contain 15–128 Unicode code points and Better Auth's maintained Have I Been Pwned plugin checks them through the k-anonymous range API without sending the full password. A breach-provider failure rejects the password operation instead of silently bypassing the control. Sessions are stored in the database and delivered through HTTP-only, SameSite cookies; browser storage is not used. Better Auth validates request origins and stores authentication rate-limit counters in PostgreSQL. Public registration receives the `user` role and cannot supply a role value.
 
 Customers can revoke every active session from the dashboard. Five invalid passwords within 15 minutes create a persistent HMAC-keyed database lock for 15 minutes, while Better Auth's database rate limiter supplies complementary per-client throttling. Administrators must complete TOTP or use a single-use recovery code before any privileged page or API is available. See [the authentication remediation record](docs/security/auth-remediation-2026-10-13.md).
+
+Protected account settings are available at `/dashboard/settings` for verified customers and `/admin/settings` for MFA-verified administrators. Both show a minimal account projection and permit display-name changes only. Email, username, role, verification and MFA state cannot be changed through the profile form. Password changes use Better Auth's current-password flow and can revoke other sessions; password recovery and revoke-all-session controls remain available as separate protected paths. Customer dashboard guidance is available at `/dashboard/help` through server-rendered accessible accordions, with links to existing request and support routes.
 
 Local database setup:
 

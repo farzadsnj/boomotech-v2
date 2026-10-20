@@ -38,6 +38,8 @@ describe("production security configuration", () => {
     expect(rules[0].headers).toContainEqual(expect.objectContaining({ key: "Content-Security-Policy" }));
     const dashboard = rules.find((rule) => rule.source === "/dashboard/:path*");
     expect(dashboard?.headers).toContainEqual({ key: "Cache-Control", value: "private, no-store, max-age=0, must-revalidate" });
+    const notifications = rules.find((rule) => rule.source === "/notifications");
+    expect(notifications?.headers).toContainEqual({ key: "Cache-Control", value: "private, no-store, max-age=0, must-revalidate" });
     expect(dashboard?.headers).toContainEqual({ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" });
     for (const source of ["/robots.txt", "/sitemap.xml"]) {
       expect(rules.find((rule) => rule.source === source)?.headers).toContainEqual({ key: "Cache-Control", value: "public, max-age=300, must-revalidate" });

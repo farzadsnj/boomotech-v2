@@ -15,6 +15,7 @@ describe("request workflow rules", () => {
     expect(customerRequestActionSchema.safeParse({ action: "reply", message: "x" }).success).toBe(false);
     const parsed = customerRequestActionSchema.parse({ action: "edit", description: "A sufficiently detailed customer request update.", status: "RESOLVED", priority: "HIGH", userId: "attacker" });
     expect(parsed).toEqual({ action: "edit", description: "A sufficiently detailed customer request update." });
-    expect(adminRequestActionSchema.safeParse({ action: "priority", priority: "MEDIOM" }).success).toBe(false);
+    expect(adminRequestActionSchema.safeParse({ action: "priority", priority: "MEDIOM", version: 0 }).success).toBe(false);
+    expect(adminRequestActionSchema.safeParse({ action: "priority", priority: "HIGH" }).success).toBe(false);
   });
 });

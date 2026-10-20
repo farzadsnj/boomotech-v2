@@ -13,7 +13,7 @@ let verification: (typeof import("@/db/schema"))["verification"];
 let userTable: (typeof import("@/db/schema"))["user"];
 let authLoginGuard: (typeof import("@/db/schema"))["authLoginGuard"];
 let rateLimitTable: (typeof import("@/db/schema"))["rateLimit"];
-let listCustomers: (typeof import("./customers"))["listCustomers"];
+let listCustomersForAdmin: (typeof import("@/features/customers/repository"))["listCustomersForAdmin"];
 let testDirectory = "";
 let capturePath = "";
 let verificationToken = "";
@@ -70,7 +70,7 @@ beforeAll(async () => {
   ({ auth } = await import("./auth"));
   ({ db, closeDatabase } = await import("@/db"));
   ({ account, verification, user: userTable, authLoginGuard, rateLimit: rateLimitTable } = await import("@/db/schema"));
-  ({ listCustomers } = await import("./customers"));
+  ({ listCustomersForAdmin } = await import("@/features/customers/repository"));
 });
 
 afterAll(async () => {
@@ -125,7 +125,7 @@ describe("database-backed account authentication", () => {
   });
 
   it("returns only safe customer-list fields", async () => {
-    const result = await listCustomers(1);
+    const result = await listCustomersForAdmin({ id: "admin-test", role: "admin", twoFactorEnabled: true }, { page: 1, sort: "registered-desc" });
     expect(result.total).toBe(1);
     expect(result.records[0]).toMatchObject({ name: "Taylor Morgan", email: "taylor@example.com" });
     expect(result.records[0]).not.toHaveProperty("password");
@@ -135,7 +135,7 @@ describe("database-backed account authentication", () => {
   it("rejects invalid and expired one-time verification grants", async () => {
     const { consumeVerificationGrant, storeVerificationGrant, verificationTokenHash } = await import("@/features/email-verification/grants");
     const { emailVerificationGrant } = await import("@/db/schema");
-    const customer = (await listCustomers(1)).records[0];
+    const customer = (await listCustomersForAdmin({ id: "admin-test", role: "admin", twoFactorEnabled: true }, { page: 1, sort: "registered-desc" })).records[0];
     expect(await consumeVerificationGrant("invalid-token")).toBeNull();
     await storeVerificationGrant(customer.id, "expired-token");
     await db.update(emailVerificationGrant).set({ expiresAt: new Date(Date.now() - 1000) }).where(eq(emailVerificationGrant.tokenHash, verificationTokenHash("expired-token")));

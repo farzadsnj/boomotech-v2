@@ -6,6 +6,11 @@ import { signInAdministrator } from "./auth-helpers";
 
 const screenshots = "artifacts/screenshots";
 
+async function signOutFromDashboard(page: import("@playwright/test").Page) {
+  await page.locator(".dashboard-account-menu > summary").click();
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+}
+
 test.describe("shop catalogue", () => {
   test("keeps catalogue and account routes out of search indexing", async ({ page }) => {
     for (const route of ["/shop", "/register", "/login", "/forgot-password", "/reset-password", "/check-email", "/email-verification-result", "/admin/login"]) {
@@ -94,6 +99,9 @@ test.describe("shop catalogue", () => {
 
 test.describe("database-backed accounts", () => {
   test.describe.configure({ mode: "serial" });
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("boomotech-cookie-notice-seen", "yes"));
+  });
   // Each Playwright worker (including retries) needs a fresh address because the
   // database intentionally persists accounts across the serial test group.
   const customer = {
@@ -128,10 +136,18 @@ test.describe("database-backed accounts", () => {
     await expect(page).toHaveURL(/\/dashboard\?verified=true$/);
     await expect(page.getByText("Your email address is verified")).toBeVisible();
     await expect(page.getByRole("heading", { name: `Welcome, ${customer.name}` })).toBeVisible();
-    await expect(page.getByText(customer.email)).toBeVisible();
+    await expect(page.locator("#dashboard-content").getByText(customer.email)).toBeVisible();
+    await expect(page.getByRole("link", { name: /Total requests: 0/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "No requests yet" })).toBeVisible();
+    const customerNavigation = page.locator(".dashboard-sidebar");
+    await expect(customerNavigation.getByRole("link", { name: "My requests" })).toBeVisible();
+    await expect(customerNavigation.getByRole("link", { name: "Account settings", exact: true })).toBeVisible();
+    await expect(customerNavigation.getByRole("link", { name: "New request", exact: true })).toHaveAttribute("href", "/booking");
+    await expect(customerNavigation.getByRole("link", { name: "Help", exact: true })).toHaveAttribute("href", "/dashboard/help");
+    await expect(customerNavigation.getByRole("link", { name: "Security settings" })).toHaveCount(0);
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${screenshots}/customer-dashboard.png`, fullPage: true });
-    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await signOutFromDashboard(page);
     await expect(page).toHaveURL(/\/login$/);
     await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/login\?next=%2Fdashboard|\/login\?next=\/dashboard/);
@@ -153,14 +169,62 @@ test.describe("database-backed accounts", () => {
     expect(submitted.status).toBe(201);
     requestReference = submitted.body.reference!;
     await page.reload();
-    await expect(page.getByText(requestReference)).toBeVisible();
-    await expect(page.getByText(/Several office computers need support/)).toBeVisible();
+    await expect(page.getByRole("link", { name: /Total requests: 1/ })).toBeVisible();
+    await expect(page.getByText(requestReference, { exact: true })).toBeVisible();
+    await expect(page.locator(".customer-request-card__description").getByText(/Several office computers need support/)).toBeVisible();
     await page.getByRole("button", { name: "Edit request" }).click();
     const description = page.getByLabel("Request description");
     await description.fill("Several office computers and the shared network need a documented support review.");
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText(/documented support review/)).toBeVisible();
-    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await expect(page.locator(".customer-request-card__description").getByText(/documented support review/)).toBeVisible();
+    await signOutFromDashboard(page);
+  });
+
+  test("validates customer settings and provides protected dashboard help", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email address").fill(customer.email);
+    await page.locator('input[name="password"]').fill(customer.password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+
+    await page.goto("/dashboard/settings");
+    await expect(page.getByRole("heading", { level: 1, name: "Account settings" })).toBeVisible();
+    await expect(page.locator(".dashboard-settings-overview dd").getByText(customer.email, { exact: true })).toBeVisible();
+    await expect(page.locator(".dashboard-settings-overview dd").filter({ hasText: "Verified" })).toBeVisible();
+    await expect(page.getByText(/Email changes are unavailable/)).toBeVisible();
+    await expect(page.locator('input[name="email"]')).toHaveCount(0);
+
+    const fullName = page.getByLabel("Full name");
+    await fullName.fill("");
+    await page.getByRole("button", { name: "Save profile" }).click();
+    await expect(fullName).toBeFocused();
+    await expect(page.getByText("Enter your full name.")).toBeVisible();
+    await fullName.fill("Casey Settings");
+    await expect(page.getByText("Enter your full name.")).toHaveCount(0);
+    await page.getByRole("button", { name: "Save profile" }).click();
+    await expect(page.locator(".dashboard-settings-form__success")).toHaveText("Your account name has been updated.");
+
+    await page.getByRole("button", { name: "Change password" }).click();
+    await expect(page.locator('input[name="currentPassword"]')).toBeFocused();
+    await expect(page.getByText("Enter your current password.")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Use password recovery" })).toHaveAttribute("href", "/forgot-password");
+    await expect(page.getByRole("button", { name: "Sign out all devices" })).toBeVisible();
+
+    await page.goto("/dashboard/help");
+    await expect(page.getByRole("heading", { level: 1, name: "Dashboard help centre" })).toBeVisible();
+    await expect(page.locator(".dashboard-sidebar").getByRole("link", { name: "Help" })).toHaveAttribute("aria-current", "page");
+    const replyQuestion = page.getByText("How do I reply to a request?", { exact: true });
+    await replyQuestion.click();
+    await expect(page.getByText(/Never include passwords, MFA codes/)).toBeVisible();
+    await expect(page.getByRole("link", { name: "View support guidance" })).toHaveAttribute("href", "/support");
+
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.reload();
+    const width = await page.evaluate(() => ({ client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth }));
+    expect(width.scroll).toBeLessThanOrEqual(width.client);
+    const results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations.filter(({ impact }) => impact === "critical" || impact === "serious")).toEqual([]);
+    await signOutFromDashboard(page);
   });
 
   test("blocks a customer from admin and shows a safe administrator customer list", async ({ page }) => {
@@ -171,18 +235,26 @@ test.describe("database-backed accounts", () => {
     await expect(page).toHaveURL(/\/dashboard$/);
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/dashboard\?access=denied/);
-    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await page.goto("/admin/customers");
+    await expect(page).toHaveURL(/\/dashboard\?access=denied/);
+    await page.goto("/admin/calendar");
+    await expect(page).toHaveURL(/\/dashboard\?access=denied/);
+    await page.goto("/admin/settings");
+    await expect(page).toHaveURL(/\/dashboard\?access=denied/);
+    await signOutFromDashboard(page);
     await page.goto("/admin/login");
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${screenshots}/admin-login.png`, fullPage: true });
     await signInAdministrator(page);
     await expect(page.getByRole("heading", { level: 1, name: "Operations dashboard" })).toBeVisible();
-    await expect(page.getByRole("heading", { level: 2, name: "Registered customers" })).toBeVisible();
-    await expect(page.locator(".admin-summary li").filter({ hasText: "New" }).locator("strong")).toHaveText(/\d+/);
+    await expect(page.locator(".operations-metrics li").filter({ hasText: "New" }).locator("strong")).toHaveText(/\d+/);
+    await page.goto("/admin/customers");
+    await expect(page.getByRole("heading", { level: 1, name: "Customer directory" })).toBeVisible();
     await expect(page.getByRole("cell", { name: customer.email, exact: true })).toBeVisible();
     await expect(page.getByRole("columnheader", { name: /password/i })).toHaveCount(0);
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${screenshots}/admin-user-list.png`, fullPage: true });
+    await page.goto("/admin");
     await page.getByRole("row").filter({ hasText: requestReference }).getByRole("link", { name: "Respond" }).click();
     await expect(page).toHaveURL(new RegExp(`/admin/requests/${requestReference}$`));
     await page.getByRole("button", { name: "Start processing" }).click();
@@ -194,13 +266,13 @@ test.describe("database-backed accounts", () => {
     await expect(page.getByText("Request updated.")).toBeVisible();
     await page.getByLabel("Response to customer").fill("Please confirm whether all affected computers use the same office network.");
     await page.getByRole("button", { name: "Send response", exact: true }).click();
-    await expect(page.getByLabel("Status: Waiting for you")).toBeVisible();
+    await expect(page.getByLabel("Status: Waiting for customer")).toBeVisible();
     await expect(page.getByText("Started processing")).toBeVisible();
     await expect(page.getByText("Priority changed")).toBeVisible();
     await expect(page.getByText("Response sent")).toBeVisible();
     await expect(page.getByText(/ADMIN_|CUSTOMER_/)).toHaveCount(0);
     await page.screenshot({ path: `${screenshots}/admin-request-detail.png`, fullPage: true });
-    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await signOutFromDashboard(page);
   });
 
   test("customer replies to an administrator update and cannot edit the locked description", async ({ page }) => {
@@ -208,13 +280,26 @@ test.describe("database-backed accounts", () => {
     await page.getByLabel("Email address").fill(customer.email);
     await page.locator('input[name="password"]').fill(customer.password);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByText(requestReference)).toBeVisible();
+    await expect(page.getByText(requestReference, { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Action needed" })).toBeVisible();
+    const notificationTrigger = page.getByRole("button", { name: /Notifications, 2 unread/ });
+    await expect(notificationTrigger).toBeVisible();
+    await notificationTrigger.click();
+    const notifications = page.getByRole("region", { name: "Recent notifications" });
+    await expect(notifications.getByText(new RegExp(`BoomoTech replied to ${requestReference}`))).toBeVisible();
+    await notifications.getByRole("button", { name: "Mark all read" }).click();
+    await expect(page.getByRole("button", { name: "Notifications", exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("link", { name: "Review and reply" })).toHaveAttribute("href", `/dashboard?request=${requestReference}#request-${requestReference}`);
     await expect(page.getByRole("button", { name: "Edit request" })).toHaveCount(0);
     await page.getByRole("button", { name: "Reply to BoomoTech" }).click();
-    await page.getByLabel("Your reply").fill("Yes, the affected computers all use the same office network. <script>window.__storedXss = true</script>");
+    await page.getByRole("textbox", { name: "Your reply", exact: true }).fill("Yes, the affected computers all use the same office network. <script>window.__storedXss = true</script>");
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByLabel("Status: In progress")).toBeVisible();
-    await expect(page.getByText(/affected computers all use/)).toBeVisible();
+    const customerCard = page.locator(`#request-${requestReference}`);
+    await customerCard.getByText("Conversation history").click();
+    await expect(customerCard.getByText(/affected computers all use/)).toBeVisible();
+    await expect(page.getByText("No request currently needs a reply from you.")).toBeVisible();
     await expect(page.getByText(/Customer confirmed that the affected devices/)).toHaveCount(0);
     await expect(page.getByText(/Priority:|High|Medium|Low/)).toHaveCount(0);
     expect(await page.evaluate(() => (window as typeof window & { __storedXss?: boolean }).__storedXss)).toBeUndefined();
@@ -245,6 +330,12 @@ test.describe("database-backed accounts", () => {
     await expect(page.getByText(/Page 2 of 2/)).toBeVisible();
     await expect(page.getByRole("link", { name: "Previous" })).toBeVisible();
     await expect(page.getByText(/Priority:|High|Medium|Low/)).toHaveCount(0);
+    const secondPageReference = await page.locator('[id^="request-BT-"]').first().getAttribute("id");
+    expect(secondPageReference).toBeTruthy();
+    const reference = secondPageReference!.replace("request-", "");
+    await page.goto(`/dashboard?request=${reference}#request-${reference}`);
+    await expect(page.getByText(/Page 2 of 2/)).toBeVisible();
+    await expect(page.locator(`#request-${reference}`)).toBeVisible();
   });
 
   test("customer and administrator request screens remain responsive and accessible", async ({ page }) => {
@@ -263,7 +354,7 @@ test.describe("database-backed accounts", () => {
     await page.waitForTimeout(900);
     const customerAxe = await new AxeBuilder({ page }).analyze();
     expect(customerAxe.violations.filter(({ impact }) => impact === "critical" || impact === "serious")).toEqual([]);
-    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await signOutFromDashboard(page);
     await signInAdministrator(page);
     await page.goto(`/admin/requests/${requestReference}`);
     for (const viewport of [{ width: 320, height: 800 }, { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1280, height: 800 }]) {

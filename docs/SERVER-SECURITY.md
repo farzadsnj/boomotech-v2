@@ -17,13 +17,13 @@ Internet -> Cloudflare -> Cloudflare Tunnel -> loopback Nginx
 - PostgreSQL must listen only on loopback and use SCRAM for TCP password authentication.
 - `boomotech.service` runs as `boomotechhost`, never root. Root owns system configuration and server backups.
 
-The repository preserves Argon2id credentials, server-side sessions, role and origin checks, rate limits, verified-email flow, single-use password-reset tokens and `no-store` headers. The current security branch adds mandatory Better Auth TOTP MFA for administrators with encrypted, single-use recovery codes. Production enrolment remains pending approval and migration.
+The repository preserves Argon2id credentials, server-side sessions, role and origin checks, rate limits, verified-email flow, single-use password-reset tokens and `no-store` headers. The merged security controls add mandatory Better Auth TOTP MFA for administrators with encrypted, single-use recovery codes. Production enrolment remains pending approval and migration.
 
 ## Application release gate
 
 Host hardening and application release approval are separate controls. A clean Ubuntu/server audit does not override an application security failure, and a green application test suite does not prove the host is configured correctly.
 
-As of 13 October 2026, the active application-security branch is **not approved for deployment**. The lockout and administrator MFA code is locally implemented, but the real GitHub CodeQL result has not rerun and production migration/enrolment have not been authorised. Keep the release blocked until the complete suite and GitHub security checks are green and the owner approves rollout.
+As of 20 October 2026, the application is **not approved for deployment**. The lockout and administrator MFA code is merged into `main`, and PR #27 checks passed, but production migration/enrolment have not been authorised and the live CodeQL alert state still requires confirmation. Keep the release blocked until the complete suite and GitHub security checks are green and the owner approves rollout.
 
 For future production changes, require both:
 
