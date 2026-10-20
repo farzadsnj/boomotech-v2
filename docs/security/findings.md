@@ -34,3 +34,5 @@ Statuses reflect repository and local-runtime evidence. Production was not probe
 - Informational: 3 found, 1 fixed, 2 open/not verified.
 
 SEC-001, SEC-002 and SEC-017 are merged into `main`. The release gate remains blocked until the migration is reviewed, existing administrators are enrolled in a controlled environment, the complete suite passes, and the live GitHub code-scanning alert confirms SEC-018 is closed.
+
+A successful pull-request check or the absence of newly introduced CodeQL alerts does not close SEC-018 or any other existing finding. Findings change status only when their stated remediation and live verification evidence are complete; production rollout items remain separate release gates.

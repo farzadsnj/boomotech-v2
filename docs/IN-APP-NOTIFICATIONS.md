@@ -22,6 +22,15 @@ Workflow actions create their request update, audit event, email outbox record w
 
 Notification rows cascade with the related request. Customer-targeted rows and read receipts also cascade when that customer account is deleted. No separate time-based deletion is claimed until the owner approves the request and audit retention policy.
 
+## Migration rollout and rollback review
+
+Migrations `0006_little_toxin.sql` and `0007_curious_pepper_potts.sql` use PostgreSQL-compatible tables, constraints, foreign keys and B-tree indexes. They remain unapplied to production until the normal backup, staging and owner-approval gates are complete.
+
+- `0006` creates three indexes with ordinary `CREATE INDEX`. On a large existing table PostgreSQL can hold a lock that blocks writes while each index is built. Measure the tables and index duration in staging, then schedule a maintenance window before applying it. Do not change these statements to `CREATE INDEX CONCURRENTLY` inside the current transactional migration runner because PostgreSQL prohibits that command in a transaction block.
+- `0007` creates new, initially empty notification tables before adding their foreign keys and indexes. This avoids legacy-row validation, but adding the foreign keys can still take brief locks on the referenced user, request and message tables. Apply it during a quiet period and monitor lock waits.
+- A manual rollback for `0007` must drop `in_app_notification_read` before `in_app_notification`. That permanently removes notification and read-state data. A rollback for `0006` drops only its three named indexes, but query performance may regress. Take a verified backup first and use reviewed SQL rather than ad hoc production commands.
+- Test both forward migration and the documented recovery procedure against a restored staging copy that represents production size. The PGlite test suite checks schema compatibility but does not measure PostgreSQL lock duration or production data volume.
+
 ## Routes
 
 - `GET /api/notifications` returns only the current user’s bounded notification projection and unread count.

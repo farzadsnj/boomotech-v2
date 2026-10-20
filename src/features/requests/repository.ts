@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, gte, ilike, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { bookingRequest, bookingRequestEvent, bookingRequestMessage, inAppNotification, notificationOutbox } from "@/db/schema";
 import { reportingPeriodStart, type ReportingPeriod } from "@/features/dashboard/reporting";
+import { analyticsDateRange, type AnalyticsPeriod } from "@/features/analytics/range";
 import type { RequestPriority, RequestStatus } from "./workflow";
 import { canTransitionRequest } from "./workflow";
 
@@ -16,7 +17,7 @@ export class RequestWorkflowError extends Error {
 }
 
 export type AdminRequestSort = "created-desc" | "created-asc" | "updated-desc" | "updated-asc";
-type AdminFilters = { page: number; period?: ReportingPeriod; scope?: "outstanding"; status?: RequestStatus; priority?: RequestPriority; service?: string; search?: string; sort?: AdminRequestSort };
+type AdminFilters = { page: number; period?: ReportingPeriod; dateField?: "resolved"; scope?: "outstanding"; status?: RequestStatus; priority?: RequestPriority; service?: string; search?: string; sort?: AdminRequestSort };
 
 const activeRequestStatuses: RequestStatus[] = ["NEW", "IN_PROGRESS", "AWAITING_USER"];
 
@@ -96,6 +97,22 @@ export async function listCustomerRequests(userId: string, page = 1) {
     status: statusOf(record.status),
     messages: messages.get(record.id) ?? [],
   })), total, totalPages: Math.max(1, Math.ceil(total / CUSTOMER_REQUEST_PAGE_SIZE)) };
+}
+
+export async function findCustomerRequestPage(userId: string, reference: string) {
+  const [target] = await db.select({ id: bookingRequest.id, updatedAt: bookingRequest.updatedAt })
+    .from(bookingRequest)
+    .where(and(eq(bookingRequest.userId, userId), eq(bookingRequest.reference, reference)))
+    .limit(1);
+  if (!target) return null;
+  const [{ preceding }] = await db.select({ preceding: count() }).from(bookingRequest).where(and(
+    eq(bookingRequest.userId, userId),
+    or(
+      gt(bookingRequest.updatedAt, target.updatedAt),
+      and(eq(bookingRequest.updatedAt, target.updatedAt), gt(bookingRequest.id, target.id)),
+    ),
+  ));
+  return Math.floor(preceding / CUSTOMER_REQUEST_PAGE_SIZE) + 1;
 }
 
 export async function getCustomerRequestOverview(userId: string) {
@@ -207,10 +224,15 @@ export async function addCustomerMessage(reference: string, userId: string, body
   });
 }
 
-function adminWhere(filters: AdminFilters) {
+function adminWhere(filters: AdminFilters, now: Date) {
   const conditions = [];
-  const periodStart = reportingPeriodStart(filters.period ?? "all");
-  if (periodStart) conditions.push(gte(bookingRequest.createdAt, periodStart));
+  if (filters.dateField && filters.period && filters.period !== "all") {
+    const { start, endExclusive } = analyticsDateRange(filters.period as AnalyticsPeriod, now);
+    conditions.push(gte(bookingRequest.resolvedAt, start), lt(bookingRequest.resolvedAt, endExclusive));
+  } else {
+    const periodStart = reportingPeriodStart(filters.period ?? "all");
+    if (periodStart) conditions.push(gte(bookingRequest.createdAt, periodStart));
+  }
   if (filters.scope === "outstanding") conditions.push(inArray(bookingRequest.status, activeRequestStatuses));
   if (filters.status) conditions.push(eq(bookingRequest.status, filters.status));
   if (filters.priority) conditions.push(eq(bookingRequest.priority, filters.priority));
@@ -222,8 +244,8 @@ function adminWhere(filters: AdminFilters) {
   return conditions.length ? and(...conditions) : undefined;
 }
 
-export async function listAdminRequests(filters: AdminFilters) {
-  const where = adminWhere(filters);
+export async function listAdminRequests(filters: AdminFilters, now = new Date()) {
+  const where = adminWhere(filters, now);
   const [{ total }] = await db.select({ total: count() }).from(bookingRequest).where(where);
   const sort = filters.sort ?? "created-desc";
   const ordering = sort === "created-asc" ? [asc(bookingRequest.createdAt), asc(bookingRequest.id)]

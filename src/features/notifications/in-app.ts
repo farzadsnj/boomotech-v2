@@ -2,6 +2,7 @@ import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { bookingRequest, inAppNotification, inAppNotificationRead } from "@/db/schema";
 import { serviceLabel } from "@/features/booking/booking-schema";
+import { customerRequestHref } from "@/features/requests/links";
 import { canAccessAdminDashboard, canAccessCustomerDashboard } from "@/lib/auth/access";
 
 export const NOTIFICATION_PAGE_SIZE = 20;
@@ -67,7 +68,7 @@ export async function listInAppNotifications(actor: NotificationActor, page = 1,
       createdAt: record.createdAt,
       readAt: record.readAt,
       ...notificationCopy(record.kind, record.reference, record.servicePath),
-      href: audience === "admin" ? `/admin/requests/${record.reference}` : `/dashboard#request-${record.reference}`,
+      href: audience === "admin" ? `/admin/requests/${record.reference}` : customerRequestHref(record.reference),
     })),
     total,
     unreadCount,

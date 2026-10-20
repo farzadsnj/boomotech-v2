@@ -290,7 +290,7 @@ test.describe("database-backed accounts", () => {
     await notifications.getByRole("button", { name: "Mark all read" }).click();
     await expect(page.getByRole("button", { name: "Notifications", exact: true })).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("link", { name: "Review and reply" })).toHaveAttribute("href", `#request-${requestReference}`);
+    await expect(page.getByRole("link", { name: "Review and reply" })).toHaveAttribute("href", `/dashboard?request=${requestReference}#request-${requestReference}`);
     await expect(page.getByRole("button", { name: "Edit request" })).toHaveCount(0);
     await page.getByRole("button", { name: "Reply to BoomoTech" }).click();
     await page.getByRole("textbox", { name: "Your reply", exact: true }).fill("Yes, the affected computers all use the same office network. <script>window.__storedXss = true</script>");
@@ -330,6 +330,12 @@ test.describe("database-backed accounts", () => {
     await expect(page.getByText(/Page 2 of 2/)).toBeVisible();
     await expect(page.getByRole("link", { name: "Previous" })).toBeVisible();
     await expect(page.getByText(/Priority:|High|Medium|Low/)).toHaveCount(0);
+    const secondPageReference = await page.locator('[id^="request-BT-"]').first().getAttribute("id");
+    expect(secondPageReference).toBeTruthy();
+    const reference = secondPageReference!.replace("request-", "");
+    await page.goto(`/dashboard?request=${reference}#request-${reference}`);
+    await expect(page.getByText(/Page 2 of 2/)).toBeVisible();
+    await expect(page.locator(`#request-${reference}`)).toBeVisible();
   });
 
   test("customer and administrator request screens remain responsive and accessible", async ({ page }) => {

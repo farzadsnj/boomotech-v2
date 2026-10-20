@@ -150,6 +150,9 @@ describe("authorised request workflow", () => {
     expect(secondPage.records).toHaveLength(3);
     expect([...firstPage.records, ...secondPage.records].every(({ userId }) => userId === customerOne)).toBe(true);
     expect([...firstPage.records, ...secondPage.records].some(({ userId }) => userId === customerTwo)).toBe(false);
+    const secondPageReference = secondPage.records[0].reference;
+    expect(await repository.findCustomerRequestPage(customerOne, secondPageReference)).toBe(2);
+    expect(await repository.findCustomerRequestPage(customerTwo, secondPageReference)).toBeNull();
   });
 
   it("filters request descriptions and applies stable submitted and updated date sorting", async () => {

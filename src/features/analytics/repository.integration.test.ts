@@ -9,6 +9,7 @@ const databasePath = path.resolve(process.cwd(), ".test-db", `analytics-${random
 const adminActor = { id: "analytics-admin", role: "admin", twoFactorEnabled: true } as const;
 const now = new Date("2026-10-18T02:30:00Z");
 let repository: typeof AnalyticsRepository;
+let requestRepository: typeof import("@/features/requests/repository");
 let db: (typeof import("@/db"))["db"];
 let closeDatabase: (typeof import("@/db"))["closeDatabase"];
 let tables: typeof import("@/db/schema");
@@ -27,6 +28,7 @@ beforeAll(async () => {
   ({ db, closeDatabase } = await import("@/db"));
   tables = await import("@/db/schema");
   repository = await import("./repository");
+  requestRepository = await import("@/features/requests/repository");
 });
 
 afterAll(async () => {
@@ -78,5 +80,14 @@ describe("administrator analytics", () => {
     expect(result.daily.find(({ date }) => date === "2026-10-12")).toMatchObject({ received: 1, resolved: 1 });
     expect(result.daily.find(({ date }) => date === "2026-10-18")).toMatchObject({ received: 1, resolved: 1 });
     expect(result.daily.find(({ date }) => date === "2026-10-13")).toMatchObject({ customers: 1 });
+
+    const resolvedDestination = await requestRepository.listAdminRequests({
+      page: 1,
+      period: "7d",
+      dateField: "resolved",
+      status: "RESOLVED",
+    }, now);
+    expect(resolvedDestination.total).toBe(result.summary.requestsResolved);
+    expect(resolvedDestination.records.map(({ reference }) => reference)).toEqual(expect.arrayContaining(["BT-AN00000002", "BT-AN00000004"]));
   });
 });

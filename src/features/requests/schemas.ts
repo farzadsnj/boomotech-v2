@@ -31,6 +31,7 @@ const serviceValues = new Set(bookingOptions.map(({ value }) => value));
 export const adminRequestFiltersSchema = z.object({
   page: z.coerce.number().int().positive().catch(1),
   period: reportingPeriodSchema.optional().default("all"),
+  dateField: z.literal("resolved").optional(),
   scope: z.enum(["outstanding"]).optional(),
   status: requestStatusSchema.optional(),
   priority: requestPrioritySchema.optional(),

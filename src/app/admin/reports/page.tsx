@@ -49,7 +49,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
       <ul aria-label={`Operational summary for ${data.range.label}`} className="operations-metrics analytics-metrics">
         <DashboardMetricCard description={analyticsPeriodLabels[period]} href={queueHref(period)} label="Requests received" value={data.summary.requestsReceived} />
-        <DashboardMetricCard description="Resolved in this period" href={queueHref(period, { status: "RESOLVED" })} label="Requests resolved" tone="positive" value={data.summary.requestsResolved} />
+        <DashboardMetricCard description="Resolved in this period" href={queueHref(period, { dateField: "resolved", status: "RESOLVED" })} label="Requests resolved" tone="positive" value={data.summary.requestsResolved} />
         <DashboardMetricCard description={`${outstandingPercentage}% of requests received`} href={queueHref(period, { scope: "outstanding" })} label="Outstanding work" tone={data.summary.outstanding ? "attention" : "default"} value={data.summary.outstanding} />
         <DashboardMetricCard description="Outstanding and high priority" href={queueHref(period, { priority: "HIGH", scope: "outstanding" })} label="High priority" tone={data.summary.highPriorityOutstanding ? "attention" : "default"} value={data.summary.highPriorityOutstanding} />
         <DashboardMetricCard description="New accounts in this period" href="/admin/customers" label="Registered customers" value={data.summary.registeredCustomers} />

@@ -9,7 +9,8 @@ import { DashboardCard, DashboardMetricCard } from "@/features/dashboard/compone
 import { DashboardShell } from "@/features/dashboard/components/dashboard-shell";
 import { DASHBOARD_THEME_COOKIE, parseDashboardTheme } from "@/features/dashboard/theme";
 import { brisbaneDateTime } from "@/features/requests/format";
-import { getCustomerRequestOverview, listCustomerRequests } from "@/features/requests/repository";
+import { customerRequestHref } from "@/features/requests/links";
+import { findCustomerRequestPage, getCustomerRequestOverview, listCustomerRequests } from "@/features/requests/repository";
 import { canAccessCustomerDashboard } from "@/lib/auth/access";
 import { auth } from "@/lib/auth/auth";
 
@@ -21,14 +22,17 @@ function pageNumber(value?: string) {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 1;
 }
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ verified?: string; access?: string; page?: string }> }) {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ verified?: string; access?: string; page?: string; request?: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login?next=/dashboard");
   if (!canAccessCustomerDashboard(session)) redirect("/check-email");
 
   const initialTheme = parseDashboardTheme((await cookies()).get(DASHBOARD_THEME_COOKIE)?.value);
   const params = await searchParams;
-  const requestedPage = pageNumber(params.page);
+  const linkedPage = params.request && /^BT-[A-F0-9]{10}$/.test(params.request)
+    ? await findCustomerRequestPage(session.user.id, params.request)
+    : null;
+  const requestedPage = linkedPage ?? pageNumber(params.page);
   const [initialResult, overview] = await Promise.all([
     listCustomerRequests(session.user.id, requestedPage),
     getCustomerRequestOverview(session.user.id),
@@ -85,7 +89,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             {overview.awaitingRequests.length ? <ul>
               {overview.awaitingRequests.map((request) => <li key={request.reference}>
                 <div><strong>{serviceLabel(request.servicePath)}</strong><span>{request.reference} · Updated {brisbaneDateTime.format(request.updatedAt)}</span></div>
-                <Link href={`#request-${request.reference}`}>Review and reply<span aria-hidden="true"> →</span></Link>
+                <Link href={customerRequestHref(request.reference)}>Review and reply<span aria-hidden="true"> →</span></Link>
               </li>)}
             </ul> : <div className="customer-portal__all-clear"><span aria-hidden="true">✓</span><div><strong>You are up to date</strong><p>No request currently needs a reply from you.</p></div></div>}
           </DashboardCard>

@@ -181,6 +181,7 @@ test("protected dashboard shell is responsive, accessible and keyboard operable"
     await expect(page.getByRole("heading", { name: "New versus resolved" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Registered customer growth" })).toBeVisible();
     await expect(page.locator("#analytics-tables").getByText("Daily activity")).toBeVisible();
+    await expect(page.getByRole("link", { name: /^Requests resolved:/ })).toHaveAttribute("href", "/admin?period=7d&dateField=resolved&status=RESOLVED#request-list");
 
     const response = await page.request.get("/api/admin/reports/export?period=7d");
     expect(response.status()).toBe(200);

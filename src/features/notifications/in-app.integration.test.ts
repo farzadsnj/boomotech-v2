@@ -80,7 +80,7 @@ describe("in-app notification delivery", () => {
     await requests.addAdminMessage(reference, adminOne.id, "Please confirm whether the issue affects more than one device.");
     const owner = await notifications.listInAppNotifications(customerOne);
     expect(owner.records.map(({ kind }) => kind)).toEqual(["CUSTOMER_ADMIN_REPLY", "CUSTOMER_STATUS_CHANGED"]);
-    expect(owner.records.every(({ href }) => href === `/dashboard#request-${reference}`)).toBe(true);
+    expect(owner.records.every(({ href }) => href === `/dashboard?request=${reference}#request-${reference}`)).toBe(true);
     expect((await notifications.listInAppNotifications(customerTwo)).records).toEqual([]);
     await expect(notifications.markInAppNotificationRead(customerTwo, owner.records[0].id)).rejects.toMatchObject({ code: "not-found" });
 

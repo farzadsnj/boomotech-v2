@@ -11,6 +11,7 @@ type RequestList = Awaited<ReturnType<typeof listAdminRequests>>;
 type Filters = {
   page: number;
   period: ReportingPeriod;
+  dateField?: "resolved";
   scope?: "outstanding";
   status?: RequestStatus;
   priority?: RequestPriority;
@@ -28,6 +29,7 @@ const sortOptions: { label: string; value: AdminRequestSort }[] = [
 
 function queryHref(filters: Filters, page: number) {
   const query = new URLSearchParams({ bookingPage: String(page), period: filters.period, sort: filters.sort });
+  if (filters.dateField) query.set("dateField", filters.dateField);
   if (filters.scope) query.set("scope", filters.scope);
   if (filters.status) query.set("status", filters.status);
   if (filters.priority) query.set("priority", filters.priority);
@@ -58,6 +60,7 @@ export function AdminRequestManagement({ filterError, filters, result }: { filte
     <form className="admin-filters" method="get">
       <input name="bookingPage" type="hidden" value="1" />
       <input name="period" type="hidden" value={filters.period} />
+      {filters.dateField ? <input name="dateField" type="hidden" value={filters.dateField} /> : null}
       {filters.scope ? <input name="scope" type="hidden" value={filters.scope} /> : null}
       <div className="admin-filter-search"><label htmlFor="request-search">Search requests</label><input defaultValue={filters.search ?? ""} id="request-search" name="search" placeholder="Reference, customer or description" type="search" /></div>
       <div><label htmlFor="status-filter">Status</label><select defaultValue={filters.status ?? ""} id="status-filter" name="status"><option value="">All statuses</option>{requestStatuses.map((item) => <option key={item} value={item}>{adminStatusLabels[item]}</option>)}</select></div>
@@ -65,7 +68,7 @@ export function AdminRequestManagement({ filterError, filters, result }: { filte
       <div><label htmlFor="service-filter">Service</label><select defaultValue={filters.service ?? ""} id="service-filter" name="service"><option value="">All services</option>{bookingOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
       <div><label htmlFor="sort-filter">Sort</label><select defaultValue={filters.sort} id="sort-filter" name="sort">{sortOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
       <button type="submit">Apply filters</button>
-      <Link href={`/admin?period=${filters.period}#request-list`}>Clear</Link>
+      <Link href={`/admin?period=${filters.period}${filters.dateField ? `&dateField=${filters.dateField}` : ""}#request-list`}>Clear</Link>
     </form>
     {result.records.length ? <>
       <div className="admin-request-table admin-table-scroll">

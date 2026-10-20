@@ -22,7 +22,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   if (!canAccessAdminDashboard(session)) redirect("/dashboard?access=denied");
   const initialTheme = parseDashboardTheme((await cookies()).get(DASHBOARD_THEME_COOKIE)?.value);
   const params = await searchParams;
-  const parsedFilters = adminRequestFiltersSchema.safeParse({ page: params.bookingPage ?? "1", period: params.period || undefined, scope: params.scope || undefined, status: params.status || undefined, priority: params.priority || undefined, service: params.service || undefined, search: params.search || undefined, sort: params.sort || undefined });
+  const parsedFilters = adminRequestFiltersSchema.safeParse({ page: params.bookingPage ?? "1", period: params.period || undefined, dateField: params.dateField || undefined, scope: params.scope || undefined, status: params.status || undefined, priority: params.priority || undefined, service: params.service || undefined, search: params.search || undefined, sort: params.sort || undefined });
   const filters = parsedFilters.success ? parsedFilters.data : { page: 1, period: "all" as const, sort: "created-desc" as const };
   const actor = { id: session.user.id, role: session.user.role, twoFactorEnabled: session.user.twoFactorEnabled };
   const [requestsResult, operations, reportingCustomerCount] = await Promise.all([
