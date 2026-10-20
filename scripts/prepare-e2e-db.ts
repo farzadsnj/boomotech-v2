@@ -24,6 +24,25 @@ await client.query(`insert into "user" (id, name, email, email_verified, usernam
   values ($1, $2, $3, true, $4, $4, 'admin', false, now(), now())`, [adminId, "Test Administrator", "admin@example.test", "farzadsnj"]);
 await client.query(`insert into account (id, account_id, provider_id, user_id, password, created_at, updated_at)
   values ($1, $2, 'credential', $2, $3, now(), now())`, [crypto.randomUUID(), adminId, passwordHash]);
+const customerFixtures = [
+  { id: crypto.randomUUID(), name: "Casey Network", email: "casey-network@example.test", verified: true },
+  { id: crypto.randomUUID(), name: "Jordan Support", email: "jordan-support@example.test", verified: false },
+] as const;
+for (const customer of customerFixtures) await client.query(`insert into "user" (id, name, email, email_verified, role, banned, created_at, updated_at)
+  values ($1, $2, $3, $4, 'user', false, now(), now())`, [customer.id, customer.name, customer.email, customer.verified]);
+const requestFixtures = [
+  { id: crypto.randomUUID(), reference: "BT-E2E0000001", userId: customerFixtures[0].id, name: "Casey Network", email: "casey-network@example.test", service: "/services/network-wifi", message: "The office has unreliable wireless coverage in two meeting rooms and needs a network assessment.", status: "NEW", priority: "HIGH" },
+  { id: crypto.randomUUID(), reference: "BT-E2E0000002", userId: customerFixtures[1].id, name: "Jordan Support", email: "jordan-support@example.test", service: "/services/it-support", message: "Several team computers need ongoing support and a documented update process.", status: "AWAITING_USER", priority: "MEDIUM" },
+  { id: crypto.randomUUID(), reference: "BT-E2E0000003", userId: null, name: "Alex Security", email: "alex-security@example.test", service: "/services/cybersecurity", message: "The business needs help reviewing account security and phishing preparation.", status: "IN_PROGRESS", priority: "HIGH" },
+] as const;
+for (const fixture of requestFixtures) {
+  await client.query(`insert into booking_request (id, reference, user_id, full_name, email, phone, service_path, message, source, status, priority, consent_version, created_at, updated_at)
+    values ($1, $2, $3, $4, $5, '+61400000000', $6, $7, 'booking-page', $8, $9, 'e2e-test', now(), now())`, [fixture.id, fixture.reference, fixture.userId, fixture.name, fixture.email, fixture.service, fixture.message, fixture.status, fixture.priority]);
+  await client.query(`insert into booking_request_event (id, booking_request_id, actor_role, event_type, to_status, created_at)
+    values ($1, $2, 'system', 'REQUEST_CREATED', $3, now())`, [crypto.randomUUID(), fixture.id, fixture.status]);
+  await client.query(`insert into in_app_notification (id, recipient_role, booking_request_id, kind, dedupe_key, created_at)
+    values ($1, 'admin', $2, 'ADMIN_NEW_REQUEST', $3, now())`, [crypto.randomUUID(), fixture.id, `${fixture.id}:ADMIN_NEW_REQUEST`]);
+}
 await client.close();
 
 const { auth } = await import("../src/lib/auth/auth");

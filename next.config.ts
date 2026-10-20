@@ -42,6 +42,7 @@ const nextConfig: NextConfig = {
       "/api/:path*",
       "/dashboard/:path*",
       "/admin/:path*",
+      "/notifications",
       "/login",
       "/register",
       "/forgot-password",

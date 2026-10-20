@@ -269,6 +269,12 @@
   .professional-nav { gap: .28rem; }.professional-nav > a, .nav-cluster > a { font-size: .75rem; }.nav-cluster > button { width: 1.25rem; }
   .header-control { padding-inline: .55rem; font-size: .72rem; }.header-cta { gap: .45rem; padding-inline: .65rem; font-size: .72rem; }
 }
+@media (max-width: 1050px) and (min-width: 901px) {
+  .header-search > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+}
+@media (max-width: 960px) and (min-width: 901px) {
+  .site-header .brand-logo > span { display: none; }
+}
 
 @media (max-width: 900px) {
   .header-search { display: none; }

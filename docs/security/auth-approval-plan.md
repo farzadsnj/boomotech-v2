@@ -1,7 +1,7 @@
 # Authentication changes awaiting owner approval
 
 Date: 11 October 2026
-Status: owner approved and implemented locally on 13 October 2026. Production migration and administrator enrolment remain prohibited until separately approved. See `auth-remediation-2026-10-13.md`.
+Status: owner approved and implemented on 13 October 2026, then merged into `main` through PR #27. Production migration and administrator enrolment remain prohibited until separately approved. See `auth-remediation-2026-10-13.md`.
 
 ## Account lockout and backoff (A3)
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { bookingOptions } from "@/features/booking/booking-schema";
+import { reportingPeriodSchema } from "@/features/dashboard/reporting";
 import { requestPrioritySchema, requestStatusSchema } from "./workflow";
 
 export const requestDescriptionSchema = z.string().trim()
@@ -19,18 +20,21 @@ export const customerRequestActionSchema = z.discriminatedUnion("action", [
 ]);
 
 export const adminRequestActionSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("start") }),
-  z.object({ action: z.literal("reply"), message: requestMessageSchema, resolve: z.boolean().optional().default(false) }),
-  z.object({ action: z.literal("status"), status: requestStatusSchema }),
-  z.object({ action: z.literal("priority"), priority: requestPrioritySchema }),
-  z.object({ action: z.literal("notes"), notes: internalNotesSchema }),
+  z.object({ action: z.literal("start"), version: z.number().int().nonnegative() }),
+  z.object({ action: z.literal("reply"), message: requestMessageSchema, resolve: z.boolean().optional().default(false), version: z.number().int().nonnegative() }),
+  z.object({ action: z.literal("status"), status: requestStatusSchema, version: z.number().int().nonnegative() }),
+  z.object({ action: z.literal("priority"), priority: requestPrioritySchema, version: z.number().int().nonnegative() }),
+  z.object({ action: z.literal("notes"), notes: internalNotesSchema, version: z.number().int().nonnegative() }),
 ]);
 
 const serviceValues = new Set(bookingOptions.map(({ value }) => value));
 export const adminRequestFiltersSchema = z.object({
   page: z.coerce.number().int().positive().catch(1),
+  period: reportingPeriodSchema.optional().default("all"),
+  scope: z.enum(["outstanding"]).optional(),
   status: requestStatusSchema.optional(),
   priority: requestPrioritySchema.optional(),
   service: z.string().refine((value) => serviceValues.has(value), "Unknown service.").optional(),
   search: z.string().trim().max(100).optional(),
+  sort: z.enum(["created-desc", "created-asc", "updated-desc", "updated-asc"]).optional().default("created-desc"),
 });

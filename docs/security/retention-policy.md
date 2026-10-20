@@ -21,4 +21,4 @@ Status: **OWNER APPROVAL REQUIRED.** This is a technical proposal. It does not a
 
 ## Deletion safeguards
 
-Any production cleanup must support dry-run counts, bounded batches, an operator-visible audit result and a tested backup/restore procedure. Account/request deletion needs referential-integrity and notification-provider handling. Deleted records can persist in backups until backup expiry; after restoration, a deletion ledger or equivalent procedure must reapply deletions. None of those destructive operations is enabled by this security branch.
+Any production cleanup must support dry-run counts, bounded batches, an operator-visible audit result and a tested backup/restore procedure. Account/request deletion needs referential-integrity and notification-provider handling. Deleted records can persist in backups until backup expiry; after restoration, a deletion ledger or equivalent procedure must reapply deletions. None of those destructive operations is enabled by the current application release.

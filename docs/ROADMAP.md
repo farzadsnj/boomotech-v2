@@ -134,18 +134,18 @@ Requirements:
 
 Outstanding launch decisions include the verified notification sender and recipient, optional customer Reply-To address, data-retention periods, AI provider budget and privacy approval, real shop catalogue approval, and the final indexing change.
 
-## Active security hardening gate — October 2026
+## Active security release gate — October 2026
 
-The current security branch improves password policy, breached-password screening, session revocation, security-event redaction, authorization regression coverage, token-page privacy headers and client-bundle secret scanning. The repository also now contains a formal attack-surface map, data inventory, findings register, incident plan, retention proposal, alerting plan and off-site backup plan.
+The security hardening merged through PR #27 improves password policy, breached-password screening, session revocation, security-event redaction, authorization regression coverage, token-page privacy headers and client-bundle secret scanning. The repository also contains a formal attack-surface map, data inventory, findings register, incident plan, retention proposal, alerting plan and off-site backup plan.
 
 This phase does **not** exit until the application security release report is PASS and required CI/code-scanning checks are green. Current blockers are:
 
 - owner-approved rollout of the implemented persistent failed-login lockout and administrator MFA migration;
 - enrolment of each existing administrator with protected recovery-code custody;
-- GitHub verification that the local CodeQL High remediation closes the real alert;
+- GitHub code-scanning confirmation that the merged CodeQL High remediation closes the live alert;
 - owner decisions for session lifetime, account deletion, database TLS, retention, alert destination and off-site backup where required by the security policy.
 
-After this gate passes, the next scoped feature is secure inbound business email through Resend and the existing Cloudflare Tunnel/Dell application path. The inbound-email work is deliberately separate from this security branch.
+After this gate passes, the next scoped feature is secure inbound business email through Resend and the existing Cloudflare Tunnel/Dell application path. The inbound-email work remains deliberately separate from the release gate.
 
 ## Owner decision register
 

@@ -1,6 +1,6 @@
 # BoomoTech project status
 
-Last updated: 11 October 2026
+Last updated: 20 October 2026
 
 This document is the current operational snapshot of the BoomoTech V2 repository. It complements the detailed architecture, deployment, server-security and feature runbooks. It must be updated whenever a release changes authentication, data handling, infrastructure, public routes, provider integrations or deployment requirements.
 
@@ -30,6 +30,7 @@ Implemented and in active use or production-ready review:
 - customer dashboard and authorised request conversation;
 - administrator dashboard, request workflow, statuses, priority, internal notes and audit events;
 - booking/support request persistence and transactional notification outbox;
+- persistent administrator and customer in-app notifications with recipient-scoped read state;
 - Resend outbound email for account and request notifications;
 - Ubuntu/Nginx/Cloudflare Tunnel deployment, monitoring, backup, UFW, Fail2ban and systemd hardening;
 - CI checks for application tests, dependency audit, secret scanning and CodeQL.
@@ -43,21 +44,19 @@ Deliberately disabled or not yet operational:
 - public file uploads;
 - inbound business email/web inbox.
 
-## Security-hardening branch
+## Security-hardening status
 
-Active branch:
-
-```text
-security/application-hardening-2026
-```
-
-Pull request:
+Merged pull request:
 
 ```text
 #27 — security: harden application controls and document release gate
 ```
 
-The branch adds or strengthens:
+Merged repository state:
+
+The security controls are present on `main`. The PR checks completed successfully, but this local review could not independently read the live CodeQL alert record. Repository merge status is not evidence that the migration was applied or that production administrators completed MFA enrolment.
+
+The merged controls add or strengthen:
 
 - 15–128 Unicode-code-point password policy;
 - HIBP Pwned Passwords k-anonymity range checking without sending the full password;
@@ -73,19 +72,19 @@ The branch adds or strengthens:
 
 **SECURITY RELEASE GATE: DO NOT RELEASE**
 
-The security branch must not be merged or deployed yet.
+The merged repository must not be deployed yet.
 
 Open release blockers include:
 
-1. apply and verify the locally implemented account-lockout/MFA migration only in an owner-approved production window;
+1. apply and verify the account-lockout/MFA migration only in an owner-approved production window;
 2. enrol every existing administrator in TOTP and secure the single-use recovery codes;
-3. rerun GitHub CodeQL to confirm the local `js/insufficient-password-hash` remediation closes the real alert before release.
+3. confirm in GitHub code scanning that the merged `js/insufficient-password-hash` remediation closes the live alert before release.
 
 Additional owner decisions remain for session lifetime, account deletion, database TLS policy, retention automation, alert delivery and encrypted off-site backup. These are tracked under `docs/security/`.
 
 No production deployment should occur while the latest security release report says `DO NOT RELEASE` or a required CI/security check is failing.
 
-## Required verification before a future merge
+## Required verification before a future release
 
 Run locally on the reviewed branch:
 
@@ -149,5 +148,6 @@ The inbound-email implementation must be a separate reviewed change and must inc
 - `docs/SERVER-BACKUP.md` — backup and restore tooling.
 - `docs/SERVER-MONITORING.md` — monitoring and operational logs.
 - `docs/NOTIFICATION-OUTBOX.md` — reliable outbound notification worker.
+- `docs/IN-APP-NOTIFICATIONS.md` — dashboard notification ownership, read state and deduplication.
 - `docs/AI-CHATBOT.md` — disabled-by-default AI integration.
 - `docs/security/` — application security policy, evidence, findings and release reports.

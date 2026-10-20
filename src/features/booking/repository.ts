@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { count, desc } from "drizzle-orm";
 import { db } from "@/db";
-import { bookingRequest, notificationOutbox } from "@/db/schema";
+import { bookingRequest, inAppNotification, notificationOutbox } from "@/db/schema";
 import type { BookingRequest } from "./booking-schema";
 
 export const ADMIN_BOOKING_PAGE_SIZE = 20;
@@ -36,6 +36,10 @@ export async function storeBookingRequest(request: BookingRequest, userId: strin
       { id: outboxId, bookingId: id, kind: "BOOKING_CREATED", dedupeKey: `${id}:BOOKING_CREATED` },
       { id: randomUUID(), bookingId: id, kind: "BOOKING_CUSTOMER_ACK", dedupeKey: `${id}:BOOKING_CUSTOMER_ACK` },
     ]);
+    await transaction.insert(inAppNotification).values({
+      id: randomUUID(), recipientRole: "admin", bookingRequestId: id,
+      kind: "ADMIN_NEW_REQUEST", dedupeKey: `${id}:ADMIN_NEW_REQUEST`,
+    });
   });
 
   return { id, reference, outboxId };

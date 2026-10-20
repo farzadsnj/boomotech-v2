@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { bigint, boolean, check, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { bigint, boolean, check, index, integer, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -20,6 +20,7 @@ export const user = pgTable("user", {
   uniqueIndex("user_email_unique").on(table.email),
   uniqueIndex("user_username_unique").on(table.username),
   index("user_created_at_idx").on(table.createdAt),
+  index("user_role_created_at_idx").on(table.role, table.createdAt),
 ]);
 
 export const session = pgTable("session", {
@@ -133,6 +134,7 @@ export const bookingRequest = pgTable("booking_request", {
   index("booking_request_status_idx").on(table.status),
   index("booking_request_priority_idx").on(table.priority),
   index("booking_request_created_at_idx").on(table.createdAt),
+  index("booking_request_status_priority_created_idx").on(table.status, table.priority, table.createdAt),
   check("booking_request_status_check", sql`${table.status} in ('NEW', 'IN_PROGRESS', 'AWAITING_USER', 'RESOLVED', 'WITHDRAWN')`),
   check("booking_request_priority_check", sql`${table.priority} in ('HIGH', 'MEDIUM', 'LOW')`),
 ]);
@@ -163,6 +165,7 @@ export const bookingRequestEvent = pgTable("booking_request_event", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   index("booking_request_event_request_date_idx").on(table.bookingRequestId, table.createdAt),
+  index("booking_request_event_created_at_idx").on(table.createdAt),
   check("booking_request_event_actor_role_check", sql`${table.actorRole} in ('customer', 'admin', 'system')`),
 ]);
 
@@ -185,6 +188,32 @@ export const notificationOutbox = pgTable("notification_outbox", {
   index("notification_outbox_status_idx").on(table.status),
   index("notification_outbox_retry_idx").on(table.status, table.nextAttemptAt),
   index("notification_outbox_booking_kind_idx").on(table.bookingId, table.kind),
+]);
+
+export const inAppNotification = pgTable("in_app_notification", {
+  id: text("id").primaryKey(),
+  recipientRole: text("recipient_role").notNull(),
+  recipientUserId: text("recipient_user_id").references(() => user.id, { onDelete: "cascade" }),
+  bookingRequestId: text("booking_request_id").notNull().references(() => bookingRequest.id, { onDelete: "cascade" }),
+  requestMessageId: text("request_message_id").references(() => bookingRequestMessage.id, { onDelete: "set null" }),
+  kind: text("kind").notNull(),
+  dedupeKey: text("dedupe_key").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("in_app_notification_dedupe_key_unique").on(table.dedupeKey),
+  index("in_app_notification_admin_created_idx").on(table.recipientRole, table.createdAt),
+  index("in_app_notification_customer_created_idx").on(table.recipientUserId, table.createdAt),
+  check("in_app_notification_recipient_check", sql`(${table.recipientRole} = 'admin' and ${table.recipientUserId} is null) or (${table.recipientRole} = 'customer' and ${table.recipientUserId} is not null)`),
+  check("in_app_notification_kind_check", sql`${table.kind} in ('ADMIN_NEW_REQUEST', 'ADMIN_CUSTOMER_REPLY', 'CUSTOMER_ADMIN_REPLY', 'CUSTOMER_STATUS_CHANGED', 'CUSTOMER_REQUEST_RESOLVED')`),
+]);
+
+export const inAppNotificationRead = pgTable("in_app_notification_read", {
+  notificationId: text("notification_id").notNull().references(() => inAppNotification.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  readAt: timestamp("read_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.notificationId, table.userId] }),
+  index("in_app_notification_read_user_idx").on(table.userId, table.readAt),
 ]);
 
 export const authSchema = { user, session, account, verification, rateLimit, twoFactor };

@@ -206,6 +206,10 @@ export const infoPages: InfoPage[] = [
         ]
       },
       {
+        title: "Dashboard appearance preference",
+        description: "The boomotech-dashboard-theme functional cookie stores only the signed-in dashboard's light or dark appearance preference. It contains no account identifier or authentication token, is not used for tracking and expires after one year unless you clear it sooner."
+      },
+      {
         title: "Browser cache",
         description: "Your browser may cache public static website files such as images, fonts, stylesheets and scripts to improve performance. BoomoTech does not intentionally place booking-form content, account data or AI-chat history into a persistent browser cache. Sensitive account, administrator and API routes are configured with no-store cache instructions. Browser history and cache behaviour can still vary by browser and device."
       },

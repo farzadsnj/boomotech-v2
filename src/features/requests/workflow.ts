@@ -15,6 +15,11 @@ export const statusLabels: Record<RequestStatus, string> = {
   WITHDRAWN: "Withdrawn",
 };
 
+export const adminStatusLabels: Record<RequestStatus, string> = {
+  ...statusLabels,
+  AWAITING_USER: "Waiting for customer",
+};
+
 export const priorityLabels: Record<RequestPriority, string> = {
   HIGH: "High",
   MEDIUM: "Medium",

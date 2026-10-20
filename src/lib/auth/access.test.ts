@@ -12,6 +12,7 @@ describe("account route authorization", () => {
     expect(canAccessAdminDashboard(null)).toBe(false);
     expect(canAccessAdminDashboard({ user: { role: "user" } })).toBe(false);
     expect(canAccessAdminDashboard({ user: { role: "admin" } })).toBe(false);
+    expect(canAccessAdminDashboard({ user: { role: "user", twoFactorEnabled: true } })).toBe(false);
     expect(canAccessAdminDashboard({ user: { role: "admin", twoFactorEnabled: true } })).toBe(true);
     expect(isAdministrator({ user: { role: "admin" } })).toBe(true);
   });

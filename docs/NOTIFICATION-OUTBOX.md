@@ -2,6 +2,8 @@
 
 Booking and request actions write their business record and notification row in the same PostgreSQL transaction. Email delivery happens later through `pnpm notifications:process`; a provider outage cannot roll back or remove the customer request.
 
+This outbox is separate from dashboard notification state. The in-app notification centre uses `in_app_notification` and per-user `in_app_notification_read` rows. Reading a dashboard notification never marks an email sent, retries an email or changes an outbox row. See `docs/IN-APP-NOTIFICATIONS.md`.
+
 ## Delivery model
 
 The worker processes `BOOKING_CREATED`, `BOOKING_CUSTOMER_ACK`, `REQUEST_ADMIN_REPLY`, `REQUEST_CUSTOMER_REPLY` and `REQUEST_RESOLVED`. It claims one eligible row inside a transaction with `FOR UPDATE SKIP LOCKED`, changes it to `processing`, increments the attempt count, and commits the claim before contacting Resend. A second worker skips that claim. Stale claims become eligible again after 15 minutes.

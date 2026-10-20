@@ -39,11 +39,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ ref
   if (!/^BT-[A-F0-9]{10}$/.test(reference)) return NextResponse.json({ error: "Request not found." }, { status: 404 });
   try {
     const action = parsed.data;
-    const result = action.action === "start" ? await markRequestRead(reference, session.user.id)
-      : action.action === "reply" ? await addAdminMessage(reference, session.user.id, action.message, action.resolve)
-        : action.action === "status" ? await changeRequestStatus(reference, session.user.id, action.status)
-          : action.action === "priority" ? await changeRequestPriority(reference, session.user.id, action.priority)
-            : await updateRequestInternalNotes(reference, session.user.id, action.notes);
+    const result = action.action === "start" ? await markRequestRead(reference, session.user.id, action.version)
+      : action.action === "reply" ? await addAdminMessage(reference, session.user.id, action.message, action.resolve, action.version)
+        : action.action === "status" ? await changeRequestStatus(reference, session.user.id, action.status, action.version)
+          : action.action === "priority" ? await changeRequestPriority(reference, session.user.id, action.priority, action.version)
+            : await updateRequestInternalNotes(reference, session.user.id, action.notes, action.version);
     return NextResponse.json({ ok: true, result });
   } catch (error) { return safeError(error); }
 }
