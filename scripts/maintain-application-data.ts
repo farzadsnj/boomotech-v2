@@ -19,6 +19,7 @@ const queries = [
   ["sent notification outbox records", sql`SELECT count(*)::int AS count FROM notification_outbox WHERE status = 'sent' AND sent_at < now() - (${outboxDays} * interval '1 day')`, sql`DELETE FROM notification_outbox WHERE status = 'sent' AND sent_at < now() - (${outboxDays} * interval '1 day')`],
   ["expired sessions", sql`SELECT count(*)::int AS count FROM session WHERE expires_at < now() - (${sessionDays} * interval '1 day')`, sql`DELETE FROM session WHERE expires_at < now() - (${sessionDays} * interval '1 day')`],
   ["expired login-guard records", sql`SELECT count(*)::int AS count FROM auth_login_guard WHERE updated_at < now() - (${loginGuardDays} * interval '1 day') AND (locked_until IS NULL OR locked_until < now())`, sql`DELETE FROM auth_login_guard WHERE updated_at < now() - (${loginGuardDays} * interval '1 day') AND (locked_until IS NULL OR locked_until < now())`],
+  ["expired booking submission keys", sql`SELECT count(*)::int AS count FROM booking_request WHERE submission_expires_at < now()`, sql`UPDATE booking_request SET submission_key = NULL, submission_scope_hash = NULL, submission_payload_hash = NULL, submission_expires_at = NULL WHERE submission_expires_at < now()`],
 ] as const;
 
 try {

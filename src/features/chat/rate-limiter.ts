@@ -51,8 +51,8 @@ function sharedLimiter(url: string, token: string): ChatRateLimiter {
 
   return { async check(key) {
     const redisKey = `boomotech:chat:${key}`;
-    const { result } = await command(["INCR", redisKey]);
-    if (result === 1) await command(["EXPIRE", redisKey, WINDOW_SECONDS]);
+    const script = "local n=redis.call('INCR',KEYS[1]); if n==1 then redis.call('EXPIRE',KEYS[1],ARGV[1]) end; return n";
+    const { result } = await command(["EVAL", script, 1, redisKey, WINDOW_SECONDS]);
     return { allowed: result <= LIMIT, retryAfterSeconds: WINDOW_SECONDS };
   } };
 }

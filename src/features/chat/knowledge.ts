@@ -12,6 +12,7 @@ function serviceKnowledge() {
     `FOR: ${service.audience}`,
     `DELIVERY: ${service.delivery}`,
     `CAN INCLUDE: ${service.inclusions.join("; ")}`,
+    `REQUIRES SEPARATE AGREEMENT: ${service.separateAgreement.join("; ")}`,
     `HELPFUL NOTES: ${service.faqs.map((faq) => `${faq.question} ${faq.answer}`).join(" ")}`,
   ].join("\n")).join("\n\n");
 }

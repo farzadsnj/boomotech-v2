@@ -47,6 +47,9 @@ export function validateProductionEnvironment(environment: Record<string, string
   for (const name of ["RESEND_API_KEY", "AUTH_FROM_EMAIL", "BOOKING_NOTIFICATION_EMAIL", "BOOKING_FROM_EMAIL"]) {
     requireValue(name, environment);
   }
+  if (environment.BOOKING_TRUST_PROXY?.trim().toLowerCase() !== "true") {
+    throw new ApplicationConfigurationError("Production configuration error: BOOKING_TRUST_PROXY must be true behind the approved proxy.");
+  }
   for (const name of ["OPENAI_CHAT_ENABLED", "SHOP_ENABLED", "SITE_INDEXING_ENABLED"]) {
     const value = environment[name]?.trim().toLowerCase();
     if (value && value !== "true" && value !== "false") throw new ApplicationConfigurationError(`Production configuration error: ${name} must be true or false.`);

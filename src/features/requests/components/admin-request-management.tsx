@@ -6,6 +6,7 @@ import { ADMIN_REQUEST_PAGE_SIZE, type AdminRequestSort, listAdminRequests } fro
 import { RequestPriorityBadge, RequestStatusBadge } from "@/components/requests/status-badge";
 import { adminStatusLabels, priorityLabels, requestPriorities, requestStatuses, type RequestPriority, type RequestStatus } from "@/features/requests/workflow";
 import type { ReportingPeriod } from "@/features/dashboard/reporting";
+import { applyPrivateRequestSearch, clearPrivateRequestSearch } from "@/features/admin/private-search-actions";
 
 type RequestList = Awaited<ReturnType<typeof listAdminRequests>>;
 type Filters = {
@@ -34,7 +35,6 @@ function queryHref(filters: Filters, page: number) {
   if (filters.status) query.set("status", filters.status);
   if (filters.priority) query.set("priority", filters.priority);
   if (filters.service) query.set("service", filters.service);
-  if (filters.search) query.set("search", filters.search);
   return `/admin?${query}#request-list`;
 }
 
@@ -57,7 +57,7 @@ export function AdminRequestManagement({ filterError, filters, result }: { filte
       <span className="admin-table__page-count">Page {Math.min(filters.page, result.totalPages)} of {result.totalPages}</span>
     </div>
     {filterError ? <p className="admin-filter-error" role="alert">{filterError}</p> : null}
-    <form className="admin-filters" method="get">
+    <form action={applyPrivateRequestSearch} className="admin-filters">
       <input name="bookingPage" type="hidden" value="1" />
       <input name="period" type="hidden" value={filters.period} />
       {filters.dateField ? <input name="dateField" type="hidden" value={filters.dateField} /> : null}
@@ -68,7 +68,7 @@ export function AdminRequestManagement({ filterError, filters, result }: { filte
       <div><label htmlFor="service-filter">Service</label><select defaultValue={filters.service ?? ""} id="service-filter" name="service"><option value="">All services</option>{bookingOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
       <div><label htmlFor="sort-filter">Sort</label><select defaultValue={filters.sort} id="sort-filter" name="sort">{sortOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
       <button type="submit">Apply filters</button>
-      <Link href={`/admin?period=${filters.period}${filters.dateField ? `&dateField=${filters.dateField}` : ""}#request-list`}>Clear</Link>
+      <button formAction={clearPrivateRequestSearch} type="submit">Clear</button>
     </form>
     {result.records.length ? <>
       <div className="admin-request-table admin-table-scroll">

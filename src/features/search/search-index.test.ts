@@ -3,7 +3,7 @@ import { searchIndex, searchSite } from "./search-index";
 
 describe("local public search", () => {
   it("ranks title matches before body matches", () => {
-    expect(searchSite("reliable connections")[0]?.path).toBe("/services/network-wifi");
+    expect(searchSite("network problems")[0]?.path).toBe("/services/network-wifi");
   });
   it("searches approved service detail and FAQ copy", () => {
     expect(searchSite("printer").some((result) => result.path === "/services/it-support")).toBe(true);

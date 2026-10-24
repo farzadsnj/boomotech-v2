@@ -19,7 +19,7 @@ const publicInfo = infoPages.filter((page) => page.kind !== "legal" && !page.pat
 export const searchIndex: SearchRecord[] = [
   ...services.map((service) => ({
     path: service.path, title: service.title, description: service.description, category: "Service" as const,
-    body: join(service.name, service.audience, service.signals, service.inclusions, service.delivery, service.outcomes, service.faqs.flatMap((faq) => [faq.question, faq.answer])),
+    body: join(service.name, service.audience, service.signals, service.problems.flatMap((item) => [item.title, item.description]), service.inclusions, service.separateAgreement, service.delivery, service.outcomes, service.example.situation, service.example.assessment, service.example.deliverables, service.faqs.flatMap((faq) => [faq.question, faq.answer])),
   })),
   ...solutions.map((solution) => ({
     path: solution.path, title: solution.title, description: solution.description, category: "Solution" as const,

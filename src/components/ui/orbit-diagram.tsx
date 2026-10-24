@@ -29,7 +29,7 @@ export function OrbitDiagram({ centre, stages, variant = "process", label }: { c
             key={stage.label}
             onClick={() => setActive((value) => value === index ? null : index)}
             onFocus={() => setActive(index)}
-            onMouseEnter={() => setActive(index)}
+            onMouseEnter={variant === "about" ? undefined : () => setActive(index)}
             type="button"
           >
             <span>{stage.label}</span>

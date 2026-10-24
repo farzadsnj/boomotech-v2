@@ -66,12 +66,12 @@
 
 @media (max-width: 700px) {
   .cookie-notice {
-    top: 5.25rem;
+    top: auto;
     right: 1rem;
-    bottom: auto;
+    bottom: calc(5rem + env(safe-area-inset-bottom));
     left: 1rem;
     width: auto;
-    max-height: calc(100vh - 6.25rem);
+    max-height: calc(100dvh - 7rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     overflow: auto;
     flex-direction: column;
     transform: none;

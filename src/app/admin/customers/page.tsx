@@ -8,6 +8,7 @@ import { DASHBOARD_THEME_COOKIE, parseDashboardTheme } from "@/features/dashboar
 import { CustomerDirectory } from "@/features/customers/components/customer-directory";
 import { listCustomersForAdmin } from "@/features/customers/repository";
 import { customerDirectoryFiltersSchema } from "@/features/customers/schemas";
+import { ADMIN_CUSTOMER_SEARCH_COOKIE, openPrivateSearch } from "@/features/admin/private-search";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Customer directory", robots: { index: false, follow: false } };
@@ -17,9 +18,11 @@ export default async function AdminCustomersPage({ searchParams }: { searchParam
   if (!session) redirect("/admin/login");
   if (session.user.role === "admin" && !session.user.twoFactorEnabled) redirect("/admin/mfa/setup");
   if (!canAccessAdminDashboard(session)) redirect("/dashboard?access=denied");
-  const initialTheme = parseDashboardTheme((await cookies()).get(DASHBOARD_THEME_COOKIE)?.value);
+  const cookieStore = await cookies();
+  const initialTheme = parseDashboardTheme(cookieStore.get(DASHBOARD_THEME_COOKIE)?.value);
   const params = await searchParams;
-  const parsed = customerDirectoryFiltersSchema.safeParse({ page: params.page ?? "1", search: params.search || undefined, verification: params.verification || undefined, sort: params.sort || undefined });
+  const privateSearch = openPrivateSearch(cookieStore.get(ADMIN_CUSTOMER_SEARCH_COOKIE)?.value, session.user.id);
+  const parsed = customerDirectoryFiltersSchema.safeParse({ page: params.page ?? "1", search: privateSearch, verification: params.verification || undefined, sort: params.sort || undefined });
   const filters = parsed.success ? parsed.data : { page: 1, sort: "registered-desc" as const };
   const actor = { id: session.user.id, role: session.user.role, twoFactorEnabled: session.user.twoFactorEnabled };
   const result = await listCustomersForAdmin(actor, filters);

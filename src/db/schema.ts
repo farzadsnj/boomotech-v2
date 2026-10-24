@@ -126,6 +126,10 @@ export const bookingRequest = pgTable("booking_request", {
   consentVersion: text("consent_version").notNull(),
   consentedAt: timestamp("consented_at", { withTimezone: true }).defaultNow().notNull(),
   notificationStatus: text("notification_status").default("pending").notNull(),
+  submissionKey: text("submission_key"),
+  submissionScopeHash: text("submission_scope_hash"),
+  submissionPayloadHash: text("submission_payload_hash"),
+  submissionExpiresAt: timestamp("submission_expires_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
@@ -135,6 +139,8 @@ export const bookingRequest = pgTable("booking_request", {
   index("booking_request_priority_idx").on(table.priority),
   index("booking_request_created_at_idx").on(table.createdAt),
   index("booking_request_status_priority_created_idx").on(table.status, table.priority, table.createdAt),
+  uniqueIndex("booking_request_submission_scope_key_unique").on(table.submissionScopeHash, table.submissionKey),
+  index("booking_request_submission_expires_idx").on(table.submissionExpiresAt),
   check("booking_request_status_check", sql`${table.status} in ('NEW', 'IN_PROGRESS', 'AWAITING_USER', 'RESOLVED', 'WITHDRAWN')`),
   check("booking_request_priority_check", sql`${table.priority} in ('HIGH', 'MEDIUM', 'LOW')`),
 ]);

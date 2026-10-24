@@ -6,7 +6,7 @@
 
 Application deployment is allowed only after the reviewed release branch has a passing security gate and all required GitHub checks are green. A successful workflow job is not enough if GitHub code scanning reports a new open alert.
 
-As of 20 October 2026, PR #27 is merged but the application remains **not approved for production**. Persistent account lockout, mandatory administrator TOTP MFA and SEC-017 are present in `main` with additive migration `0005_mushy_bedlam.sql`. The PR workflows passed, but the live CodeQL alert state was not independently available to this local review. Do not deploy or run the migration until the complete release gate is reviewed. See `docs/security/auth-remediation-2026-10-13.md`.
+As of 24 October 2026, PR #27 is merged but the application remains **not approved for production**. Persistent account lockout, mandatory administrator TOTP MFA and SEC-017 are present in `main` with additive migration `0005_mushy_bedlam.sql`. GitHub currently reports zero open code-scanning alerts and a successful `Security` workflow for `c681456c47b3ea69599c964a4eb157e2632c5617`, but no closed-alert record was returned for the earlier `js/insufficient-password-hash` finding. Do not treat a successful workflow or zero new alerts as specific closure evidence. Do not deploy or run the migration until the complete release gate is reviewed. See `docs/security/auth-remediation-2026-10-13.md`.
 
 Before every future production deployment, verify at minimum:
 
@@ -143,7 +143,7 @@ sudo -u boomotechhost -H bash -lc 'cd /var/www/boomotech && pnpm maintenance:run
 sudo -u boomotechhost -H bash -lc 'cd /var/www/boomotech && pnpm maintenance:run -- --apply'
 ```
 
-The apply command removes only expired verification grants, stale rate-limit buckets, old sent outbox rows and long-expired sessions according to documented environment retention values. It does not delete bookings, messages, audit events or failed notifications.
+The apply command removes expired verification grants, stale rate-limit buckets, old sent outbox rows and long-expired sessions according to documented environment retention values. It also clears expired 24-hour booking idempotency keys and their hashes without deleting the booking. It does not delete bookings, messages, audit events or failed notifications.
 
 The defaults are `MAINTENANCE_EXPIRED_GRANT_DAYS=30`, `MAINTENANCE_RATE_LIMIT_DAYS=2`, `MAINTENANCE_SENT_OUTBOX_DAYS=90`, `MAINTENANCE_EXPIRED_SESSION_DAYS=30` and `MAINTENANCE_LOGIN_GUARD_DAYS=30`. Login-guard cleanup only removes inactive rows whose locks have expired. `BOOMOTECH_OUTBOX_WARNING_MINUTES=15` controls the aggregate monitor warning. Review these values against the approved privacy and retention policy before using apply mode.
 

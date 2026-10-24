@@ -3,6 +3,7 @@ import { brisbaneDateTime } from "@/features/requests/format";
 import { DashboardEmptyState } from "@/features/dashboard/components/dashboard-card";
 import { CUSTOMER_PAGE_SIZE, listCustomersForAdmin } from "../repository";
 import type { CustomerDirectoryFilters } from "../schemas";
+import { applyPrivateCustomerSearch, clearPrivateCustomerSearch } from "@/features/admin/private-search-actions";
 
 type DirectoryResult = Awaited<ReturnType<typeof listCustomersForAdmin>>;
 
@@ -14,7 +15,6 @@ const sortOptions = [
 
 function pageHref(filters: CustomerDirectoryFilters, page: number) {
   const query = new URLSearchParams({ page: String(page), sort: filters.sort });
-  if (filters.search) query.set("search", filters.search);
   if (filters.verification) query.set("verification", filters.verification);
   return `/admin/customers?${query}`;
 }
@@ -28,12 +28,12 @@ export function CustomerDirectory({ filterError, filters, result }: { filterErro
   return <section aria-labelledby="customer-directory-heading" className="admin-table-wrap customer-directory">
     <div className="admin-table__heading"><div><h2 id="customer-directory-heading">Registered customers</h2><p>{result.total} account{result.total === 1 ? "" : "s"} · {CUSTOMER_PAGE_SIZE} per page</p></div><span className="admin-table__page-count">Page {filters.page} of {result.totalPages}</span></div>
     {filterError ? <p className="admin-filter-error" role="alert">{filterError}</p> : null}
-    <form className="customer-directory__filters" method="get">
+    <form action={applyPrivateCustomerSearch} className="customer-directory__filters">
       <input name="page" type="hidden" value="1" />
       <div><label htmlFor="customer-search">Search customers</label><input defaultValue={filters.search ?? ""} id="customer-search" name="search" placeholder="Name or email" type="search" /></div>
       <div><label htmlFor="customer-verification">Verification</label><select defaultValue={filters.verification ?? ""} id="customer-verification" name="verification"><option value="">All accounts</option><option value="verified">Verified</option><option value="unverified">Pending verification</option></select></div>
       <div><label htmlFor="customer-sort">Sort</label><select defaultValue={filters.sort} id="customer-sort" name="sort">{sortOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
-      <button type="submit">Apply filters</button><Link href="/admin/customers">Clear</Link>
+      <button type="submit">Apply filters</button><button formAction={clearPrivateCustomerSearch} type="submit">Clear</button>
     </form>
     {result.records.length ? <>
       <div className="admin-table-scroll customer-directory__table"><table><caption className="sr-only">Registered customer directory</caption><thead><tr><th scope="col">Customer</th><th scope="col">Email</th><th scope="col">Verification</th><th scope="col">Registered</th><th scope="col">Requests</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead><tbody>{result.records.map((customer) => <tr key={customer.id}><td><strong>{customer.name}</strong></td><td>{customer.email}</td><td><VerificationBadge verified={customer.emailVerified} /></td><td><time dateTime={customer.createdAt.toISOString()}>{brisbaneDateTime.format(customer.createdAt)}</time></td><td><strong>{customer.requestCount}</strong></td><td><Link aria-label={`View customer ${customer.name}`} className="admin-request-link" href={`/admin/customers/${customer.id}`}>View</Link></td></tr>)}</tbody></table></div>

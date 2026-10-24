@@ -2,12 +2,10 @@
 .chat-launcher { display: inline-flex; min-height: 3.5rem; align-items: center; gap: .65rem; padding: .8rem 1rem; border: 0; border-radius: 999px; background: var(--color-primary-dark); box-shadow: 0 12px 35px rgb(0 63 104 / 25%); color: white; cursor: pointer; font-weight: 750; animation: chat-enter .35s ease both; }
 .chat-launcher:hover { background: var(--color-primary-dark); } .chat-launcher:active { transform: scale(.98); }
 .chat-launcher svg { width: 1.35rem; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
-.chat-launcher.needs-attention { animation: chat-enter .35s ease both, chat-attention 1.8s .4s ease-in-out 2; }
 body:has(.shop-hero, .product-hero, .auth-page, .account-dashboard, .admin-page) .chat-launcher { width: 3.5rem; justify-content: center; padding: 0; }
 body:has(.shop-hero, .product-hero, .auth-page, .account-dashboard, .admin-page) .chat-launcher span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
-.chat-welcome { position: relative; width: min(20rem, calc(100vw - 2rem)); padding: 1rem 2.5rem 1rem 1rem; border: 1px solid var(--color-border); border-radius: 1rem 1rem .25rem 1rem; background: white; box-shadow: var(--shadow-card); animation: chat-enter .25s ease both; }
-.chat-welcome p { margin: 0; line-height: 1.5; } .chat-welcome button { position: absolute; top: .35rem; right: .45rem; width: 2rem; height: 2rem; border: 0; background: transparent; color: var(--color-ink); cursor: pointer; font-size: 1.35rem; }
 .chat-panel { width: min(27rem, calc(100vw - 2rem)); max-height: min(43rem, calc(100dvh - 6rem - env(safe-area-inset-bottom))); overflow: hidden; border: 1px solid var(--color-border); border-radius: 1.1rem; background: white; box-shadow: 0 20px 65px rgb(13 42 59 / 24%); animation: chat-enter .22s ease both; }
+.chatbot.is-open .chat-launcher { display: none; }
 .chat-panel--loading { min-height: 7rem; padding: 1.5rem; color: var(--color-ink-soft); }
 .chat-panel > header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.1rem; background: var(--color-ink); color: white; }
 .chat-panel header p, .chat-panel header h2 { margin: 0; } .chat-panel header p { color: var(--color-accent); font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; } .chat-panel header h2 { font-size: 1.1rem; }
@@ -22,9 +20,13 @@ body:has(.shop-hero, .product-hero, .auth-page, .account-dashboard, .admin-page)
 .chat-back { margin-bottom: 1rem; padding: .5rem .75rem; }
 .chat-service-list { display: grid; gap: .8rem; } .chat-service-list article { padding: .9rem; border: 1px solid var(--color-border); border-radius: .65rem; } .chat-service-list h4, .chat-answer h4 { margin: 0; font-size: 1rem; } .chat-service-list p { margin: .4rem 0 .75rem; color: var(--color-ink-soft); font-size: .88rem; line-height: 1.45; } .chat-service-list article div { display: flex; flex-wrap: wrap; gap: .6rem; } .chat-service-list a, .chat-service-list button, .chat-answer a, .chat-answer button { padding: .45rem .6rem; color: var(--color-primary-dark); font-size: .83rem; font-weight: 750; }
 .chat-question label, .booking-form label { display: grid; gap: .35rem; margin-bottom: .85rem; color: var(--color-ink); font-weight: 700; }
+.field-label { display: inline-flex; align-items: baseline; gap: .22rem; width: fit-content; }
+.field-label > span, .required-note > span { color: var(--color-danger); }
 .chat-question textarea, .booking-form input, .booking-form textarea, .booking-form select { width: 100%; padding: .72rem; border: 1px solid var(--color-border); border-radius: .45rem; background: white; color: var(--color-ink); font-weight: 400; }
 .chat-question button:disabled { cursor: wait; opacity: .7; }
 .chat-error { margin: .8rem 0 0; padding: .75rem; border-left: .25rem solid var(--color-danger); background: #fff1f1; color: var(--color-ink); font-size: .9rem; line-height: 1.45; }
+.chat-leave-warning { padding: 1rem; border: 1px solid var(--color-border); border-radius: .7rem; background: var(--color-surface-muted); }
+.chat-leave-warning h3 { margin-top: 0; }.chat-leave-warning div { display: flex; flex-wrap: wrap; gap: .65rem; }
 .booking-form [aria-invalid="true"] { border-color: var(--color-danger); box-shadow: 0 0 0 1px var(--color-danger); }
 .field-error { color: var(--color-danger); font-size: .82rem; font-weight: 700; line-height: 1.4; }
 .required-note { margin: 0 0 1rem; color: var(--color-ink-soft); font-size: .85rem; }
@@ -39,7 +41,6 @@ body:has(.shop-hero, .product-hero, .auth-page, .account-dashboard, .admin-page)
 .booking-success { padding: 1.25rem; border: 1px solid #8bcab5; border-radius: .7rem; background: #effaf6; } .booking-success h2 { margin-top: 0; } .booking-success__actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1.2rem; } .booking-success__actions .button-link { display: inline-flex; }
 .header-cta.header-cta--primary { border-color: var(--color-primary); background: var(--color-primary); color: white; cursor: pointer; } .header-cta.header-cta--primary:hover { background: var(--color-primary-dark); color: white; }
 @keyframes chat-enter { from { transform: translateY(.6rem) scale(.98); } to { transform: none; } }
-@keyframes chat-attention { 0%, 100% { box-shadow: 0 12px 35px rgb(0 63 104 / 25%); } 50% { box-shadow: 0 12px 35px rgb(0 63 104 / 25%), 0 0 0 8px rgb(120 200 232 / 18%); } }
 @media (max-width: 600px) {
   .chatbot { right: max(.5rem, env(safe-area-inset-right)); bottom: max(.5rem, env(safe-area-inset-bottom)); left: max(.5rem, env(safe-area-inset-left)); }
   .chat-launcher span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -48,8 +49,8 @@ body:has(.shop-hero, .product-hero, .auth-page, .account-dashboard, .admin-page)
   .chatbot.is-open .chat-launcher { display: none; }
   .chat-panel { display: grid; width: 100%; height: auto; max-height: calc(100dvh - max(1rem, env(safe-area-inset-top)) - max(1rem, env(safe-area-inset-bottom))); grid-template-rows: auto minmax(0, auto); border-radius: 1rem 1rem .25rem .25rem; }
   .chat-body { max-height: calc(100dvh - 6rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)); min-height: 0; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); scroll-padding-bottom: 8rem; }
-  .booking-actions { position: sticky; bottom: calc(-1rem - env(safe-area-inset-bottom)); z-index: 2; margin-inline: -1rem; padding: .85rem 1rem calc(.85rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--color-border); background: white; }
+  .booking-form--compact .booking-actions { position: sticky; bottom: calc(-1rem - env(safe-area-inset-bottom)); z-index: 2; margin-inline: -1rem; padding: .85rem 1rem calc(.85rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--color-border); background: white; }
   .booking-actions .button-link { min-width: 0; }
 }
 @media (max-width: 1050px) { .mobile-booking-button { width: 100%; margin-top: .8rem; justify-content: center; padding: .75rem; border-color: var(--color-primary); background: var(--color-primary); color: white; text-align: center; } }
-@media (prefers-reduced-motion: reduce) { .chat-launcher, .chat-panel, .chat-welcome { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .chat-launcher, .chat-panel { animation: none; } }

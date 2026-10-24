@@ -76,7 +76,7 @@ test("protected dashboard shell is responsive, accessible and keyboard operable"
     await page.getByLabel("Priority", { exact: true }).selectOption("HIGH");
     await page.getByLabel("Sort", { exact: true }).selectOption("updated-desc");
     await page.getByRole("button", { name: "Apply filters" }).click();
-    await expect(page).toHaveURL(/search=wireless\+coverage/);
+    await expect(page).not.toHaveURL(/search=/);
     await expect(page).toHaveURL(/priority=HIGH/);
     await expect(page).toHaveURL(/sort=updated-desc/);
     await expect(page.getByText("BT-E2E0000001").first()).toBeVisible();
@@ -115,7 +115,7 @@ test("protected dashboard shell is responsive, accessible and keyboard operable"
     await page.getByLabel("Verification", { exact: true }).selectOption("verified");
     await page.getByLabel("Sort", { exact: true }).selectOption("requests-desc");
     await page.getByRole("button", { name: "Apply filters" }).click();
-    await expect(page).toHaveURL(/search=casey-network%40example.test/);
+    await expect(page).not.toHaveURL(/search=/);
     await expect(table.getByText("Casey Network")).toBeVisible();
     await expect(table.getByText("Jordan Support")).toHaveCount(0);
 

@@ -11,6 +11,7 @@ import { canAccessAdminDashboard } from "@/lib/auth/access";
 import { countCustomersForReportingPeriod } from "@/features/customers/repository";
 import { DashboardShell } from "@/features/dashboard/components/dashboard-shell";
 import { DASHBOARD_THEME_COOKIE, parseDashboardTheme } from "@/features/dashboard/theme";
+import { ADMIN_REQUEST_SEARCH_COOKIE, openPrivateSearch } from "@/features/admin/private-search";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Administrator dashboard", robots: { index: false, follow: false } };
@@ -20,9 +21,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   if (!session) redirect("/admin/login");
   if (session.user.role === "admin" && !session.user.twoFactorEnabled) redirect("/admin/mfa/setup");
   if (!canAccessAdminDashboard(session)) redirect("/dashboard?access=denied");
-  const initialTheme = parseDashboardTheme((await cookies()).get(DASHBOARD_THEME_COOKIE)?.value);
+  const cookieStore = await cookies();
+  const initialTheme = parseDashboardTheme(cookieStore.get(DASHBOARD_THEME_COOKIE)?.value);
   const params = await searchParams;
-  const parsedFilters = adminRequestFiltersSchema.safeParse({ page: params.bookingPage ?? "1", period: params.period || undefined, dateField: params.dateField || undefined, scope: params.scope || undefined, status: params.status || undefined, priority: params.priority || undefined, service: params.service || undefined, search: params.search || undefined, sort: params.sort || undefined });
+  const privateSearch = openPrivateSearch(cookieStore.get(ADMIN_REQUEST_SEARCH_COOKIE)?.value, session.user.id);
+  const parsedFilters = adminRequestFiltersSchema.safeParse({ page: params.bookingPage ?? "1", period: params.period || undefined, dateField: params.dateField || undefined, scope: params.scope || undefined, status: params.status || undefined, priority: params.priority || undefined, service: params.service || undefined, search: privateSearch, sort: params.sort || undefined });
   const filters = parsedFilters.success ? parsedFilters.data : { page: 1, period: "all" as const, sort: "created-desc" as const };
   const actor = { id: session.user.id, role: session.user.role, twoFactorEnabled: session.user.twoFactorEnabled };
   const [requestsResult, operations, reportingCustomerCount] = await Promise.all([

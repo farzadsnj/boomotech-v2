@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { count, desc } from "drizzle-orm";
+import { and, count, desc, eq, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { bookingRequest, inAppNotification, notificationOutbox } from "@/db/schema";
 import type { BookingRequest } from "./booking-schema";
@@ -11,13 +11,35 @@ function createReference() {
   return `BT-${randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase()}`;
 }
 
-export async function storeBookingRequest(request: BookingRequest, userId: string | null) {
+export class BookingSubmissionConflictError extends Error {}
+
+type SubmissionIdentity = {
+  key: string;
+  scopeHash: string;
+  payloadHash: string;
+  expiresAt: Date;
+};
+
+export async function storeBookingRequest(request: BookingRequest, userId: string | null, submission?: SubmissionIdentity) {
   const id = randomUUID();
   const reference = createReference();
   const outboxId = randomUUID();
 
-  await db.transaction(async (transaction) => {
-    await transaction.insert(bookingRequest).values({
+  return db.transaction(async (transaction) => {
+    if (submission) {
+      await transaction.update(bookingRequest).set({
+        submissionKey: null,
+        submissionScopeHash: null,
+        submissionPayloadHash: null,
+        submissionExpiresAt: null,
+      }).where(and(
+        eq(bookingRequest.submissionScopeHash, submission.scopeHash),
+        eq(bookingRequest.submissionKey, submission.key),
+        lte(bookingRequest.submissionExpiresAt, new Date()),
+      ));
+    }
+
+    const [inserted] = await transaction.insert(bookingRequest).values({
       id,
       reference,
       userId,
@@ -31,7 +53,27 @@ export async function storeBookingRequest(request: BookingRequest, userId: strin
       priority: "MEDIUM",
       consentVersion: BOOKING_CONSENT_VERSION,
       notificationStatus: "pending",
-    });
+      submissionKey: submission?.key,
+      submissionScopeHash: submission?.scopeHash,
+      submissionPayloadHash: submission?.payloadHash,
+      submissionExpiresAt: submission?.expiresAt,
+    }).onConflictDoNothing().returning({ id: bookingRequest.id });
+
+    if (!inserted && submission) {
+      const [existing] = await transaction.select({
+        id: bookingRequest.id,
+        reference: bookingRequest.reference,
+        payloadHash: bookingRequest.submissionPayloadHash,
+      }).from(bookingRequest).where(and(
+        eq(bookingRequest.submissionScopeHash, submission.scopeHash),
+        eq(bookingRequest.submissionKey, submission.key),
+      )).limit(1);
+      if (existing?.payloadHash === submission.payloadHash) {
+        return { id: existing.id, reference: existing.reference, outboxId: null, replayed: true };
+      }
+      throw new BookingSubmissionConflictError("The submission key was already used for different information.");
+    }
+
     await transaction.insert(notificationOutbox).values([
       { id: outboxId, bookingId: id, kind: "BOOKING_CREATED", dedupeKey: `${id}:BOOKING_CREATED` },
       { id: randomUUID(), bookingId: id, kind: "BOOKING_CUSTOMER_ACK", dedupeKey: `${id}:BOOKING_CUSTOMER_ACK` },
@@ -40,9 +82,8 @@ export async function storeBookingRequest(request: BookingRequest, userId: strin
       id: randomUUID(), recipientRole: "admin", bookingRequestId: id,
       kind: "ADMIN_NEW_REQUEST", dedupeKey: `${id}:ADMIN_NEW_REQUEST`,
     });
+    return { id, reference, outboxId, replayed: false };
   });
-
-  return { id, reference, outboxId };
 }
 
 export async function listAdminBookings(page: number) {

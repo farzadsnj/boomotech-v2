@@ -4,6 +4,17 @@ export type ProcessStep = { number: string; title: string; description: string }
 export type Feature = { title: string; description: string; href?: `/${string}`; action?: string };
 export type ResourceCard = Feature & { href: `/${string}`; action: string; topic: string; format: string; readTime: string; relatedService: string; featured?: boolean };
 export type VisualAsset = { src: string; alt: string };
+export type ServiceExample = {
+  situation: string;
+  assessment: string;
+  deliverables: string[];
+};
+export type ServiceDiagramStage = { label: string; detail?: string; options?: string[] };
+export type ServiceDiagram =
+  | { kind: "flow"; title: string; caption: string; stages: ServiceDiagramStage[] }
+  | { kind: "layers"; title: string; caption: string; layers: ServiceDiagramStage[] }
+  | { kind: "comparison"; title: string; caption: string; columns: Array<{ title: string; items: string[] }> }
+  | { kind: "before-after"; title: string; caption: string; before: string[]; after: string[] };
 
 export type PageBase = {
   path: `/${string}`;
@@ -20,10 +31,18 @@ export type ServiceRecord = PageBase & {
   visual: VisualAsset;
   audience: string;
   signals: string[];
+  problems: Feature[];
   inclusions: string[];
+  separateAgreement: string[];
   delivery: string;
   outcomes: string[];
+  diagram: ServiceDiagram;
+  example: ServiceExample;
   process: ProcessStep[];
+  processTitle: string;
+  ctaLabel: string;
+  ctaTitle: string;
+  preparation: string;
   related: SiteLink[];
   faqs: Faq[];
 };

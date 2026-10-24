@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const prompts = [
-  { text: "Computer running slowly?", href: "/services/it-support", label: "Explore IT support" },
-  { text: "Microsoft 365 login problems?", href: "/services/microsoft-365", label: "Explore Microsoft 365" },
-  { text: "Wi-Fi or network keeps disconnecting?", href: "/services/network-wifi", label: "Explore network help" },
-  { text: "Worried about backups and cybersecurity?", href: "/services/backup-recovery", label: "Review backup planning" },
-  { text: "Need help with a business website?", href: "/services/web-software", label: "Explore web services" },
-  { text: "Too many repetitive manual tasks?", href: "/services/ai-automation", label: "Explore automation" },
+  { text: "A slow computer or printer problem?", href: "/services/it-support", label: "Explore IT support" },
+  { text: "Need clearer ownership of ongoing IT?", href: "/services/managed-it", label: "Explore managed IT" },
+  { text: "Microsoft 365 login or shared-file problems?", href: "/services/microsoft-365", label: "Explore Microsoft 365" },
+  { text: "Wi-Fi keeps dropping out?", href: "/services/network-wifi", label: "Explore network help" },
+  { text: "Unsure what is backed up?", href: "/services/backup-recovery", label: "Review backup planning" },
+  { text: "Concerned about account or device security?", href: "/services/cybersecurity", label: "Review security basics" },
+  { text: "Need a website or internal tool?", href: "/services/web-software", label: "Explore web and software" },
+  { text: "Too many repetitive administration tasks?", href: "/services/ai-automation", label: "Explore automation" },
 ] as const;
 
 export function ServiceDiscoveryPanel() {
@@ -60,7 +62,7 @@ export function ServiceDiscoveryPanel() {
       <p className="service-discovery__context">Start with the problem. The suggested page explains the likely next step without asking you to diagnose it.</p>
       <div className="service-discovery__actions">
         <Link href={current.href}>{current.label}</Link>
-        <Link href="/booking">Request a consultation</Link>
+        <Link href={`/booking?service=${encodeURIComponent(current.href)}&intent=consultation`}>Request this service</Link>
       </div>
       <Link className="service-discovery__all" href="/services">View all services →</Link>
     </div>

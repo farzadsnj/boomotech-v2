@@ -4,6 +4,7 @@ import { storeBookingRequest } from "@/features/booking/repository";
 import { POST } from "./route";
 
 vi.mock("@/features/booking/repository", () => ({
+  BookingSubmissionConflictError: class BookingSubmissionConflictError extends Error {},
   storeBookingRequest: vi.fn(),
 }));
 
@@ -11,12 +12,12 @@ const storeBooking = vi.mocked(storeBookingRequest);
 
 const payload = { fullName: "Taylor Smith", email: "taylor@example.com", phone: "+61 400 000 000", servicePath: "/services/it-support", message: "We need help with several office computers.\nPlease contact us.", consent: true, website: "" };
 let client = 1;
-const request = (body: unknown, options: { origin?: string; userAgent?: string; raw?: string; contentType?: string } = {}) => new Request("http://localhost/api/booking", { method: "POST", headers: { "content-type": options.contentType ?? "application/json", origin: options.origin ?? "http://localhost", "user-agent": options.userAgent ?? `booking-test-${client++}` }, body: options.raw ?? JSON.stringify(body) });
+const request = (body: unknown, options: { origin?: string; userAgent?: string; raw?: string; contentType?: string; key?: string } = {}) => new Request("http://localhost/api/booking", { method: "POST", headers: { "content-type": options.contentType ?? "application/json", origin: options.origin ?? "http://localhost", "user-agent": options.userAgent ?? `booking-test-${client++}`, "idempotency-key": options.key ?? `booking_test_key_${client.toString().padStart(8, "0")}` }, body: options.raw ?? JSON.stringify(body) });
 
 describe("booking endpoint", () => {
   beforeEach(() => {
     resetDevelopmentRateLimiter();
-    storeBooking.mockReset().mockResolvedValue({ id: "00000000-0000-4000-8000-000000000001", reference: "BT-TEST123456", outboxId: "00000000-0000-4000-8000-000000000002" });
+    storeBooking.mockReset().mockResolvedValue({ id: "00000000-0000-4000-8000-000000000001", reference: "BT-TEST123456", outboxId: "00000000-0000-4000-8000-000000000002", replayed: false });
     delete process.env.RESEND_API_KEY; delete process.env.BOOKING_NOTIFICATION_EMAIL; delete process.env.BOOKING_FROM_EMAIL;
     delete process.env.BOOKING_RATE_LIMIT_REST_URL; delete process.env.BOOKING_RATE_LIMIT_REST_TOKEN; delete process.env.BOOKING_TRUST_PROXY;
   });
@@ -40,7 +41,7 @@ describe("booking endpoint", () => {
   it("stores a request even when notifications are not configured", async () => {
     const response = await POST(request(payload));
     expect(response.status).toBe(201);
-    expect(await response.json()).toEqual({ ok: true, reference: "BT-TEST123456" });
+    expect(await response.json()).toEqual({ ok: true, reference: "BT-TEST123456", replayed: false });
     expect(storeBooking).toHaveBeenCalledOnce();
   });
   it("reports a database failure without claiming the request was saved", async () => {
@@ -51,5 +52,14 @@ describe("booking endpoint", () => {
     const fetch = vi.spyOn(globalThis, "fetch");
     expect((await POST(request(payload))).status).toBe(201);
     expect(fetch).not.toHaveBeenCalled();
+  });
+  it("requires an opaque idempotency key for a valid submission", async () => {
+    expect((await POST(request(payload, { key: "short" }))).status).toBe(400);
+  });
+  it("returns the original reference for a safe replay", async () => {
+    storeBooking.mockResolvedValueOnce({ id: "00000000-0000-4000-8000-000000000001", reference: "BT-TEST123456", outboxId: null, replayed: true });
+    const response = await POST(request(payload, { key: "safe_replay_key_123456789" }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true, reference: "BT-TEST123456", replayed: true });
   });
 });

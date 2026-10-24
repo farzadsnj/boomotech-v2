@@ -65,4 +65,31 @@ describe("booking repository", () => {
       vi.unstubAllEnvs();
     }
   });
+
+  it("deduplicates concurrent submissions and returns the original reference", async () => {
+    const request = {
+      fullName: "Morgan Lee", email: "morgan@example.com", phone: "+61411111111",
+      servicePath: "/services/network-wifi", message: "We need help stabilising the office wireless network.",
+      source: "booking-page" as const, consent: true as const, website: "",
+    };
+    const submission = { key: "concurrent_key_123456789", scopeHash: "scope-concurrent", payloadHash: "payload-same", expiresAt: new Date(Date.now() + 86_400_000) };
+    const results = await Promise.all([
+      repository.storeBookingRequest(request, null, submission),
+      repository.storeBookingRequest(request, null, submission),
+    ]);
+    expect(new Set(results.map(({ reference }) => reference)).size).toBe(1);
+    expect(results.filter(({ replayed }) => replayed)).toHaveLength(1);
+  });
+
+  it("rejects reuse of a submission key with different information", async () => {
+    const base = {
+      fullName: "Jordan Park", email: "jordan@example.com", phone: "+61422222222",
+      servicePath: "/services/it-support", message: "We need help with a recurring workstation problem.",
+      source: "booking-page" as const, consent: true as const, website: "",
+    };
+    const identity = { key: "conflict_key_1234567890", scopeHash: "scope-conflict", payloadHash: "payload-one", expiresAt: new Date(Date.now() + 86_400_000) };
+    await repository.storeBookingRequest(base, null, identity);
+    await expect(repository.storeBookingRequest({ ...base, message: "A different request with enough detail to validate." }, null, { ...identity, payloadHash: "payload-two" }))
+      .rejects.toBeInstanceOf(repository.BookingSubmissionConflictError);
+  });
 });

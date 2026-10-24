@@ -39,7 +39,7 @@ export function MobileNavigation({ shopEnabled = false }: { shopEnabled?: boolea
 
   return (
     <details className="mobile-nav" ref={detailsRef}>
-      <summary aria-label="Toggle navigation">
+      <summary aria-label="Menu: toggle navigation">
         <span className="mobile-nav__label">Menu</span>
         <span aria-hidden="true" className="menu-lines"><i /><i /></span>
       </summary>
@@ -53,7 +53,7 @@ export function MobileNavigation({ shopEnabled = false }: { shopEnabled?: boolea
           <NavigationLink href="/tools/it-health-check"><span className="mobile-nav__link-label">IT Health Check</span><ArrowIcon diagonal /></NavigationLink>
           <NavigationLink href="/faq"><span className="mobile-nav__link-label">FAQ</span><ArrowIcon diagonal /></NavigationLink>
         </div>
-        <NavigationLink href="/pricing"><span className="mobile-nav__link-label">Pricing</span><ArrowIcon diagonal /></NavigationLink>
+        <NavigationLink href="/pricing"><span className="mobile-nav__link-label">Pricing &amp; quotes</span><ArrowIcon diagonal /></NavigationLink>
         <NavigationLink href="/about"><span className="mobile-nav__link-label">About</span><ArrowIcon diagonal /></NavigationLink>
         <NavigationLink href="/support"><span className="mobile-nav__link-label">Support</span><ArrowIcon diagonal /></NavigationLink>
         <button className="mobile-nav__action" onClick={() => { if (detailsRef.current) detailsRef.current.open = false; window.dispatchEvent(new Event("boomotech:open-search")); }} type="button"><span className="mobile-nav__link-label">Search</span><ArrowIcon diagonal /></button>

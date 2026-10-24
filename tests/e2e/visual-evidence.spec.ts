@@ -29,8 +29,8 @@ test("capture final public-interface review evidence", async ({ page }) => {
   await expect(page.getByTestId("hero-visual")).toBeVisible(); await page.screenshot({ path: `${output}/home-hero-pointer.png` });
   await page.evaluate(() => window.scrollTo(0, 950)); await expect(page.getByRole("button", { name: "Back to top" })).toBeVisible(); await page.screenshot({ path: `${output}/home-sticky-header-scroll-top.png` });
   await page.setViewportSize(mobile); await page.goto("/"); await prepareFullPage(page); await page.screenshot({ path: `${output}/home-mobile.png`, fullPage: true }); await page.locator(".site-header, .chatbot-shell, .scroll-top").evaluateAll((nodes) => nodes.forEach((node) => ((node as HTMLElement).style.display = "none"))); await page.locator(".site-footer").screenshot({ path: `${output}/mobile-footer.png` }); await page.goto("/"); await page.evaluate(() => window.scrollTo(0, 0));
-  await page.locator("summary[aria-label='Toggle navigation']").click(); await page.getByRole("button", { name: "Search" }).click(); await page.screenshot({ path: `${output}/search-mobile.png` }); await page.keyboard.press("Escape");
-  await page.evaluate(() => sessionStorage.removeItem("boomotech-welcome-seen")); await page.reload(); await expect(page.getByText(/Need help choosing a service/)).toBeVisible({ timeout: 4_000 }); await page.screenshot({ path: `${output}/chat-welcome-mobile.png` });
+  await page.locator("summary[aria-label='Menu: toggle navigation']").click(); await page.getByRole("button", { name: "Search" }).click(); await page.screenshot({ path: `${output}/search-mobile.png` }); await page.keyboard.press("Escape");
+  await page.reload(); await page.waitForTimeout(3_000); await expect(page.getByRole("dialog")).toHaveCount(0); await page.screenshot({ path: `${output}/chat-launcher-mobile.png` });
   await page.getByRole("button", { name: "Chat with BoomoTech" }).click(); await page.screenshot({ path: `${output}/chat-open-mobile.png` }); await page.keyboard.press("Escape");
 
   for (const route of ["services", "solutions"] as const) {
@@ -39,6 +39,7 @@ test("capture final public-interface review evidence", async ({ page }) => {
   }
 
   for (const slug of ["it-support", "network-wifi", "cybersecurity"]) { await page.setViewportSize(desktop); await page.goto(`/services/${slug}`); await prepareFullPage(page); await page.screenshot({ path: `${output}/service-${slug}-desktop.png`, fullPage: true }); }
+  await page.setViewportSize(mobile); await page.goto("/services/it-support"); await prepareFullPage(page); await page.screenshot({ path: `${output}/service-it-support-mobile.png`, fullPage: true });
   await page.goto("/services/network-wifi"); const mini = page.locator(".service-questions"); for (const fieldset of await mini.locator("fieldset").all()) await fieldset.getByRole("radio").first().check(); await mini.screenshot({ path: `${output}/service-mini-result.png` });
   await page.goto("/solutions/small-business"); await prepareFullPage(page); await page.screenshot({ path: `${output}/solution-small-business-desktop.png`, fullPage: true });
   await page.goto("/tools/it-health-check"); await prepareFullPage(page); await page.screenshot({ path: `${output}/it-health-check-desktop.png`, fullPage: true });

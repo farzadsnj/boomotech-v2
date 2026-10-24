@@ -1,11 +1,17 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { bookingRequestSchema } from "@/features/booking/booking-schema";
 import { getBookingClientKey, getBookingRateLimiter, RateLimitConfigurationError } from "@/features/booking/rate-limiter";
-import { storeBookingRequest } from "@/features/booking/repository";
+import { BookingSubmissionConflictError, storeBookingRequest } from "@/features/booking/repository";
 import { recordSecurityEvent } from "@/lib/security/events";
 
 const MAX_BODY_BYTES = 20_000;
+const IDEMPOTENCY_RETENTION_MS = 24 * 60 * 60 * 1000;
 class BodyTooLargeError extends Error {}
+
+function digest(value: string) {
+  return createHash("sha256").update(value).digest("hex");
+}
 
 function approvedOrigin(request: Request) {
   const configured = process.env.SITE_URL?.trim();
@@ -67,9 +73,11 @@ export async function POST(request: Request) {
   try { payload = JSON.parse(raw); } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
   if (payload && typeof payload === "object" && "website" in payload && String((payload as { website?: unknown }).website ?? "")) return NextResponse.json({ ok: true });
 
+  let clientKey = "";
   try {
     const limiter = getBookingRateLimiter();
-    const result = await limiter.check(getBookingClientKey(request));
+    clientKey = getBookingClientKey(request);
+    const result = await limiter.check(clientKey);
     if (!result.allowed) {
       recordSecurityEvent("rate_limit_hit", { route: "/api/booking" });
       return NextResponse.json({ error: "Too many attempts. Please try again later." }, { status: 429, headers: { "Retry-After": String(result.retryAfterSeconds) } });
@@ -82,12 +90,27 @@ export async function POST(request: Request) {
   const parsed = bookingRequestSchema.safeParse(payload);
   if (!parsed.success) return NextResponse.json({ error: "Please check the highlighted information.", issues: parsed.error.flatten().fieldErrors }, { status: 400 });
 
+  const submissionKey = request.headers.get("idempotency-key")?.trim() ?? "";
+  if (!/^[A-Za-z0-9_-]{20,128}$/.test(submissionKey)) {
+    return NextResponse.json({ error: "This request needs a valid submission key. Please reload the form and try again." }, { status: 400 });
+  }
+
   let stored: Awaited<ReturnType<typeof storeBookingRequest>>;
   try {
-    stored = await storeBookingRequest(parsed.data, await getAuthenticatedUserId(request));
-  } catch {
+    const userId = await getAuthenticatedUserId(request);
+    const canonicalPayload = JSON.stringify(parsed.data);
+    stored = await storeBookingRequest(parsed.data, userId, {
+      key: submissionKey,
+      scopeHash: digest(userId ? `user:${userId}` : `anonymous:${clientKey}`),
+      payloadHash: digest(canonicalPayload),
+      expiresAt: new Date(Date.now() + IDEMPOTENCY_RETENTION_MS),
+    });
+  } catch (error) {
+    if (error instanceof BookingSubmissionConflictError) {
+      return NextResponse.json({ error: "This submission was already used with different information. Reload the form before sending a new request." }, { status: 409 });
+    }
     return NextResponse.json({ error: "We could not save your request. Please try again later." }, { status: 503 });
   }
 
-  return NextResponse.json({ ok: true, reference: stored.reference }, { status: 201 });
+  return NextResponse.json({ ok: true, reference: stored.reference, replayed: stored.replayed }, { status: stored.replayed ? 200 : 201 });
 }

@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { isIP } from "node:net";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { rateLimit } from "@/db/schema";
@@ -36,8 +37,8 @@ function sharedLimiter(url: string, token: string): BookingRateLimiter {
   }
   return { async check(key) {
     const redisKey = `boomotech:booking:${key}`;
-    const { result } = await command(["INCR", redisKey]);
-    if (result === 1) await command(["EXPIRE", redisKey, WINDOW_SECONDS]);
+    const script = "local n=redis.call('INCR',KEYS[1]); if n==1 then redis.call('EXPIRE',KEYS[1],ARGV[1]) end; return n";
+    const { result } = await command(["EVAL", script, 1, redisKey, WINDOW_SECONDS]);
     return { allowed: result <= LIMIT, retryAfterSeconds: WINDOW_SECONDS };
   } };
 }
@@ -71,7 +72,8 @@ export function getBookingRateLimiter(): BookingRateLimiter {
 export function getBookingClientKey(request: Request) {
   if (process.env.BOOKING_TRUST_PROXY === "true") {
     const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-    if (forwarded && /^[a-f0-9:.]{3,64}$/i.test(forwarded)) return createHash("sha256").update(forwarded).digest("hex").slice(0, 32);
+    if (forwarded && isIP(forwarded)) return createHash("sha256").update(forwarded.toLowerCase()).digest("hex").slice(0, 32);
+    if (process.env.NODE_ENV === "production") throw new RateLimitConfigurationError("A valid trusted proxy client address is required in production.");
   }
   if (process.env.NODE_ENV === "production") throw new RateLimitConfigurationError("A trusted proxy client address is required in production.");
   const fingerprint = `${request.headers.get("user-agent") ?? "unknown"}|${request.headers.get("accept-language") ?? "unknown"}`;

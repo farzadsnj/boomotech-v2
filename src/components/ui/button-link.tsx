@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowIcon } from "./arrow-icon";
-import { BookingActionLink } from "@/features/booking/booking-action-link";
 
 type Props = {
   href: string;
@@ -8,17 +7,14 @@ type Props = {
   variant?: "primary" | "secondary" | "light";
   className?: string;
   bookingService?: string;
+  bookingIntent?: "consultation" | "quote";
 };
 
-export function ButtonLink({ href, children, variant = "primary", className = "", bookingService }: Props) {
+export function ButtonLink({ href, children, variant = "primary", className = "", bookingService, bookingIntent = "consultation" }: Props) {
   const styles = `button-link inline-flex items-center button-link--${variant} ${className}`.trim();
   const content = <><span>{children}</span><ArrowIcon /></>;
-  return href === "/booking" ? (
-    <BookingActionLink className={styles} href="/booking" servicePath={bookingService}>{content}</BookingActionLink>
-  ) : (
-    <Link className={styles} href={href}>
-      <span>{children}</span>
-      <ArrowIcon />
-    </Link>
-  );
+  const destination = href === "/booking" && (bookingService || bookingIntent === "quote")
+    ? `/booking?${new URLSearchParams({ ...(bookingService ? { service: bookingService } : {}), intent: bookingIntent }).toString()}`
+    : href;
+  return <Link className={styles} href={destination}>{content}</Link>;
 }

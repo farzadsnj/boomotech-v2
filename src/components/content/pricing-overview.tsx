@@ -10,7 +10,7 @@ export function PricingOverview() {
       <p className="pricing-card__basis">{option.pricingBasis}</p><h2>{option.title}</h2><p>{option.summary}</p>
       <h3>Possible inclusions</h3><ul>{option.includes.map((item) => <li key={item}>{item}</li>)}</ul>
       <p className="pricing-card__condition">{option.conditions}</p>
-      <div className="pricing-card__actions"><Link href={option.servicePath}>View details <ArrowIcon diagonal /></Link><ButtonLink bookingService={option.servicePath} href="/booking">Request a quote</ButtonLink></div>
+      <div className="pricing-card__actions"><Link href={option.servicePath}>View details <ArrowIcon diagonal /></Link><ButtonLink bookingIntent="quote" bookingService={option.servicePath} href="/booking">Request a quote</ButtonLink></div>
     </article>)}</div></section>
     <section className="pricing-principles"><div className="container pricing-principles__grid"><div><p className="eyebrow"><span className="eyebrow-line" />BEFORE WORK BEGINS</p><h2>What to expect from a quote.</h2></div><ul>{pricingPrinciples.map((item) => <li key={item}>{item}</li>)}</ul></div></section>
   </>;

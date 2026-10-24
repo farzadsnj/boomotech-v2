@@ -49,7 +49,7 @@ test.describe("shop catalogue", () => {
     for (const href of productLinks) expect((await request.get(href)).status()).toBe(200);
     await page.goto(productLinks[0]);
     await expect(page.getByText("This item cannot be ordered online.")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Ask about equipment and setup" })).toHaveAttribute("href", "/booking");
+      await expect(page.getByRole("link", { name: "Ask about equipment and setup" })).toHaveAttribute("href", /\/booking\?service=.*intent=consultation/);
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${screenshots}/product-detail.png`, fullPage: true });
   });
@@ -163,7 +163,7 @@ test.describe("database-backed accounts", () => {
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     const submitted = await page.evaluate(async (email) => {
-      const response = await fetch("/api/booking", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fullName: "Casey Test", email, phone: "+61 400 000 000", servicePath: "/services/it-support", message: "Several office computers need support and a careful review of the shared network.", consent: true, source: "booking-page", website: "" }) });
+      const response = await fetch("/api/booking", { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() }, body: JSON.stringify({ fullName: "Casey Test", email, phone: "+61 400 000 000", servicePath: "/services/it-support", message: "Several office computers need support and a careful review of the shared network.", consent: true, source: "booking-page", website: "" }) });
       return { status: response.status, body: await response.json() as { reference?: string } };
     }, customer.email);
     expect(submitted.status).toBe(201);
@@ -251,10 +251,17 @@ test.describe("database-backed accounts", () => {
     await page.goto("/admin/customers");
     await expect(page.getByRole("heading", { level: 1, name: "Customer directory" })).toBeVisible();
     await expect(page.getByRole("cell", { name: customer.email, exact: true })).toBeVisible();
+    await page.getByLabel("Search customers").fill(customer.email);
+    await page.getByRole("button", { name: "Apply filters" }).click();
+    await expect(page).not.toHaveURL(/search=/); await expect(page.getByRole("cell", { name: customer.email, exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Clear" }).click();
     await expect(page.getByRole("columnheader", { name: /password/i })).toHaveCount(0);
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${screenshots}/admin-user-list.png`, fullPage: true });
     await page.goto("/admin");
+    await page.getByLabel("Search requests").fill(requestReference);
+    await page.getByRole("button", { name: "Apply filters" }).click();
+    await expect(page).not.toHaveURL(/search=/); await expect(page.getByText(requestReference, { exact: true }).first()).toBeVisible();
     await page.getByRole("row").filter({ hasText: requestReference }).getByRole("link", { name: "Respond" }).click();
     await expect(page).toHaveURL(new RegExp(`/admin/requests/${requestReference}$`));
     await page.getByRole("button", { name: "Start processing" }).click();
@@ -316,7 +323,7 @@ test.describe("database-backed accounts", () => {
     const api = page.context().request;
     for (let index = 0; index < 20; index += 1) {
       const response = await api.post("/api/booking", {
-        headers: { origin: "http://localhost:3100", "x-forwarded-for": `203.0.113.${index + 1}` },
+        headers: { origin: "http://localhost:3100", "x-forwarded-for": `203.0.113.${index + 1}`, "idempotency-key": `pagination_test_${String(index).padStart(8, "0")}` },
         data: { fullName: customer.name, email: customer.email, phone: "+61 400 000 000", servicePath: "/services/it-support", message: `Pagination test request ${index + 1} with a safe and sufficiently detailed description.`, consent: true, source: "booking-page", website: "" },
       });
       expect(response.status()).toBe(201);

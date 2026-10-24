@@ -61,7 +61,7 @@ The global shell self-hosts the variable Manrope display face and Inter body fac
 
 Service and solution records own their visual source and alternative text in `src/content/services.ts` and `src/content/solutions.ts`. Add the local SVG under `public/visuals`, then update the record rather than embedding asset choices in a page component. Blog records similarly require `heroImage`, `heroImageAlt` and a visual theme. Local SVGs are displayed with `next/image` at fixed aspect ratios.
 
-The chat welcome appears once per browser session after a short delay. Notification sound is off until the visitor turns it on inside the assistant. The preference is stored locally as `boomotech-chat-sound`; the short Web Audio chime plays at most once per session after a valid interaction and remains independent from reduced-motion settings. Turn it off with the same “Sound on/off” control.
+The service assistant stays closed until a visitor chooses to open it. Notification sound is off until the visitor turns it on inside the assistant. The preference is stored locally as `boomotech-chat-sound`; the short Web Audio chime plays at most once per session after a valid interaction and remains independent from reduced-motion settings. Storage failures are treated as a non-blocking loss of preference. Turn sound off with the same control.
 
 ## Shop catalogue
 

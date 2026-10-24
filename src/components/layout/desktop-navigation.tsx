@@ -44,7 +44,7 @@ export function DesktopNavigation() {
       {resourceActive ? <span className="sr-only">Current section</span> : null}
       {open === "resources" ? <div className="mega-menu mega-menu--resources"><div className="mega-menu__resources-intro"><p className="eyebrow">RESOURCES &amp; LEARNING</p><strong>Learn, assess and choose a practical next step.</strong></div><Link href="/blog"><strong>Blog posts</strong><span>Practical guides for everyday technology decisions.</span></Link><Link href="/learning"><strong>Learning portal</strong><span>Preview future courses, lessons and practical learning paths.</span></Link><Link href="/tools/it-health-check"><strong>Free IT Health Check</strong><span>Identify useful priorities in around five minutes.</span></Link><Link href="/faq"><strong>Frequently asked questions</strong><span>Answers about services, safety and next steps.</span></Link></div> : null}
     </div>
-    <NavigationLink href="/pricing">Pricing</NavigationLink>
+    <NavigationLink href="/pricing">Pricing &amp; quotes</NavigationLink>
     <NavigationLink href="/about">About</NavigationLink>
     <NavigationLink href="/support">Support</NavigationLink>
   </nav>;

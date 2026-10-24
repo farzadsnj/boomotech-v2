@@ -29,7 +29,7 @@ Implemented and in active use or production-ready review:
 - PostgreSQL-backed customer registration, verified email, password reset and server-side sessions;
 - customer dashboard and authorised request conversation;
 - administrator dashboard, request workflow, statuses, priority, internal notes and audit events;
-- booking/support request persistence and transactional notification outbox;
+- booking/support request persistence, 24-hour submission replay protection and transactional notification outbox;
 - persistent administrator and customer in-app notifications with recipient-scoped read state;
 - Resend outbound email for account and request notifications;
 - Ubuntu/Nginx/Cloudflare Tunnel deployment, monitoring, backup, UFW, Fail2ban and systemd hardening;
@@ -54,7 +54,7 @@ Merged pull request:
 
 Merged repository state:
 
-The security controls are present on `main`. The PR checks completed successfully, but this local review could not independently read the live CodeQL alert record. Repository merge status is not evidence that the migration was applied or that production administrators completed MFA enrolment.
+The security controls are present on `main`. On 24 October 2026 the GitHub code-scanning API reported zero open alerts, and the latest `Security` workflow for `c681456c47b3ea69599c964a4eb157e2632c5617` completed successfully. The API returned no closed-alert record that proves the lifecycle of the earlier `js/insufficient-password-hash` finding, so the specific closure evidence remains unverified. Repository merge status is not evidence that the migration was applied or that production administrators completed MFA enrolment.
 
 The merged controls add or strengthen:
 
@@ -78,7 +78,7 @@ Open release blockers include:
 
 1. apply and verify the account-lockout/MFA migration only in an owner-approved production window;
 2. enrol every existing administrator in TOTP and secure the single-use recovery codes;
-3. confirm in GitHub code scanning that the merged `js/insufficient-password-hash` remediation closes the live alert before release.
+3. obtain or approve specific closure evidence for the earlier `js/insufficient-password-hash` alert; zero currently open alerts and a passing workflow do not by themselves preserve that alert's closure history.
 
 Additional owner decisions remain for session lifetime, account deletion, database TLS policy, retention automation, alert delivery and encrypted off-site backup. These are tracked under `docs/security/`.
 

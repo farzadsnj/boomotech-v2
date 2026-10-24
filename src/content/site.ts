@@ -8,7 +8,7 @@ export const site = {
     { label: "Services", href: "/services" },
     { label: "Solutions", href: "/solutions" },
     { label: "Resources & Learning", href: "/resources" },
-    { label: "Pricing", href: "/pricing" },
+    { label: "Pricing & quotes", href: "/pricing" },
     { label: "About", href: "/about" },
     { label: "Support", href: "/support" },
   ] satisfies SiteLink[],
@@ -22,7 +22,7 @@ export const site = {
         { label: "Blog posts", href: "/blog" },
         { label: "Learning portal", href: "/learning" },
         { label: "IT Health Check", href: "/tools/it-health-check" },
-        { label: "Pricing", href: "/pricing" },
+        { label: "Pricing & quotes", href: "/pricing" },
         { label: "Shop", href: "/shop" },
       ],
     },
@@ -30,7 +30,7 @@ export const site = {
       title: "Get started",
       links: [
         { label: "IT support", href: "/support" },
-        { label: "Book a consultation", href: "/booking" },
+        { label: "Request a consultation", href: "/booking" },
         { label: "Quote preparation", href: "/get-a-quote" },
         { label: "Contact", href: "/contact" },
         { label: "Customer login", href: "/login" },
@@ -55,7 +55,7 @@ export const homeContent = {
   introduction:
     "Brisbane-based assistance for day-to-day IT problems, cloud, security, websites, automation and AI — with remote options across Australia.",
   primaryAction: { label: "Get IT help", href: "/support" },
-  secondaryAction: { label: "Book a consultation", href: "/booking" },
+  secondaryAction: { label: "Request a consultation", href: "/booking" },
   pathways: [
     { number: "01", title: "I need help with an IT problem", description: "Find a clear starting point for devices, accounts, networks and everyday tech issues.", href: "/support", action: "Explore support", icon: "support" },
     { number: "02", title: "I want to improve my business systems", description: "Explore practical ways to make work more reliable, secure and connected.", href: "/solutions", action: "See solutions", icon: "systems" },

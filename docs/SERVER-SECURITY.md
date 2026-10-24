@@ -23,7 +23,7 @@ The repository preserves Argon2id credentials, server-side sessions, role and or
 
 Host hardening and application release approval are separate controls. A clean Ubuntu/server audit does not override an application security failure, and a green application test suite does not prove the host is configured correctly.
 
-As of 20 October 2026, the application is **not approved for deployment**. The lockout and administrator MFA code is merged into `main`, and PR #27 checks passed, but production migration/enrolment have not been authorised and the live CodeQL alert state still requires confirmation. Keep the release blocked until the complete suite and GitHub security checks are green and the owner approves rollout.
+As of 24 October 2026, the application is **not approved for deployment**. The lockout and administrator MFA code is merged into `main`, and PR #27 checks passed. GitHub reports zero open code-scanning alerts, but did not return a closed-alert record for the earlier `js/insufficient-password-hash` finding. Production migration and enrolment have not been authorised. Keep the release blocked until the specific security evidence is accepted, the complete suite and GitHub checks are green, and the owner approves rollout.
 
 For future production changes, require both:
 

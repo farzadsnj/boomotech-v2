@@ -42,12 +42,22 @@ describe("local Phase 1 content", () => {
       expect(service.visual.alt.length).toBeGreaterThan(15);
       expect(service.audience.length).toBeGreaterThan(20);
       expect(service.signals.length).toBeGreaterThanOrEqual(3);
+      expect(service.problems.length).toBeGreaterThanOrEqual(3);
       expect(service.inclusions.length).toBeGreaterThanOrEqual(3);
+      expect(service.separateAgreement.length).toBeGreaterThanOrEqual(1);
       expect(service.delivery.length).toBeGreaterThan(20);
       expect(service.outcomes.length).toBeGreaterThanOrEqual(3);
       expect(service.process.length).toBeGreaterThanOrEqual(3);
+      expect(service.processTitle.length).toBeGreaterThan(10);
+      expect(service.diagram.caption.length).toBeGreaterThan(30);
+      expect(service.example.deliverables.length).toBeGreaterThanOrEqual(2);
+      expect(service.faqs.length).toBeGreaterThanOrEqual(4);
+      expect(service.ctaLabel.length).toBeGreaterThan(8);
+      expect(service.preparation.length).toBeGreaterThan(30);
       expect(service.related.length).toBeGreaterThanOrEqual(2);
     }
+    expect(new Set(services.map(({ processTitle }) => processTitle)).size).toBe(services.length);
+    expect(JSON.stringify(services)).not.toMatch(/any future request flow/i);
   });
 
   it("keeps page metadata unique and useful", () => {
