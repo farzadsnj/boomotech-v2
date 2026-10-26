@@ -54,6 +54,14 @@ export type SolutionRecord = PageBase & {
   challenges: Feature[];
   priorities: string[];
   approach: ProcessStep[];
+  pathways?: Feature[];
+  diagram?: ServiceDiagram;
+  inclusions?: string[];
+  separateAgreement?: string[];
+  delivery?: string;
+  example?: ServiceExample;
+  faqs?: Faq[];
+  cta?: { label: string; title: string; description: string; href: `/${string}` };
   related: SiteLink[];
 };
 

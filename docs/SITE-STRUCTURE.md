@@ -3,14 +3,13 @@
 ## Primary navigation
 
 - Services
-- Solutions
-- Resources & Learning
-- Pricing
+- Help for individuals
+- Help for businesses
+- Pricing & quotes
 - About
-- Support
-- Book a consultation
+- Get help
 
-Blog posts, the future learning portal, FAQs and the IT Health Check sit under Resources & Learning. Detailed services sit in the Services mega menu. Client portal and booking are labelled utility actions. Shop stays behind `SHOP_ENABLED=false` until catalogue operations are approved.
+Resources, blog posts, FAQs and the IT Health Check remain available through mobile secondary navigation, page links, search and the footer without competing with the primary help journey. Detailed services remain in the Services mega menu. Client portal and request submission are utility actions. Shop stays behind `SHOP_ENABLED=false` until catalogue operations are approved.
 
 ## Route map
 
@@ -56,6 +55,8 @@ Each page must define audience, problems, outcomes, inclusions, exclusions, proc
 - `/solutions/retail`
 - `/solutions/home-office-individuals`
 - `/solutions/remote-work`
+
+`/solutions/home-office-individuals` and `/solutions/small-business` are the primary audience entry pages. They show recognisable problems, linked service starting points, an audience-specific explanatory diagram, boundaries, a labelled illustrative example and a request action that carries only the allowlisted audience and request identifiers into `/booking`.
 
 Healthcare or regulated-industry pages require validated capability and compliance wording before publication.
 
@@ -176,6 +177,14 @@ Policies require owner/legal review before launch.
 | Buy a product | Shop → Product → Checkout | Order |
 | Learn and build trust | Search/Blog → Article → Relevant service | Consultation/support |
 | Existing customer needs help | Support/Portal → Request/status | Resolved request |
+
+### Shared discovery and request context
+
+Homepage discovery asks at most three optional questions: audience, recognisable problem or goal, and whether the visitor is fixing something or planning an improvement. A result provides one suggested service, a direct request action and no more than two alternatives. Visitors can skip certainty by selecting “Not sure”.
+
+Allowlisted audience, category, service and intent identifiers may be represented in `/booking` query parameters. Customer-entered descriptions, preparation answers and contact details must not appear in URLs or browser storage. These values transfer in transient application memory and are cleared by a full refresh, successful submission or explicit discard.
+
+The booking sequence is: describe the need, provide contact details, review and consent. Phone is optional for email contact and required only when phone contact is selected. Submission creates a request for review, not an appointment.
 
 ## Global requirements
 

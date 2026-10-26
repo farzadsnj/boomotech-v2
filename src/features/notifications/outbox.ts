@@ -36,7 +36,7 @@ export function buildNotificationEmail(kind: NotificationKind, context: Notifica
   const dashboard = dashboardLink(context, configuration);
   const safety = "Do not send passwords, MFA codes, recovery keys or payment-card information by email.";
   if (kind === "BOOKING_CREATED") {
-    const fields = [`Reference: ${context.reference}`, `Name: ${context.fullName}`, `Email: ${context.email}`, `Phone: ${context.phone}`, `Service: ${service}`, `Message: ${context.requestBody}`];
+    const fields = [`Reference: ${context.reference}`, `Name: ${context.fullName}`, `Email: ${context.email}`, ...(context.phone ? [`Phone: ${context.phone}`] : []), `Service: ${service}`, `Message: ${context.requestBody}`];
     return { to: configuration.adminEmail, subject: `New request ${context.reference}: ${service}`, text: ["New booking request", "", ...fields].join("\n"), html: frame("New booking request", fields) };
   }
   if (kind === "REQUEST_CUSTOMER_REPLY") {

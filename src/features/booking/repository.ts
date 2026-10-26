@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto";
 import { and, count, desc, eq, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { bookingRequest, inAppNotification, notificationOutbox } from "@/db/schema";
-import type { BookingRequest } from "./booking-schema";
+import type { BookingRequestInput } from "./booking-schema";
+import { bookingRequestSchema, formatBookingMessage } from "./booking-schema";
 
 export const ADMIN_BOOKING_PAGE_SIZE = 20;
 export const BOOKING_CONSENT_VERSION = "2026-10-03";
@@ -20,7 +21,8 @@ type SubmissionIdentity = {
   expiresAt: Date;
 };
 
-export async function storeBookingRequest(request: BookingRequest, userId: string | null, submission?: SubmissionIdentity) {
+export async function storeBookingRequest(input: BookingRequestInput, userId: string | null, submission?: SubmissionIdentity) {
+  const request = bookingRequestSchema.parse(input);
   const id = randomUUID();
   const reference = createReference();
   const outboxId = randomUUID();
@@ -47,7 +49,7 @@ export async function storeBookingRequest(request: BookingRequest, userId: strin
       email: request.email,
       phone: request.phone,
       servicePath: request.servicePath,
-      message: request.message,
+      message: formatBookingMessage(request),
       source: request.source,
       status: "NEW",
       priority: "MEDIUM",

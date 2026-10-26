@@ -45,17 +45,16 @@ export function MobileNavigation({ shopEnabled = false }: { shopEnabled?: boolea
       </summary>
       <nav aria-label="Mobile primary">
         <NavigationLink href="/services"><span className="mobile-nav__link-label">Services</span><ArrowIcon diagonal /></NavigationLink>
-        <NavigationLink href="/solutions"><span className="mobile-nav__link-label">Solutions</span><ArrowIcon diagonal /></NavigationLink>
-        <NavigationLink href="/resources"><span className="mobile-nav__link-label">Resources &amp; Learning</span><ArrowIcon diagonal /></NavigationLink>
-        <div className="mobile-nav__subnav" aria-label="Resource links">
-          <NavigationLink href="/blog"><span className="mobile-nav__link-label"><ArticleIcon />Blog posts</span><ArrowIcon diagonal /></NavigationLink>
-          <NavigationLink href="/learning"><span className="mobile-nav__link-label">Learning portal</span><ArrowIcon diagonal /></NavigationLink>
-          <NavigationLink href="/tools/it-health-check"><span className="mobile-nav__link-label">IT Health Check</span><ArrowIcon diagonal /></NavigationLink>
-          <NavigationLink href="/faq"><span className="mobile-nav__link-label">FAQ</span><ArrowIcon diagonal /></NavigationLink>
-        </div>
+        <NavigationLink href="/solutions/home-office-individuals"><span className="mobile-nav__link-label">Help for individuals</span><ArrowIcon diagonal /></NavigationLink>
+        <NavigationLink href="/solutions/small-business"><span className="mobile-nav__link-label">Help for businesses</span><ArrowIcon diagonal /></NavigationLink>
         <NavigationLink href="/pricing"><span className="mobile-nav__link-label">Pricing &amp; quotes</span><ArrowIcon diagonal /></NavigationLink>
         <NavigationLink href="/about"><span className="mobile-nav__link-label">About</span><ArrowIcon diagonal /></NavigationLink>
-        <NavigationLink href="/support"><span className="mobile-nav__link-label">Support</span><ArrowIcon diagonal /></NavigationLink>
+        <NavigationLink href="/support"><span className="mobile-nav__link-label">Get help</span><ArrowIcon diagonal /></NavigationLink>
+        <div className="mobile-nav__subnav" aria-label="Resources and learning">
+          <NavigationLink href="/resources"><span className="mobile-nav__link-label">Resources</span><ArrowIcon diagonal /></NavigationLink>
+          <NavigationLink href="/blog"><span className="mobile-nav__link-label"><ArticleIcon />Blog posts</span><ArrowIcon diagonal /></NavigationLink>
+          <NavigationLink href="/tools/it-health-check"><span className="mobile-nav__link-label">IT Health Check</span><ArrowIcon diagonal /></NavigationLink>
+        </div>
         <button className="mobile-nav__action" onClick={() => { if (detailsRef.current) detailsRef.current.open = false; window.dispatchEvent(new Event("boomotech:open-search")); }} type="button"><span className="mobile-nav__link-label">Search</span><ArrowIcon diagonal /></button>
         {shopEnabled ? <NavigationLink href="/shop"><span className="mobile-nav__link-label">Shop</span><ArrowIcon diagonal /></NavigationLink> : null}
         <NavigationLink href="/login"><span className="mobile-nav__link-label"><AccountIcon />Client portal</span><ArrowIcon diagonal /></NavigationLink>

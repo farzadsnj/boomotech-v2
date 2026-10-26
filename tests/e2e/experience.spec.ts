@@ -5,16 +5,17 @@ import { signInAdministrator } from "./auth-helpers";
 async function fillContact(page: Page) {
   await page.getByLabel(/Full name/).fill("Taylor Smith");
   await page.getByLabel(/Email address/).fill("taylor@example.com");
-  await page.getByLabel(/Phone number/).fill("0400 000 000");
+  await page.getByRole("button", { name: "Continue" }).click();
+}
+
+async function fillProblem(page: Page, service = "/services/network-wifi", message = "Our office Wi-Fi is unreliable in two work areas.") {
+  await page.getByLabel(/Service required/).selectOption(service);
+  await page.getByLabel(/Problem or requested work/).fill(message);
   await page.getByRole("button", { name: "Continue" }).click();
 }
 
 async function reachReview(page: Page) {
-  await fillContact(page);
-  await page.getByLabel(/Service required/).selectOption("/services/network-wifi");
-  await page.getByLabel(/Problem or requested work/).fill("Our office Wi-Fi is unreliable in two work areas.");
-  await page.getByLabel(/I agree/).check();
-  await page.getByRole("button", { name: "Continue" }).click();
+  await fillProblem(page); await fillContact(page); await page.getByLabel(/I agree/).check();
 }
 
 test("chatbot stays quiet until opened, then supports keyboard close and focus restoration", async ({ page }) => {
@@ -29,15 +30,15 @@ test("chatbot stays quiet until opened, then supports keyboard close and focus r
 test("header consultation action opens the full enquiry page", async ({ page }) => {
   await page.goto("/"); const booking = page.getByRole("link", { name: "Request a consultation" }).first();
   await expect(booking).toHaveAttribute("href", "/booking"); await booking.click();
-  await expect(page).toHaveURL(/\/booking$/); await expect(page.getByText("Your contact details", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/booking$/); await expect(page.getByText("What do you need help with?", { exact: true })).toBeVisible();
 });
 
 test("service and pricing actions preserve enquiry context on the full page", async ({ page }) => {
   await page.goto("/services/network-wifi");
-  await page.locator(".service-context").getByRole("link", { name: "Request a network assessment" }).click();
+  await page.getByRole("link", { name: "Request a network assessment" }).first().click();
   await expect(page).toHaveURL(/\/booking\?service=%2Fservices%2Fnetwork-wifi&intent=consultation/);
-  await fillContact(page);
   await expect(page.getByLabel(/Service required/)).toHaveValue("/services/network-wifi");
+  await fillProblem(page); await fillContact(page);
   await page.goto("/pricing");
   await page.locator(".pricing-card").first().getByRole("link", { name: /quote/i }).click();
   await expect(page).toHaveURL(/intent=quote/); await expect(page.getByRole("heading", { name: "Request a tailored quote." })).toBeVisible();
@@ -92,14 +93,14 @@ test("mobile navigation supports active Blog state, route changes and Escape", a
   await menu.click(); await navigation.getByRole("link", { name: "Services" }).click(); await expect(page).toHaveURL(/\/services$/);
 });
 
-test("desktop services and resources menus expose guided destinations", async ({ page }) => {
+test("desktop services menu and primary audience destinations are clear", async ({ page }) => {
   await page.goto("/");
   const servicesMenu = page.getByRole("button", { name: "Show services menu" }); await servicesMenu.focus(); await page.keyboard.press("Enter");
   await expect(page.getByText("What can we help with?")).toBeVisible(); await expect(page.getByRole("link", { name: "Cybersecurity" }).first()).toBeVisible();
   await expect(page.locator(".service-discovery__prompt")).toContainText("A slow computer or printer problem?", { timeout: 4_000 });
   const suggested = page.getByRole("link", { name: "Explore IT support" }); await suggested.focus(); const pausedText = await page.locator(".service-discovery__prompt").textContent(); await page.waitForTimeout(350); expect(await page.locator(".service-discovery__prompt").textContent()).toBe(pausedText);
   await page.keyboard.press("Escape"); await expect(page.getByText("What can we help with?")).toHaveCount(0); await expect(servicesMenu).toBeFocused();
-  await page.getByRole("button", { name: "Show resources and learning menu" }).click(); const resourceMenu = page.locator(".mega-menu--resources"); await expect(resourceMenu.getByRole("link", { name: /Free IT Health Check/ })).toBeVisible(); await expect(resourceMenu.getByRole("link", { name: /Blog posts/ })).toBeVisible(); await expect(resourceMenu.getByRole("link", { name: /Learning portal/ })).toBeVisible();
+  const navigation = page.getByRole("navigation", { name: "Primary" }); await expect(navigation.getByRole("link", { name: "Individuals" })).toHaveAttribute("href", "/solutions/home-office-individuals"); await expect(navigation.getByRole("link", { name: "Businesses" })).toHaveAttribute("href", "/solutions/small-business"); await expect(navigation.getByRole("link", { name: "Get help" })).toHaveAttribute("href", "/support");
 });
 
 test("orbital diagrams support focus, dismissal and reduced motion", async ({ page, browser }) => {
@@ -131,15 +132,15 @@ test("service categories preselect an approved service", async ({ page }) => {
   await page.goto("/"); await page.getByRole("button", { name: "Chat with BoomoTech" }).click();
   await page.getByRole("button", { name: "Explore our services" }).click(); await page.getByRole("button", { name: "Improve Wi-Fi or business systems" }).click();
   await page.getByRole("article").filter({ hasText: "Network and Wi-Fi" }).getByRole("button", { name: "Request consultation" }).click();
-  await fillContact(page); await expect(page.getByLabel(/Service required/)).toHaveValue("/services/network-wifi");
+  await expect(page.getByLabel(/Service required/)).toHaveValue("/services/network-wifi"); await fillProblem(page); await fillContact(page);
 });
 
 test("closing a partially completed assistant form requires an explicit discard", async ({ page }) => {
   await page.goto("/"); const launcher = page.getByRole("button", { name: "Chat with BoomoTech" }); await launcher.click();
-  await page.getByRole("button", { name: "Book a consultation" }).click(); await page.getByLabel(/Full name/).fill("Taylor Smith");
+  await page.getByRole("button", { name: "Book a consultation" }).click(); await page.getByLabel(/Problem or requested work/).fill("I need advice about a recurring technology problem.");
   await page.getByRole("button", { name: "Close service assistant" }).click();
   await expect(page.getByRole("heading", { name: "Discard this unfinished request?" })).toBeVisible();
-  await page.getByRole("button", { name: "Keep editing" }).click(); await expect(page.getByLabel(/Full name/)).toHaveValue("Taylor Smith");
+  await page.getByRole("button", { name: "Keep editing" }).click(); await expect(page.getByLabel(/Problem or requested work/)).toHaveValue("I need advice about a recurring technology problem.");
   await page.getByRole("button", { name: "Close service assistant" }).click(); await page.getByRole("button", { name: "Discard request" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0); await expect(launcher).toBeFocused();
 });
@@ -171,21 +172,20 @@ test("booking field errors are specific and focus the first invalid field", asyn
   await page.goto("/booking");
   await expect(page.getByRole("button", { name: "Chat with BoomoTech" })).toHaveCount(0);
   await page.getByRole("button", { name: "Continue" }).click();
-  await expect(page.getByLabel(/Full name/)).toBeFocused(); await expect(page.getByText("Enter your full name.")).toBeVisible();
-  await page.getByLabel(/Full name/).fill("Taylor Smith"); await page.getByLabel(/Email address/).fill("not-email"); await page.getByLabel(/Phone number/).fill("12abc");
+  await expect(page.getByLabel(/Problem or requested work/)).toBeFocused(); await expect(page.getByText("Please add a little more detail.")).toBeVisible();
+  await page.getByLabel(/Problem or requested work/).fill("I need help understanding a recurring computer problem."); await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByLabel(/Full name/).fill("Taylor Smith"); await page.getByLabel(/Email address/).fill("not-email"); await page.getByLabel(/Preferred contact/).selectOption("phone"); await page.getByLabel(/Phone number/).fill("12abc");
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.getByText("Enter a valid email address.")).toBeVisible(); await expect(page.getByText("Enter a valid phone number.")).toBeVisible();
   await page.getByLabel(/Email address/).fill("taylor@example.com"); await expect(page.getByText("Enter a valid email address.")).toHaveCount(0);
   await page.getByLabel(/Phone number/).fill("0400 000 000"); await expect(page.locator(".form-error[role='alert']")).toHaveCount(0); await page.getByRole("button", { name: "Continue" }).click();
-  await page.getByRole("button", { name: "Continue" }).click();
-  await expect(page.getByLabel(/Service required/)).toBeFocused(); await expect(page.getByText("Choose a service.")).toBeVisible(); await expect(page.getByText("Please add a little more detail.")).toBeVisible(); await expect(page.getByText("Consent is required before sending.")).toBeVisible();
+  await page.getByRole("button", { name: "Send consultation request" }).click(); await expect(page.getByLabel(/I agree/)).toBeFocused(); await expect(page.getByText("Consent is required before sending.")).toBeVisible();
 });
 
 test("back navigation retains booking values", async ({ page }) => {
-  await page.goto("/booking"); await fillContact(page);
-  await page.getByLabel(/Service required/).selectOption("/services/it-support"); await page.getByLabel(/Problem or requested work/).fill("Several laptops and a printer need troubleshooting."); await page.getByLabel(/I agree/).check();
+  await page.goto("/booking"); await fillProblem(page, "/services/it-support", "Several laptops and a printer need troubleshooting."); await fillContact(page);
   await page.getByRole("button", { name: "Back", exact: true }).click();
-  await expect(page.getByLabel(/Email address/)).toHaveValue("taylor@example.com"); await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByLabel(/Email address/)).toHaveValue("taylor@example.com"); await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect(page.getByLabel(/Service required/)).toHaveValue("/services/it-support"); await expect(page.getByLabel(/Problem or requested work/)).toHaveValue("Several laptops and a printer need troubleshooting.");
 });
 
@@ -225,8 +225,7 @@ test("mobile chatbot fits short menus and completes booking at compact sizes", a
     await page.setViewportSize(viewport); await page.goto("/"); await page.getByRole("button", { name: "Chat with BoomoTech" }).click();
     const panel = page.locator(".chat-panel"); const box = await panel.boundingBox();
     expect(box).not.toBeNull(); expect(box!.height).toBeLessThan(viewport.height - 16); await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
-    await page.getByRole("button", { name: "Book a consultation" }).click(); await fillContact(page);
-    await page.getByLabel(/Service required/).selectOption("/services/it-support"); await page.getByLabel(/Problem or requested work/).fill("Several office computers need practical troubleshooting support."); await page.getByLabel(/I agree/).check(); await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByRole("button", { name: "Book a consultation" }).click(); await fillProblem(page, "/services/it-support", "Several office computers need practical troubleshooting support."); await fillContact(page); await page.getByLabel(/I agree/).check();
     await page.getByRole("button", { name: "Send consultation request" }).click(); await expect(page.getByRole("heading", { name: "Request received" })).toBeVisible();
     await page.getByRole("button", { name: "Close assistant" }).click(); await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
   }
@@ -236,8 +235,9 @@ test("skip link and desktop current-page marker are accessible", async ({ page }
   await page.goto("/services"); await page.keyboard.press("Tab"); await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused(); await page.keyboard.press("Enter"); await expect(page.locator("#main-content")).toBeFocused();
   const current = page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Services" }); await expect(current).toHaveAttribute("aria-current", "page");
   expect(await current.evaluate((node) => getComputedStyle(node, "::after").transform)).not.toBe("none");
-  const resources = page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Resources" });
-  await expect(resources).toBeVisible();
+  const individuals = page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Individuals" });
+  await expect(individuals).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Businesses" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Client portal" })).toHaveAttribute("href", "/login");
 });
 
@@ -279,7 +279,7 @@ test("blog articles expose canonical, Open Graph, updated and structured metadat
 });
 
 test("representative pages and chatbot pass automated accessibility checks", async ({ page }) => {
-  for (const path of ["/", "/services", "/services/cybersecurity", "/tools/it-health-check", "/booking", "/pricing", "/learning", "/blog", "/blog/essential-it-support-checklist-small-business"]) { await page.goto(path); await page.waitForTimeout(900); expect((await new AxeBuilder({ page }).analyze()).violations.filter(({ impact }) => impact === "critical" || impact === "serious")).toEqual([]); }
+  for (const path of ["/", "/services", "/services/cybersecurity", "/solutions/home-office-individuals", "/solutions/small-business", "/tools/it-health-check", "/booking", "/pricing", "/learning", "/blog", "/blog/essential-it-support-checklist-small-business"]) { await page.goto(path); await page.waitForTimeout(900); expect((await new AxeBuilder({ page }).analyze()).violations.filter(({ impact }) => impact === "critical" || impact === "serious")).toEqual([]); }
   await page.goto("/"); await page.getByRole("button", { name: "Chat with BoomoTech" }).click(); await page.waitForTimeout(300); expect((await new AxeBuilder({ page }).include(".chat-panel").analyze()).violations.filter(({ impact }) => impact === "critical" || impact === "serious")).toEqual([]);
 });
 
@@ -297,7 +297,7 @@ test("reveals remain visible without JavaScript and reduced motion", async ({ br
 
 for (const viewport of [{ width: 320, height: 568 }, { width: 375, height: 812 }, { width: 390, height: 844 }, { width: 430, height: 932 }, { width: 768, height: 1024 }, { width: 1024, height: 768 }, { width: 1280, height: 800 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) test(`has no horizontal overflow at ${viewport.width}x${viewport.height}`, async ({ page }) => {
   await page.setViewportSize(viewport);
-  for (const path of ["/", "/services", "/solutions", "/support", "/resources", "/learning", "/pricing", "/tools/it-health-check", "/booking", "/blog", "/blog/essential-it-support-checklist-small-business", "/shop", "/about"]) {
+  for (const path of ["/", "/services", "/solutions", "/solutions/home-office-individuals", "/solutions/small-business", "/support", "/resources", "/learning", "/pricing", "/tools/it-health-check", "/booking", "/blog", "/blog/essential-it-support-checklist-small-business", "/shop", "/about"]) {
     await page.goto(path);
     const measurement = await page.evaluate(() => ({
       clientWidth: document.documentElement.clientWidth,
@@ -312,8 +312,8 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 375, height: 812 }
 });
 
 test("service pathfinder and IT Health Check work without submitting personal data", async ({ page }) => {
-  await page.goto("/"); const pathfinder = page.getByTestId("service-pathfinder"); await pathfinder.getByRole("button", { name: /Reduce risk/ }).click(); await expect(pathfinder.getByRole("heading", { name: /Protect access/ })).toBeVisible(); await expect(pathfinder.getByRole("link", { name: /Cybersecurity/ })).toBeVisible();
-  await pathfinder.getByRole("button", { name: /Not sure yet/ }).click(); await expect(pathfinder.getByRole("link", { name: "Support guidance" })).toBeVisible();
+  await page.goto("/"); const pathfinder = page.getByTestId("service-pathfinder"); await pathfinder.getByRole("button", { name: /For businesses/ }).click(); await pathfinder.getByRole("button", { name: /Improve Wi-Fi/ }).click(); await expect(pathfinder.getByRole("heading", { name: "Network and Wi-Fi" })).toBeVisible(); await expect(pathfinder.getByRole("link", { name: /Send a request/ })).toBeVisible();
+  await pathfinder.getByRole("button", { name: /Not sure—help me choose/ }).click(); await expect(pathfinder.getByRole("heading", { name: /Send the problem without choosing/ })).toBeVisible();
   await page.goto("/tools/it-health-check"); for (let index = 0; index < 6; index += 1) await page.getByRole("button", { name: "Partly or not consistently" }).click();
   await expect(page.getByRole("heading", { name: "A focused review could reduce friction" })).toBeVisible(); await expect(page.getByRole("heading", { name: "Your answers" })).toBeVisible(); await expect(page.getByRole("link", { name: "Get more assistance" })).toHaveAttribute("href", "/support#request-support"); await expect(page.getByText(/not submitted, saved/i)).toBeVisible();
 });
@@ -322,8 +322,8 @@ test("site search is local, ranked and fully keyboard operable", async ({ page }
   await page.goto("/"); const trigger = page.getByRole("button", { name: "Search BoomoTech" }); await trigger.click();
   const dialog = page.getByRole("dialog", { name: "What can we help you find?" }); await expect(dialog).toBeVisible();
   const input = dialog.getByRole("searchbox", { name: "Search BoomoTech" }); await expect(input).toBeFocused(); await input.fill("network problems");
-  await expect(dialog.getByRole("link", { name: /unreliable Wi-Fi and network problems/ }).first()).toBeVisible(); await page.keyboard.press("ArrowDown"); await page.keyboard.press("ArrowUp");
-  await input.fill("zyxwvutsrq"); await expect(dialog.getByRole("heading", { name: "Can’t find what you need?" })).toBeVisible(); await expect(dialog.getByRole("link", { name: "Ask for support" })).toHaveAttribute("href", "/support#request-support");
+  await expect(dialog.getByRole("link", { name: /Network and Wi-Fi/ }).first()).toBeVisible(); await page.keyboard.press("ArrowDown"); await page.keyboard.press("ArrowUp");
+  await input.fill("zyxwvutsrq"); await expect(dialog.getByRole("heading", { name: /still help you find/i })).toBeVisible(); await expect(dialog.getByRole("link", { name: "Send a request" })).toHaveAttribute("href", "/booking?service=other&intent=consultation");
   await page.keyboard.press("Escape"); await expect(dialog).not.toBeVisible(); await expect(trigger).toBeFocused();
 });
 
@@ -332,8 +332,9 @@ test("service preparation continues to booking with an approved service context"
   for (const fieldset of await questions.locator("fieldset").all()) await fieldset.getByRole("radio").first().check();
   const bookingLink = questions.getByRole("link", { name: "Continue with this service" }); await expect(bookingLink).toHaveAttribute("href", /\/booking\?service=%2Fservices%2Fnetwork-wifi&intent=consultation/); await bookingLink.click();
   await expect(page).toHaveURL(/\/booking\?service=%2Fservices%2Fnetwork-wifi&intent=consultation/);
-  await fillContact(page); await expect(page.getByLabel(/Service required/)).toHaveValue("/services/network-wifi");
-  await page.goto("/booking?service=not-approved"); await fillContact(page); await expect(page.getByLabel(/Service required/)).toHaveValue("");
+  await expect(page.getByLabel(/Service required/)).toHaveValue("/services/network-wifi"); await expect(page.getByRole("heading", { name: "Here is what you have told us" })).toBeVisible();
+  await fillProblem(page); await fillContact(page);
+  await page.goto("/booking?service=not-approved"); await expect(page.getByLabel(/Service required/)).toHaveValue("other");
 });
 
 test("public breadcrumbs use absolute structured-data URLs", async ({ page }) => {

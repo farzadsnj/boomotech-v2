@@ -23,7 +23,7 @@ import { PricingOverview } from "./pricing-overview";
 import { LearningPortal } from "./learning-portal";
 import { ServiceDiagram } from "./service-diagram";
 
-function Hero({ page, detail, action }: { page: PageRecord; detail?: string; action?: { label: string; servicePath: string } }) {
+function Hero({ page, detail, action }: { page: PageRecord; detail?: string; action?: { label: string; href?: string; servicePath?: string } }) {
   const visual = "visual" in page ? page.visual : null;
   const compact = ["/contact", "/support", "/pricing", "/get-a-quote"].includes(page.path);
   return (
@@ -32,7 +32,7 @@ function Hero({ page, detail, action }: { page: PageRecord; detail?: string; act
         <Breadcrumbs path={page.path} title={page.title} />
         <div className={`inner-hero__grid${visual ? " inner-hero__grid--visual" : ""}`}>
           <div><p className="eyebrow"><span className="eyebrow-line" />{page.eyebrow}</p><h1>{page.title}</h1></div>
-          <div className="inner-hero__summary"><p>{page.description}</p>{detail ? <p className="inner-hero__detail">{detail}</p> : null}{action ? <ButtonLink bookingService={action.servicePath} className="inner-hero__cta" href="/booking">{action.label}</ButtonLink> : null}</div>
+          <div className="inner-hero__summary"><p>{page.description}</p>{detail ? <p className="inner-hero__detail">{detail}</p> : null}{action ? <ButtonLink bookingService={action.servicePath} className="inner-hero__cta" href={action.href ?? "/booking"}>{action.label}</ButtonLink> : null}</div>
           {visual ? <div className="inner-hero__visual"><Image alt={visual.alt} fill priority sizes="(max-width: 800px) 90vw, 36vw" src={visual.src} /></div> : null}
         </div>
       </div>
@@ -65,7 +65,7 @@ function ClosingCta({ label = "Request a consultation", title = "Start with a cl
 function ServicePage({ page }: { page: ServiceRecord }) {
   const group = serviceGroupForPath(page.path);
   return <div className={`service-detail service-detail--${group?.accent ?? "sky"}`}><Hero action={{ label: page.ctaLabel, servicePath: page.path }} detail={page.audience} page={page} />
-    <section className="service-context"><div className="container"><span>{group?.label ?? "Service"}</span><p>{group?.heading}</p><div className="service-context__actions"><ButtonLink bookingService={page.path} href="/booking">{page.ctaLabel}</ButtonLink><Link href="/services">Compare services <ArrowIcon diagonal /></Link></div></div></section>
+    <section className="service-context"><div className="container"><span>{group?.label ?? "Service"}</span><p>{group?.heading}</p><div className="service-context__actions"><Link href="/services">Compare services <ArrowIcon diagonal /></Link></div></div></section>
     <Section eyebrow="RECOGNISABLE PROBLEMS" title="When this service may help"><CardGrid items={page.problems} /></Section>
     <Section eyebrow="HOW IT FITS TOGETHER" title={page.diagram.title} muted><ServiceDiagram diagram={page.diagram} /></Section>
     <ServiceQuestions servicePath={page.path} />
@@ -79,12 +79,17 @@ function ServicePage({ page }: { page: ServiceRecord }) {
 }
 
 function SolutionPage({ page }: { page: SolutionRecord }) {
-  return <><Hero detail={page.audience} page={page} />
+  return <div className="solution-detail"><Hero action={page.cta ? { label: page.cta.label, href: page.cta.href } : undefined} detail={page.audience} page={page} />
     <Section eyebrow="COMMON PRESSURES" title="Start with what gets in the way"><CardGrid items={page.challenges} /></Section>
+    {page.pathways?.length ? <Section eyebrow="FIND THE CLOSEST SITUATION" title="Choose a useful starting point" muted><CardGrid items={page.pathways} /></Section> : null}
+    {page.diagram ? <Section eyebrow="HOW TO THINK ABOUT THE SETUP" title={page.diagram.title}><ServiceDiagram diagram={page.diagram} /></Section> : null}
+    {page.inclusions?.length && page.separateAgreement?.length ? <Section eyebrow="SCOPE AND BOUNDARIES" title="What help can include"><div className="service-scope-grid"><article><h3>Possible areas of help</h3><BulletGrid items={page.inclusions} /></article><article><h3>Needs separate agreement or another specialist</h3><BulletGrid items={page.separateAgreement} /></article></div>{page.delivery ? <div className="delivery-note"><h3>Remote and onsite suitability</h3><p>{page.delivery}</p></div> : null}</Section> : null}
+    {page.example ? <Section eyebrow="ILLUSTRATIVE EXAMPLE" title="How the situation could be separated into practical steps" muted><article className="service-example"><div><h3>Situation</h3><p>{page.example.situation}</p></div><div><h3>Assessment and work</h3><p>{page.example.assessment}</p></div><div><h3>Possible deliverables</h3><ul>{page.example.deliverables.map((item) => <li key={item}>{item}</li>)}</ul></div>{page.cta ? <ButtonLink href={page.cta.href}>{page.cta.label}</ButtonLink> : null}</article></Section> : null}
     <Section eyebrow="USEFUL PRIORITIES" title="Build around the work" muted><BulletGrid items={page.priorities} /></Section>
     <Section eyebrow="APPROACH" title="Move from context to practical action"><ProcessSteps steps={page.approach} /></Section>
+    {page.faqs?.length ? <Section eyebrow="QUESTIONS BEFORE YOU REQUEST" title="Useful answers"><FaqList items={page.faqs} /></Section> : null}
     <Section eyebrow="RELATED PATHS" title="Services that may contribute" muted><RelatedLinks links={page.related} /></Section>
-    <ClosingCta /></>;
+    <ClosingCta description={page.cta?.description} href={page.cta?.href} label={page.cta?.label} title={page.cta?.title} /></div>;
 }
 
 function HubPageView({ page }: { page: HubPage }) {

@@ -5,6 +5,11 @@ const valid = { fullName: "Taylor Smith", email: "Taylor@Example.com", phone: "+
 describe("booking request schema", () => {
   it("normalises an accepted request", () => { const result = bookingRequestSchema.parse(valid); expect(result.email).toBe("taylor@example.com"); expect(result.phone).toBe("+61400000000"); });
   it("requires consent", () => { expect(bookingRequestSchema.safeParse({ ...valid, consent: false }).success).toBe(false); });
+  it("allows email contact without a phone number", () => { const result = bookingRequestSchema.parse({ ...valid, phone: "", preferredContact: "email" }); expect(result.phone).toBe(""); });
+  it("requires a valid phone when phone contact is selected", () => {
+    expect(bookingRequestSchema.safeParse({ ...valid, phone: "", preferredContact: "phone" }).success).toBe(false);
+    expect(bookingRequestSchema.safeParse({ ...valid, phone: "0400 000 000", preferredContact: "phone" }).success).toBe(true);
+  });
   it("rejects unknown services and invalid contact fields", () => { expect(bookingRequestSchema.safeParse({ ...valid, servicePath: "/fake", email: "bad" }).success).toBe(false); });
   it("rejects the honeypot when filled", () => { expect(bookingRequestSchema.safeParse({ ...valid, website: "spam" }).success).toBe(false); });
   it.each([

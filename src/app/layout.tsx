@@ -11,6 +11,7 @@ import { businessIdentity } from "@/content/business";
 import { getSiteUrl } from "@/lib/site-url";
 import { isAiChatEnabled, isShopEnabled } from "@/lib/config/features";
 import { siteMetadata } from "@/lib/site-metadata";
+import { EnquiryContextProvider } from "@/features/enquiry/context";
 import "./globals.css";
 
 const inter = Inter({
@@ -39,14 +40,16 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body className={`${inter.variable} ${manrope.variable}`} style={{ "--font-body": inter.style.fontFamily, "--font-display": manrope.style.fontFamily } as CSSProperties}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organisation).replace(/</g, "\\u003c") }} />
-        <a className="skip-link" href="#main-content">Skip to content</a>
-        <SiteHeader shopEnabled={shopEnabled} />
-        <main id="main-content" tabIndex={-1}>{children}</main>
-        <SiteFooter shopEnabled={shopEnabled} />
-        <ScrollToTop />
-        <Chatbot aiEnabled={aiEnabled} />
-        <CookieNotice />
-        <RevealObserver />
+        <EnquiryContextProvider>
+          <a className="skip-link" href="#main-content">Skip to content</a>
+          <SiteHeader shopEnabled={shopEnabled} />
+          <main id="main-content" tabIndex={-1}>{children}</main>
+          <SiteFooter shopEnabled={shopEnabled} />
+          <ScrollToTop />
+          <Chatbot aiEnabled={aiEnabled} />
+          <CookieNotice />
+          <RevealObserver />
+        </EnquiryContextProvider>
       </body>
     </html>
   );

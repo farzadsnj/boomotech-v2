@@ -40,6 +40,7 @@ const nextConfig: NextConfig = {
     ].join("; ");
     const sensitiveSources = [
       "/api/:path*",
+      "/booking",
       "/dashboard/:path*",
       "/admin/:path*",
       "/notifications",

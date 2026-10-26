@@ -6,11 +6,11 @@ export const site = {
     "Practical technology support and smarter systems for your business. Brisbane-based help with remote options across Australia.",
   navigation: [
     { label: "Services", href: "/services" },
-    { label: "Solutions", href: "/solutions" },
-    { label: "Resources & Learning", href: "/resources" },
+    { label: "Help for individuals", href: "/solutions/home-office-individuals" },
+    { label: "Help for businesses", href: "/solutions/small-business" },
     { label: "Pricing & quotes", href: "/pricing" },
     { label: "About", href: "/about" },
-    { label: "Support", href: "/support" },
+    { label: "Get help", href: "/support" },
   ] satisfies SiteLink[],
   footer: [
     {

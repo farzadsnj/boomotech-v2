@@ -1,35 +1,75 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { serviceGroups } from "@/content/service-groups";
+import { useRef, useState } from "react";
 import { ArrowIcon } from "@/components/ui/arrow-icon";
+import { ButtonLink } from "@/components/ui/button-link";
+import { useEnquiryContext } from "@/features/enquiry/context";
+import { problemOptions, recommendationFor } from "@/features/enquiry/recommendation";
+import type { EnquiryAudience, EnquiryCategory } from "@/features/enquiry/types";
 
-const goals = [
-  { id: "support", label: "Fix an IT problem", hint: "Devices, accounts, email or everyday interruptions" },
-  { id: "secure", label: "Reduce risk", hint: "Security, backups, access or recovery" },
-  { id: "improve", label: "Improve our systems", hint: "Cloud, infrastructure or repetitive work" },
-  { id: "build", label: "Build something useful", hint: "A website, software or digital experience" },
-  { id: "unsure", label: "Not sure yet", hint: "Get guidance without choosing a service first" }
+const audiences: Array<{ id: EnquiryAudience; label: string; description: string }> = [
+  { id: "personal", label: "For home & individuals", description: "Help with computers, Wi-Fi, printers, email, files or buying decisions." },
+  { id: "business", label: "For businesses", description: "Support, systems, security, websites and practical improvements." },
+  { id: "unsure", label: "Not sure? Describe your problem", description: "Start in everyday language and change the suggested service later." },
+];
+
+const stages = [
+  { id: "broken", label: "Something is not working now" },
+  { id: "planning", label: "I am planning an improvement" },
+  { id: "unsure", label: "Not sure / skip this question" },
 ] as const;
 
 export function ServicePathfinder() {
-  const [selected, setSelected] = useState<(typeof goals)[number]["id"] | null>(null);
-  const group = serviceGroups.find((item) => item.id === selected);
-  const unsure = selected === "unsure";
-  return <div className="pathfinder" data-testid="service-pathfinder">
+  const { updateContext } = useEnquiryContext();
+  const [audience, setAudience] = useState<EnquiryAudience | null>(null);
+  const [category, setCategory] = useState<EnquiryCategory | null>(null);
+  const [stage, setStage] = useState<(typeof stages)[number]["id"] | null>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
+  const recommendation = category && stage ? recommendationFor(category, stage) : null;
+
+  function chooseAudience(value: EnquiryAudience) {
+    setAudience(value); setCategory(null); setStage(null); updateContext({ audience: value });
+  }
+  function chooseCategory(value: EnquiryCategory) {
+    setCategory(value); setStage("unsure");
+    const option = problemOptions.find(({ id }) => id === value)!;
+    updateContext({ category: value, servicePath: option.servicePath, serviceChoice: "suggested", intent: option.intent });
+  }
+  function chooseStage(value: (typeof stages)[number]["id"]) {
+    setStage(value);
+    requestAnimationFrame(() => resultRef.current?.focus());
+  }
+
+  return <div className="pathfinder pathfinder--guided" data-testid="service-pathfinder">
     <div className="pathfinder__prompt">
       <p className="eyebrow"><span className="eyebrow-line" />FIND A STARTING POINT</p>
-      <h2>What would you like technology to do better?</h2>
-      <p>Choose the closest goal. You can explore the options without sharing personal information.</p>
+      <h2>Tell us who needs help, then choose the closest problem.</h2>
+      <p>No technical name is required. This guidance stays in your browser and is not sent until you review and submit a request.</p>
     </div>
-    <div className="pathfinder__goals" role="group" aria-label="Choose your technology goal">
-      {goals.map((goal) => <button aria-pressed={selected === goal.id} key={goal.id} onClick={() => setSelected(goal.id)} type="button"><strong>{goal.label}</strong><span>{goal.hint}</span><ArrowIcon diagonal /></button>)}
-    </div>
-    {unsure ? <div className="pathfinder__result pathfinder__result--sky" aria-live="polite"><div><span className="pathfinder__result-label">A useful place to start</span><h3>Describe the situation in your own words.</h3><p>You do not need to diagnose the issue or choose a service. Use the support guidance for a problem, or request a consultation for a planned decision or project.</p></div><ul><li><Link href="/support"><span><strong>Support guidance</strong><small>Prepare a safe description of what is happening.</small></span><ArrowIcon diagonal /></Link></li><li><Link href="/booking"><span><strong>Request a consultation</strong><small>Start a conversation about a decision or planned improvement.</small></span><ArrowIcon diagonal /></Link></li></ul></div> : group ? <div className={`pathfinder__result pathfinder__result--${group.accent}`} aria-live="polite">
-      <div><span className="pathfinder__result-label">A useful place to start</span><h3>{group.heading}</h3><p>{group.description}</p></div>
-      <ul>{group.services.slice(0, 3).map((service) => <li key={service.path}><Link href={service.path}><span><strong>{service.name}</strong><small>{service.description}</small></span><ArrowIcon diagonal /></Link></li>)}</ul>
-      <Link className="text-link" href="/services">Compare all services <ArrowIcon diagonal /></Link>
-    </div> : <p className="pathfinder__empty">Select a goal to see a focused set of services.</p>}
+
+    <section className="pathfinder__step" aria-labelledby="pathfinder-audience-title">
+      <div><span>01</span><h3 id="pathfinder-audience-title">Who is this for?</h3><p>Home-office users can choose either and change it later.</p></div>
+      <div className="pathfinder__audiences">{audiences.map((option) => <button aria-pressed={audience === option.id} key={option.id} onClick={() => chooseAudience(option.id)} type="button"><strong>{option.label}</strong><span>{option.description}</span></button>)}</div>
+    </section>
+
+    {audience ? <section className="pathfinder__step" aria-labelledby="pathfinder-problem-title">
+      <div><span>02</span><h3 id="pathfinder-problem-title">What is closest to the problem or goal?</h3><p>Choose “Not sure” if several options fit.</p></div>
+      <div className="pathfinder__problems">{problemOptions.map((option) => <button aria-pressed={category === option.id} key={option.id} onClick={() => chooseCategory(option.id)} type="button"><strong>{option.label}</strong><span>{option.examples}</span></button>)}</div>
+    </section> : null}
+
+    {category ? <section className="pathfinder__step pathfinder__step--compact" aria-labelledby="pathfinder-stage-title">
+      <div><span>03</span><h3 id="pathfinder-stage-title">Is something broken now, or are you planning?</h3><p>This helps choose the type of request. It does not set urgency or promise a response time.</p></div>
+      <div className="pathfinder__stages">{stages.map((option) => <button aria-pressed={stage === option.id} key={option.id} onClick={() => chooseStage(option.id)} type="button">{option.label}</button>)}</div>
+    </section> : null}
+
+    {recommendation ? <div className="pathfinder__result pathfinder__result--sky" aria-live="polite" ref={resultRef} tabIndex={-1}>
+      <div><span className="pathfinder__result-label">Suggested starting point</span><h3>{recommendation.primary?.name ?? "Send the problem without choosing a service"}</h3><p>{recommendation.why}</p><small>You can change this suggestion in the request form.</small></div>
+      <div className="pathfinder__recommendation-actions">
+        {recommendation.primary ? <Link className="text-link" href={recommendation.primary.path}>Understand this service <ArrowIcon diagonal /></Link> : null}
+        <ButtonLink bookingIntent={recommendation.option.intent} bookingService={recommendation.option.servicePath} href="/booking" onClick={() => updateContext({ audience: audience ?? "unsure", category: category ?? "other", servicePath: recommendation.option.servicePath, serviceChoice: "suggested", intent: recommendation.option.intent })}>Send a request</ButtonLink>
+        {recommendation.alternatives.length ? <div className="pathfinder__alternatives"><span>Other possible paths:</span>{recommendation.alternatives.map((service) => <Link href={service.path} key={service.path}>{service.name}</Link>)}</div> : null}
+      </div>
+    </div> : <p className="pathfinder__empty">{audience ? "Choose the closest problem or goal to continue." : "Choose a personal, business or unsure starting point. You can also browse all services."} <Link href="/services">Browse all services</Link></p>}
   </div>;
 }

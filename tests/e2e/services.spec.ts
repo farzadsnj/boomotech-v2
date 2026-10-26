@@ -24,15 +24,16 @@ test("every Services menu destination has complete content and a service-aware c
 test("a service consultation remains selected and can be changed", async ({ page }) => {
   await page.goto("/services/microsoft-365");
   await page.getByRole("link", { name: "Discuss your Microsoft 365 setup" }).first().click();
-  await page.getByLabel(/Full name/).fill("Taylor Smith");
-  await page.getByLabel(/Email address/).fill("taylor@example.com");
-  await page.getByLabel(/Phone number/).fill("0400 000 000");
-  await page.getByRole("button", { name: "Continue" }).click();
   const service = page.getByLabel(/Service required/);
   await expect(service).toHaveValue("/services/microsoft-365");
   await service.selectOption("/services/network-wifi");
   await expect(service).toHaveValue("/services/network-wifi");
-  await expect(page.getByText(/does not confirm an appointment/i)).toBeVisible();
+  await page.getByLabel(/Problem or requested work/).fill("Our business Wi-Fi drops out during routine work.");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByLabel(/Full name/).fill("Taylor Smith");
+  await page.getByLabel(/Email address/).fill("taylor@example.com");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByText(/not a confirmed appointment/i)).toBeVisible();
 });
 
 for (const width of [320, 390]) test(`service diagrams and pages avoid horizontal overflow at ${width}px`, async ({ page }) => {

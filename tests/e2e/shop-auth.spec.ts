@@ -162,13 +162,20 @@ test.describe("database-backed accounts", () => {
     await page.locator('input[name="password"]').fill(customer.password);
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
-    const submitted = await page.evaluate(async (email) => {
-      const response = await fetch("/api/booking", { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() }, body: JSON.stringify({ fullName: "Casey Test", email, phone: "+61 400 000 000", servicePath: "/services/it-support", message: "Several office computers need support and a careful review of the shared network.", consent: true, source: "booking-page", website: "" }) });
-      return { status: response.status, body: await response.json() as { reference?: string } };
-    }, customer.email);
-    expect(submitted.status).toBe(201);
-    requestReference = submitted.body.reference!;
-    await page.reload();
+    await page.locator(".dashboard-sidebar").getByRole("link", { name: "New request", exact: true }).click();
+    await expect(page).toHaveURL(/\/booking$/);
+    await page.getByLabel(/Service required/).selectOption("/services/it-support");
+    await page.getByLabel(/Problem or requested work/).fill("Several office computers need support and a careful review of the shared network.");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.getByLabel("Full name")).toHaveValue(customer.name);
+    await expect(page.getByLabel("Email address")).toHaveValue(customer.email);
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByLabel(/I agree/).check();
+    await page.getByRole("button", { name: "Send consultation request" }).click();
+    const referenceText = await page.getByText(/BT-[A-F0-9]{10}/).textContent();
+    requestReference = referenceText?.match(/BT-[A-F0-9]{10}/)?.[0] ?? "";
+    expect(requestReference).toMatch(/^BT-[A-F0-9]{10}$/);
+    await page.goto("/dashboard");
     await expect(page.getByRole("link", { name: /Total requests: 1/ })).toBeVisible();
     await expect(page.getByText(requestReference, { exact: true })).toBeVisible();
     await expect(page.locator(".customer-request-card__description").getByText(/Several office computers need support/)).toBeVisible();

@@ -84,6 +84,15 @@
 .pathfinder__result li span { display: grid; gap: .2rem; }
 .pathfinder__result li small { color: var(--color-ink-soft); }
 .pathfinder__result > .text-link { grid-column: 2; justify-self: start; }
+.pathfinder__step { display: grid; grid-template-columns: minmax(210px, .42fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3rem); padding: clamp(1.5rem, 3vw, 2.5rem); border-top: 1px solid var(--color-border); }
+.pathfinder__step > div:first-child > span { color: var(--color-primary-dark); font-size: .72rem; font-weight: 850; letter-spacing: .12em; }.pathfinder__step h3 { margin: .45rem 0; font-size: clamp(1.35rem, 2.4vw, 2rem); letter-spacing: -.04em; }.pathfinder__step > div:first-child p { margin: 0; color: var(--color-ink-soft); font-size: .88rem; line-height: 1.55; }
+.pathfinder__audiences, .pathfinder__problems { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; }.pathfinder__problems { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pathfinder__audiences button, .pathfinder__problems button, .pathfinder__stages button { min-height: 5.5rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: .6rem; background: #fff; color: var(--color-ink); text-align: left; cursor: pointer; transition: border-color .18s, background .18s, box-shadow .18s; }
+.pathfinder__audiences button:hover, .pathfinder__audiences button[aria-pressed="true"], .pathfinder__problems button:hover, .pathfinder__problems button[aria-pressed="true"], .pathfinder__stages button:hover, .pathfinder__stages button[aria-pressed="true"] { border-color: var(--color-primary); background: var(--color-blue-pale); box-shadow: 0 0 0 1px var(--color-primary); }
+.pathfinder__audiences strong, .pathfinder__problems strong { display: block; margin-bottom: .35rem; }.pathfinder__audiences span, .pathfinder__problems span { display: block; color: var(--color-ink-soft); font-size: .8rem; line-height: 1.45; }
+.pathfinder__stages { display: flex; flex-wrap: wrap; gap: .65rem; }.pathfinder__stages button { min-height: 3rem; }
+.pathfinder__recommendation-actions { display: grid; align-content: start; justify-items: start; gap: .8rem; }.pathfinder__recommendation-actions > .text-link { grid-column: auto; }.pathfinder__alternatives { display: flex; flex-wrap: wrap; gap: .5rem; color: var(--color-ink-soft); font-size: .8rem; }.pathfinder__alternatives a { color: var(--color-primary-dark); font-weight: 750; text-decoration: underline; text-underline-offset: .18rem; }.pathfinder__result small { color: var(--color-ink-soft); line-height: 1.5; }
+.pathfinder__empty a { color: var(--color-primary-dark); font-weight: 800; text-decoration: underline; text-underline-offset: .18rem; }
 
 .capability-section { background: #fff; }
 .capability-section__header, .resource-preview__header { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-bottom: 3rem; }
@@ -199,6 +208,7 @@
   .pathfinder__goals { grid-template-columns: repeat(2, 1fr); }.pathfinder__goals button:nth-child(2) { border-right: 0; }.pathfinder__goals button:nth-child(-n+2) { border-bottom: 1px solid var(--color-border); }
   .pathfinder__result, .work-section__grid, .health-promo__inner, .home-faq__grid, .booking-page__header, .tool-hero__grid, .service-directory__group, .about-story__grid { grid-template-columns: 1fr; }
   .pathfinder__result > .text-link { grid-column: 1; }
+  .pathfinder__step { grid-template-columns: 1fr; }.pathfinder__audiences { grid-template-columns: 1fr; }.pathfinder__problems { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .capability-card { grid-column: span 6; }
   .resource-preview__grid { grid-template-columns: 1fr; }
   .inner-hero__grid--visual { grid-template-columns: 1fr; grid-template-areas: "title" "summary" "visual"; }.inner-hero__visual { min-height: 300px; }
@@ -211,6 +221,7 @@
   .trust-rail .container { grid-template-columns: 1fr; }.trust-rail span, .trust-rail span:last-child { min-height: 3.7rem; border-right: 1px solid rgb(255 255 255 / 14%); border-bottom: 1px solid rgb(255 255 255 / 14%); }
   .pathfinder__goals { grid-template-columns: 1fr; }.pathfinder__goals button, .pathfinder__goals button:nth-child(2) { min-height: 8.5rem; border-right: 0; border-bottom: 1px solid var(--color-border); }
   .pathfinder__result { padding: 1.3rem; }
+  .pathfinder__problems { grid-template-columns: 1fr; }.pathfinder__step { padding: 1.2rem; }.pathfinder__audiences button, .pathfinder__problems button { min-height: 0; }
   .capability-section__header, .resource-preview__header { align-items: flex-start; flex-direction: column; }
   .capability-bento { display: grid; grid-template-columns: 1fr; }.capability-card { grid-column: 1; min-height: 0; }.capability-card h3 { margin-top: 3rem; }
   .orbit-diagram { min-height: 380px; }

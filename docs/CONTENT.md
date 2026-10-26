@@ -116,6 +116,14 @@ Each service record should include:
 
 Each page should offer one context-matched next action. Educational content can point to a relevant service, checklist, or consultation, but should remain genuinely useful without purchase.
 
+## Audience and problem-first discovery
+
+The homepage provides three optional entry points: home and individuals, businesses, and an unsure path. The visitor then chooses a recognisable problem or goal rather than a technology product. The deterministic finder may suggest one service and up to two alternatives, but must label the result as a starting point rather than a diagnosis.
+
+The request flow asks for the problem before contact details. It accepts an uncertain audience or service, carries optional service-preparation answers during client navigation, and keeps all recommendations editable. Search results use the concise service name followed by a short explanation; clear symptom queries should rank a service above generic guidance. Unmatched search offers the direct request form instead of a confident unrelated result.
+
+The primary individual and small-business solution pages expand this first choice without asking visitors to diagnose technology. Each page uses audience-specific symptoms, linked service pathways, one explanatory decision diagram, an illustrative example, explicit scope boundaries, remote/onsite guidance and an audience-aware request action. Individual guidance must distinguish configuration and troubleshooting from hardware repair, specialist data recovery and third-party account recovery. Business guidance must distinguish scoped assistance from monitoring, unlimited support, service levels, compliance work and continuing supplier costs.
+
 ## Content required from owner
 
 - Approved company story and founder/team information
