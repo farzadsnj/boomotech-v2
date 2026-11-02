@@ -1,6 +1,7 @@
 import { appendFile, mkdir } from "node:fs/promises";
 import path from "node:path";
-import { EmailTransportConfigurationError, escapeEmailHtml, sendEmailWithResend } from "@/lib/email/resend";
+import { EmailTransportConfigurationError, sendEmailWithResend } from "@/lib/email/resend";
+import { renderBrandedEmail } from "@/lib/email/template";
 
 export class VerificationEmailConfigurationError extends Error { name = "VerificationEmailConfigurationError"; }
 export class VerificationEmailDeliveryError extends Error { name = "VerificationEmailDeliveryError"; }
@@ -44,8 +45,16 @@ async function deliverAuthenticationEmail(message: VerificationEmail | PasswordR
     : "Verify your email address to activate your BoomoTech customer account.";
   const action = isReset ? "Reset password" : "Verify email address";
   const ignore = isReset ? "If you did not request a password reset, ignore this email and your password will remain unchanged." : "If you did not create this account, ignore this email.";
-  const text = [`Hi ${message.name},`, "", instruction, actionUrl, "", `This link expires in ${message.expiresInMinutes} minutes and can be used once.`, ignore].join("\n");
-  const html = `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#1D3A49"><h1 style="color:#1D3A49">${heading}</h1><p>Hi ${escapeEmailHtml(message.name)},</p><p>${instruction}</p><p><a href="${escapeEmailHtml(actionUrl)}" style="display:inline-block;padding:12px 18px;background:#0070B7;color:#fff;text-decoration:none;border-radius:6px;font-weight:700">${action}</a></p><p>Or copy this link:<br><span style="word-break:break-all">${escapeEmailHtml(actionUrl)}</span></p><p>This link expires in ${message.expiresInMinutes} minutes and can be used once.</p><p>${ignore}</p></div>`;
+  const { text, html } = renderBrandedEmail({
+    approvedOrigin: new URL(actionUrl).origin,
+    preheader: instruction,
+    heading,
+    greeting: `Hi ${message.name || "there"},`,
+    introduction: instruction,
+    paragraphs: [`This link expires in ${message.expiresInMinutes} minutes and can be used once.`, ignore],
+    action: { label: action, url: actionUrl },
+    safety: "BoomoTech will never ask you to send your password, MFA code or recovery code by email.",
+  });
   try {
     await sendEmailWithResend({ from, to: message.to, subject, text, html });
   } catch (error) {

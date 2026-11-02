@@ -34,13 +34,22 @@ function validSiteUrl(environment: NotificationEnvironment) {
   }
 }
 
+function optionalReplyTo(environment: NotificationEnvironment) {
+  const value = environment.CUSTOMER_REPLY_TO_EMAIL?.trim();
+  if (!value) return undefined;
+  if (!/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(value)) {
+    throw new NotificationWorkerConfigurationError("Notification worker configuration has an invalid CUSTOMER_REPLY_TO_EMAIL.");
+  }
+  return value;
+}
+
 export function validateNotificationWorkerEnvironment(environment: NotificationEnvironment = process.env): NotificationWorkerConfiguration {
   return {
     resendApiKey: requiredValue("RESEND_API_KEY", environment),
     adminEmail: requiredValue("BOOKING_NOTIFICATION_EMAIL", environment),
     fromEmail: requiredValue("BOOKING_FROM_EMAIL", environment),
     siteUrl: validSiteUrl(environment),
-    customerReplyTo: environment.CUSTOMER_REPLY_TO_EMAIL?.trim() || undefined,
+    customerReplyTo: optionalReplyTo(environment),
   };
 }
 

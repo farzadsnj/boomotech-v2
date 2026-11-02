@@ -1,5 +1,11 @@
 # Notification outbox
 
+## Transactional email presentation
+
+Request acknowledgements, administrator request/reply notifications, customer replies and resolution notices use the shared email-compatible renderer in `src/lib/email/template.ts`. Email verification and password reset use the same visual shell through their existing isolated adapter. The renderer supplies a table-based 600 px layout, inline brand colours, equivalent plain text, escaped customer content, safe multiline formatting and a visible fallback URL for each action.
+
+Administrator request actions link only to the existing protected `/admin/requests/[reference]` route. Account-linked verified customers receive their authorised dashboard request link; guest acknowledgements and replies do not imply dashboard access. `CUSTOMER_REPLY_TO_EMAIL` is optional and must be a verified configured mailbox when present. A no-reply sender is never described as accepting replies. Template changes do not modify outbox dedupe keys, claims, retry state or already-sent rows.
+
 Booking and request actions write their business record and notification row in the same PostgreSQL transaction. Email delivery happens later through `pnpm notifications:process`; a provider outage cannot roll back or remove the customer request.
 
 This outbox is separate from dashboard notification state. The in-app notification centre uses `in_app_notification` and per-user `in_app_notification_read` rows. Reading a dashboard notification never marks an email sent, retries an email or changes an outbox row. See `docs/IN-APP-NOTIFICATIONS.md`.

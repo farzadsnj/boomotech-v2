@@ -1,0 +1,22 @@
+BOOMOTECH
+
+Your request has been marked resolved
+
+Hi Alexandra A Very Long Fictional Customer Name <Example>,
+
+BoomoTech has marked request BT-PREVIEW001 as resolved.
+
+Reference: BT-PREVIEW001
+Service: Cloud and infrastructure
+
+Resolution note:
+This is a fictional multiline update.
+No real customer or request data is included.
+
+If you need help with a separate issue or more work is required, send a new request through the secure request form.
+
+Review request: https://boomotech.com.au/dashboard?request=BT-PREVIEW001#request-BT-PREVIEW001
+
+Do not send passwords, MFA codes, recovery keys or payment-card information by email.
+
+BoomoTech — practical technology support and smarter systems.

@@ -1,0 +1,25 @@
+BOOMOTECH
+
+New customer request
+
+Hello BoomoTech team,
+
+A new request has been saved and is ready for protected review.
+
+Reference: BT-PREVIEW001
+Service: Cloud and infrastructure
+Submitted: 1 Nov 2026, 10:30 am
+Name: Alexandra A Very Long Fictional Customer Name <Example>
+Email: alexandra@example.test
+
+Customer message:
+Our fictional team is reviewing a cloud and infrastructure change.
+Please explain the safe assessment steps before anything is moved.
+<This must be rendered as text, not HTML.>
+AReallyLongUnbrokenExampleValueThatMustWrapWithoutBreakingTheEmailLayout1234567890
+
+View request: https://boomotech.com.au/admin/requests/BT-PREVIEW001
+
+Do not send passwords, MFA codes, recovery keys or payment-card information by email.
+
+BoomoTech — practical technology support and smarter systems.

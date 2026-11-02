@@ -58,5 +58,8 @@ export function validateProductionEnvironment(environment: Record<string, string
   if (environment.ADMIN_TEMP_PASSWORD?.trim()) {
     throw new ApplicationConfigurationError("Production configuration error: remove ADMIN_TEMP_PASSWORD after the administrator bootstrap completes.");
   }
+  for (const name of ["AUTH_E2E_DATABASE_PATH", "AUTH_EMAIL_CAPTURE_PATH", "AUTH_EMAIL_CAPTURE_MODE", "E2E_ADMIN_PASSWORD"]) {
+    if (environment[name]?.trim()) throw new ApplicationConfigurationError(`Production configuration error: remove test-only ${name}.`);
+  }
   return { authUrl, siteUrl: PRODUCTION_ORIGIN };
 }

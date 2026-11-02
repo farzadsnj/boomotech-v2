@@ -43,6 +43,23 @@ The script:
 
 There is no destructive Git reset and no automatic database rollback. Production credentials are never intentionally passed into the unit-test process, preventing tests from contacting the live database, Resend or OpenAI configuration. The production environment is loaded again only after tests pass, before migrations and the production build. A migration failure leaves the running service untouched. A restart or health-check failure prints service diagnostics and stops for manual investigation.
 
+The deployment script does not run `pnpm admin:seed` or any credential recovery command. `pnpm prod:check` rejects `ADMIN_TEMP_PASSWORD`, `AUTH_E2E_DATABASE_PATH`, email-capture variables and the E2E administrator password in the steady-state production environment. Unit tests explicitly remove production database and authentication variables. A deployment, build, migration or restart must never create, reseed or reset an administrator.
+
+## Administrator sign-in diagnostics and recovery
+
+The previously destructive bootstrap behaviour was a confirmed code defect, but repository inspection does not prove that it caused a particular live post-deployment failure. Before changing a production credential, an operator should record these read-only checks without printing secrets, hashes, tokens, MFA material or connection URLs:
+
+1. Confirm the application service and migration command load the same protected environment file and intended database identity. Use `psql "$DATABASE_URL" -Atqc 'select current_database(), current_schema();'` inside the service account environment; do not print `DATABASE_URL`.
+2. Confirm the target account has one credential provider row, remains verified with the `admin` role, and still has an MFA row. Select only identifiers, booleans and counts—never the credential password, TOTP secret or recovery codes.
+3. Check the aggregate login-guard lock expiry and wait for a valid temporary lockout to expire. Do not delete all protection records.
+4. Confirm `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SITE_URL`, proxy headers and secure-cookie mode come from the approved deployment environment. Compare secret-manager versions or protected configuration audit records; do not echo values.
+5. Distinguish an invalidated session from rejection of a fresh correct password, then distinguish password, email-verification, MFA and infrastructure stages using the redacted authentication error category in server logs.
+6. Confirm the database/volume was not recreated and review operator history for any manual `admin:seed` invocation. No lifecycle script calls it.
+
+If the password genuinely needs recovery, use `/forgot-password` with the administrator's verified email and complete the single-use link. This revokes sessions according to the existing Better Auth policy but preserves MFA. Bootstrap is only for the initial account; when it reports an existing identity, no recovery action occurs. A conflicting identity requires an owner-reviewed database investigation rather than an automatic role, password or MFA change.
+
+Safe rollout for this change: rehearse the checks and create-only bootstrap against a restored non-production database, take and validate the normal backup, deploy through the reviewed script, run migrations, restart the service, and perform a fresh password-plus-MFA login. Do not run bootstrap on the live existing administrator. Roll back application code if health or authentication diagnostics fail; do not restore or mutate authentication rows until the evidence and backup are reviewed.
+
 ## Server prerequisites
 
 - Ubuntu host with Node.js 22, pnpm 11, Git, curl, PostgreSQL client tools, Nginx and systemd.
