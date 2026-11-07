@@ -104,22 +104,37 @@ test("desktop services menu and primary audience destinations are clear", async 
 });
 
 test("orbital diagrams support focus, dismissal and reduced motion", async ({ page, browser }) => {
-  await page.goto("/"); const understand = page.getByRole("button", { name: "Understand" }); await understand.focus();
+  await page.goto("/");
+  const privacyDismiss = page.getByRole("button", { name: "Got it" }); if (await privacyDismiss.waitFor({ state: "visible", timeout: 1_000 }).then(() => true).catch(() => false)) await privacyDismiss.click();
+  const homeOrbit = page.locator(".orbit-diagram").first();
+  for (const fraction of [0, .25, .5, .75]) {
+    const sample = await homeOrbit.evaluate((orbit, phase) => {
+      for (const animated of orbit.querySelectorAll<HTMLElement>(".orbit-diagram__track, .orbit-diagram__node")) {
+        for (const animation of animated.getAnimations()) { animation.pause(); animation.currentTime = (animation.effect?.getTiming().duration as number) * phase; }
+      }
+      const stage = orbit.querySelector(".orbit-diagram__stage")!.getBoundingClientRect();
+      const nodes = [...orbit.querySelectorAll(".orbit-diagram__node")].map((node) => {
+        const box = node.getBoundingClientRect(); return box.left >= stage.left - 1 && box.right <= stage.right + 1 && box.top >= stage.top - 1 && box.bottom <= stage.bottom + 1;
+      });
+      const first = orbit.querySelector(".orbit-diagram__node")!;
+      const track = new DOMMatrix(getComputedStyle(orbit.querySelector(".orbit-diagram__track")!).transform);
+      const position = new DOMMatrix(getComputedStyle(first.parentElement!).transform);
+      const pill = new DOMMatrix(getComputedStyle(first).transform);
+      const combined = track.multiply(position).multiply(pill);
+      return { nodes, angle: Math.abs(Math.atan2(combined.b, combined.a) * 180 / Math.PI) };
+    }, fraction);
+    expect(sample.nodes.every(Boolean)).toBe(true); expect(Math.min(sample.angle, Math.abs(sample.angle - 360))).toBeLessThan(2);
+  }
+  const understand = page.getByRole("button", { name: "Understand" }); await understand.focus();
   await expect(understand).toHaveAttribute("aria-expanded", "true"); await expect(page.getByRole("region", { name: "Stage details" })).toContainText("Identify the problem");
-  await expect(page.locator(".orbit-diagram__track").first()).toHaveCSS("animation-play-state", "paused"); await page.keyboard.press("Escape"); await expect(understand).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator(".orbit-diagram__track").first()).toHaveCSS("animation-play-state", "paused"); await page.keyboard.press("Escape"); await expect(understand).toHaveAttribute("aria-expanded", "false"); await expect(understand).toBeFocused();
   await page.goto("/about");
   const aboutOrbit = page.locator(".orbit-diagram--about"); const clarify = page.getByRole("button", { name: "Clarify" });
-  await aboutOrbit.hover(); await clarify.hover(); await expect(clarify).toHaveAttribute("aria-expanded", "false"); await expect(aboutOrbit.locator(".orbit-diagram__popover")).not.toHaveClass(/is-visible/); await expect(aboutOrbit.locator(".orbit-diagram__popover")).toHaveCSS("opacity", "0");
-  const labelAngle = await clarify.locator("span").evaluate((label) => {
-    const track = new DOMMatrix(getComputedStyle(label.closest(".orbit-diagram__track")!).transform);
-    const node = new DOMMatrix(getComputedStyle(label.parentElement!).transform);
-    const counter = new DOMMatrix(getComputedStyle(label).transform);
-    const combined = track.multiply(node).multiply(counter);
-    return Math.abs(Math.atan2(combined.b, combined.a) * 180 / Math.PI);
-  });
-  expect(labelAngle).toBeLessThan(2);
+  await aboutOrbit.hover(); await clarify.hover(); await expect(clarify).toHaveAttribute("aria-expanded", "false"); await expect(aboutOrbit.locator(".orbit-diagram__popover")).not.toHaveClass(/is-visible/); await expect(aboutOrbit.locator(".orbit-diagram__popover")).toContainText("Hover, focus or tap");
+  const geometry = await aboutOrbit.evaluate((orbit) => { const stage = orbit.querySelector(".orbit-diagram__stage")!.getBoundingClientRect(); const details = orbit.querySelector(".orbit-diagram__popover")!.getBoundingClientRect(); return { ratio: stage.width / stage.height, separated: details.top >= stage.bottom }; });
+  expect(geometry.ratio).toBeCloseTo(1, 2); expect(geometry.separated).toBe(true);
   await clarify.focus(); await expect(page.getByRole("region", { name: "Stage details" })).toContainText("dependencies and boundaries");
-  const reduced = await browser.newContext({ reducedMotion: "reduce" }); const reducedPage = await reduced.newPage(); await reducedPage.goto("/"); await expect(reducedPage.locator(".orbit-diagram__track").first()).toHaveCSS("animation-name", "none"); await reduced.close();
+  const reduced = await browser.newContext({ reducedMotion: "reduce" }); const reducedPage = await reduced.newPage(); await reducedPage.goto("/"); await expect(reducedPage.locator(".orbit-diagram__track").first()).toHaveCSS("animation-name", "none"); await expect(reducedPage.locator(".orbit-diagram__node").first()).toHaveCSS("animation-name", "none"); await reduced.close();
 });
 
 test("pricing and learning routes are clear, linked and honest", async ({ page }) => {
@@ -323,8 +338,12 @@ test("site search is local, ranked and fully keyboard operable", async ({ page }
   const dialog = page.getByRole("dialog", { name: "What can we help you find?" }); await expect(dialog).toBeVisible();
   const input = dialog.getByRole("searchbox", { name: "Search BoomoTech" }); await expect(input).toBeFocused(); await input.fill("network problems");
   await expect(dialog.getByRole("link", { name: /Network and Wi-Fi/ }).first()).toBeVisible(); await page.keyboard.press("ArrowDown"); await page.keyboard.press("ArrowUp");
+  await input.fill("w"); await expect(dialog.getByText("Enter at least two characters")).toBeVisible(); await input.fill("win"); await expect(dialog.getByText(/result/)).toBeVisible();
   await input.fill("zyxwvutsrq"); await expect(dialog.getByRole("heading", { name: /still help you find/i })).toBeVisible(); await expect(dialog.getByRole("link", { name: "Send a request" })).toHaveAttribute("href", "/booking?service=other&intent=consultation");
+  const empty = dialog.locator(".search-empty"); const emptyBoxes = await empty.evaluate((node) => { const paragraph = node.querySelector("p")!.getBoundingClientRect(); const action = node.querySelector("a")!.getBoundingClientRect(); return { separated: action.top >= paragraph.bottom, fits: node.scrollHeight <= node.clientHeight }; }); expect(emptyBoxes.separated).toBe(true); expect(emptyBoxes.fits).toBe(true);
   await page.keyboard.press("Escape"); await expect(dialog).not.toBeVisible(); await expect(trigger).toBeFocused();
+
+  await page.setViewportSize({ width: 390, height: 700 }); await page.locator("summary[aria-label='Menu: toggle navigation']").click(); const mobileTrigger = page.getByRole("button", { name: "Search", exact: true }); await mobileTrigger.click(); await expect(input).toBeFocused(); await page.keyboard.press("Escape"); await expect(mobileTrigger).toBeFocused();
 });
 
 test("service preparation continues to booking with an approved service context", async ({ page }) => {

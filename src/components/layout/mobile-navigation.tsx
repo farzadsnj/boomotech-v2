@@ -55,7 +55,7 @@ export function MobileNavigation({ shopEnabled = false }: { shopEnabled?: boolea
           <NavigationLink href="/blog"><span className="mobile-nav__link-label"><ArticleIcon />Blog posts</span><ArrowIcon diagonal /></NavigationLink>
           <NavigationLink href="/tools/it-health-check"><span className="mobile-nav__link-label">IT Health Check</span><ArrowIcon diagonal /></NavigationLink>
         </div>
-        <button className="mobile-nav__action" onClick={() => { if (detailsRef.current) detailsRef.current.open = false; window.dispatchEvent(new Event("boomotech:open-search")); }} type="button"><span className="mobile-nav__link-label">Search</span><ArrowIcon diagonal /></button>
+        <button className="mobile-nav__action" onClick={(event) => { window.dispatchEvent(new CustomEvent("boomotech:open-search", { detail: event.currentTarget })); }} type="button"><span className="mobile-nav__link-label">Search</span><ArrowIcon diagonal /></button>
         {shopEnabled ? <NavigationLink href="/shop"><span className="mobile-nav__link-label">Shop</span><ArrowIcon diagonal /></NavigationLink> : null}
         <NavigationLink href="/login"><span className="mobile-nav__link-label"><AccountIcon />Client portal</span><ArrowIcon diagonal /></NavigationLink>
         <ChatBookingButton mobile />

@@ -41,7 +41,10 @@ describe("notification outbox", () => {
     expect(new Set(sent.map(({ idempotencyKey }) => idempotencyKey)).size).toBe(2);
     const acknowledgement = sent.find(({ to }) => to === "guest@example.com")!;
     expect(acknowledgement.text).toContain("not a confirmed appointment"); expect(acknowledgement.text).not.toContain("/dashboard");
-    expect(sent.find(({ to }) => to === "inbox@example.com")?.html).toContain("&lt;script&gt;");
+    const admin = sent.find(({ to }) => to === "inbox@example.com")!;
+    expect(admin.html).toContain("&lt;script&gt;");
+    expect(admin.html).toContain(`https://boomotech.com.au/admin/requests/`);
+    expect(admin.html).toContain("background:#102F3D");
   });
 
   it("notifies guests of admin replies without dashboard links or internal notes", async () => {
@@ -56,7 +59,7 @@ describe("notification outbox", () => {
   it("includes a dashboard link only for verified account customers", async () => {
     await booking.storeBookingRequest(requestData("customer@example.com"), customerId);
     const sent: ServerEmail[] = []; await outbox.processNotificationOutbox(async (message) => { sent.push(message); });
-    expect(sent.find(({ to }) => to === "customer@example.com")?.text).toContain("https://boomotech.com.au/dashboard");
+    expect(sent.find(({ to }) => to === "customer@example.com")?.text).toContain("https://boomotech.com.au/dashboard?request=");
   });
 
   it("delivers customer replies to the inbox and resolution notices to the customer", async () => {

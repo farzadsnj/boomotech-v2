@@ -32,6 +32,11 @@ describe("notification worker configuration", () => {
     expect(validateNotificationWorkerEnvironment({ ...validEnvironment, SITE_URL: "http://127.0.0.1:3100" }).siteUrl).toBe("http://127.0.0.1:3100");
   });
 
+  it("accepts only a syntactically valid configured reply-to mailbox", () => {
+    expect(validateNotificationWorkerEnvironment({ ...validEnvironment, CUSTOMER_REPLY_TO_EMAIL: "replies@example.test" }).customerReplyTo).toBe("replies@example.test");
+    expect(() => validateNotificationWorkerEnvironment({ ...validEnvironment, CUSTOMER_REPLY_TO_EMAIL: "BoomoTech <replies@example.test>" })).toThrow(/CUSTOMER_REPLY_TO_EMAIL/);
+  });
+
   it("accepts PostgreSQL connection URLs and rejects malformed values", () => {
     expect(validateNotificationWorkerDatabaseEnvironment({ DATABASE_URL: "postgresql://user:password@127.0.0.1:5432/boomotech" })).toContain("boomotech");
     expect(() => validateNotificationWorkerDatabaseEnvironment({ DATABASE_URL: "not-a-database-url" })).toThrow(/DATABASE_URL/);

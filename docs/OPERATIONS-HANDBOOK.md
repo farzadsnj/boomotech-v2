@@ -409,7 +409,7 @@ pnpm admin:seed
 Expected result:
 
 ```text
-Administrator account created or updated. Remove ADMIN_TEMP_PASSWORD from .env.local now.
+Administrator account created. Remove ADMIN_TEMP_PASSWORD from .env.local now.
 ```
 
 Remove `ADMIN_TEMP_PASSWORD` from `.env.local` immediately. The stored password is hashed; removing the environment value does not remove the account. Previously used Better Auth secrets, Resend keys and temporary administrator passwords must be rotated externally and must not be reused.
@@ -420,7 +420,7 @@ Sign in at:
 http://localhost:3000/admin/login
 ```
 
-Running the seed command again updates the administrator and invalidates previous admin sessions. Never hard-code an administrator password in source code.
+Running the seed command again for the exact existing verified administrator reports that bootstrap is unnecessary and changes nothing. It preserves the credential password, MFA/recovery data, verification state and sessions. A partial or conflicting username/email identity fails closed. Never hard-code an administrator password in source code and never use bootstrap as a routine recovery command. Use the supported password-reset flow; it preserves mandatory administrator MFA.
 
 ## 11. Account behaviour
 
@@ -824,6 +824,8 @@ shred -u .env.admin-bootstrap
 pnpm prod:check
 pnpm build
 ```
+
+This create-only bootstrap is not part of deployment and must not be placed in a package lifecycle hook, systemd start command or migration. For an existing account it exits successfully without changing authentication data. Use `/forgot-password` for an approved administrator password recovery; do not delete MFA or login-guard rows to make sign-in work.
 
 ### 17.6 Application process
 

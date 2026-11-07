@@ -17,6 +17,6 @@ describe("UI and UX CSS safeguards", () => {
   });
 
   it("provides reduced-motion fallbacks for new animations", () => {
-    expect(professional).toContain(".service-discovery__prompt i, .orbit-diagram__track, .orbit-diagram__node > span { animation: none !important; }");
+    expect(professional).toContain(".service-discovery__prompt i, .orbit-diagram__track, .orbit-diagram__node { animation: none !important; }");
   });
 });

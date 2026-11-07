@@ -6,6 +6,7 @@ import { FormEvent, useRef, useState } from "react";
 import type { ZodError } from "zod";
 import { authClient } from "@/lib/auth/client";
 import { adminLoginSchema, loginSchema, registrationSchema } from "@/lib/auth/schemas";
+import { authenticationErrorCategory } from "@/lib/auth/client-error";
 import { PasswordInput, PasswordRequirements } from "./password-input";
 
 type Mode = "register" | "login" | "admin";
@@ -49,10 +50,13 @@ export function AccountForm({ mode }: { mode: Mode }) {
         const parsed = adminLoginSchema.parse(values);
         const result = await authClient.signIn.username({ username: parsed.username, password: parsed.password });
         if (result.error) {
-          if (result.error.status === 403) {
+          const category = authenticationErrorCategory(result.error);
+          if (category === "verification-required") {
             router.push("/check-email");
             return;
           }
+          if (category === "rate-limited") { setFormError("Too many sign-in attempts. Wait before trying again."); return; }
+          if (category === "unavailable") { setFormError("Sign in is temporarily unavailable. Try again later."); return; }
           throw new Error("login");
         }
         if (result.data && "twoFactorRedirect" in result.data && result.data.twoFactorRedirect) {
@@ -63,11 +67,13 @@ export function AccountForm({ mode }: { mode: Mode }) {
       } else {
         const parsed = loginSchema.parse(values);
         const result = await authClient.signIn.email({ email: parsed.email, password: parsed.password });
-        if (result.error?.status === 403) {
-          router.push("/check-email");
-          return;
+        if (result.error) {
+          const category = authenticationErrorCategory(result.error);
+          if (category === "verification-required") { router.push("/check-email"); return; }
+          if (category === "rate-limited") { setFormError("Too many sign-in attempts. Wait before trying again."); return; }
+          if (category === "unavailable") { setFormError("Sign in is temporarily unavailable. Try again later."); return; }
+          throw new Error("login");
         }
-        if (result.error) throw new Error("login");
         if (result.data && "twoFactorRedirect" in result.data && result.data.twoFactorRedirect) {
           router.push("/admin/mfa");
           return;

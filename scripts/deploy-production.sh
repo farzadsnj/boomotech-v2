@@ -106,6 +106,8 @@ if [[ "$FAST" == false ]]; then
     -u ADMIN_USERNAME \
     -u ADMIN_EMAIL \
     -u ADMIN_TEMP_PASSWORD \
+    -u AUTH_E2E_DATABASE_PATH \
+    -u E2E_ADMIN_PASSWORD \
     -u AUTH_EMAIL_CAPTURE_PATH \
     -u AUTH_EMAIL_CAPTURE_MODE \
     NODE_ENV=test pnpm test

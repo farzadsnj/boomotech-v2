@@ -3,7 +3,9 @@ import { db } from "@/db";
 import { bookingRequest, bookingRequestMessage, notificationOutbox, user } from "@/db/schema";
 import { serviceLabel } from "@/features/booking/booking-schema";
 import { validateNotificationWorkerEnvironment, type NotificationWorkerConfiguration } from "@/features/notifications/config";
-import { escapeEmailHtml, preserveEmailLineBreaks, sendEmailWithResend, type ServerEmail } from "@/lib/email/resend";
+import { sendEmailWithResend, type ServerEmail } from "@/lib/email/resend";
+import { renderBrandedEmail } from "@/lib/email/template";
+import { customerRequestHref } from "@/features/requests/links";
 
 export const OUTBOX_MAX_ATTEMPTS = 5;
 export const OUTBOX_BATCH_SIZE = 20;
@@ -21,14 +23,19 @@ export type NotificationContext = {
   requestBody: string;
   messageBody: string | null;
   verifiedAccount: boolean;
+  createdAt: Date;
 };
 
 function dashboardLink(context: NotificationContext, configuration: NotificationWorkerConfiguration) {
-  return context.verifiedAccount ? new URL("/dashboard", configuration.siteUrl).toString() : null;
+  return context.verifiedAccount ? new URL(customerRequestHref(context.reference), configuration.siteUrl).toString() : null;
 }
 
-function frame(title: string, paragraphs: string[]) {
-  return `<h1>${escapeEmailHtml(title)}</h1>${paragraphs.map((value) => `<p>${preserveEmailLineBreaks(value)}</p>`).join("")}`;
+function adminLink(context: NotificationContext, configuration: NotificationWorkerConfiguration) {
+  return new URL(`/admin/requests/${encodeURIComponent(context.reference)}`, configuration.siteUrl).toString();
+}
+
+function submittedAt(value: Date) {
+  return new Intl.DateTimeFormat("en-AU", { dateStyle: "medium", timeStyle: "short", timeZone: "Australia/Brisbane" }).format(value);
 }
 
 export function buildNotificationEmail(kind: NotificationKind, context: NotificationContext, configuration: NotificationWorkerConfiguration): Omit<ServerEmail, "from" | "idempotencyKey"> {
@@ -36,23 +43,26 @@ export function buildNotificationEmail(kind: NotificationKind, context: Notifica
   const dashboard = dashboardLink(context, configuration);
   const safety = "Do not send passwords, MFA codes, recovery keys or payment-card information by email.";
   if (kind === "BOOKING_CREATED") {
-    const fields = [`Reference: ${context.reference}`, `Name: ${context.fullName}`, `Email: ${context.email}`, ...(context.phone ? [`Phone: ${context.phone}`] : []), `Service: ${service}`, `Message: ${context.requestBody}`];
-    return { to: configuration.adminEmail, subject: `New request ${context.reference}: ${service}`, text: ["New booking request", "", ...fields].join("\n"), html: frame("New booking request", fields) };
+    const body = renderBrandedEmail({ approvedOrigin: configuration.siteUrl, preheader: `New request ${context.reference}`, heading: "New customer request", greeting: "Hello BoomoTech team,", introduction: "A new request has been saved and is ready for protected review.", fields: [
+      { label: "Reference", value: context.reference }, { label: "Service", value: service }, { label: "Submitted", value: submittedAt(context.createdAt) },
+      { label: "Name", value: context.fullName }, { label: "Email", value: context.email }, ...(context.phone ? [{ label: "Phone", value: context.phone }] : []),
+    ], message: { label: "Customer message", value: context.requestBody }, action: { label: "View request", url: adminLink(context, configuration) }, safety });
+    return { to: configuration.adminEmail, subject: `New request ${context.reference}: ${service}`, ...body };
   }
   if (kind === "REQUEST_CUSTOMER_REPLY") {
-    const fields = [`Reference: ${context.reference}`, `Customer: ${context.fullName}`, `Service: ${service}`, `Customer reply: ${context.messageBody ?? ""}`];
-    return { to: configuration.adminEmail, subject: `Customer reply ${context.reference}`, text: fields.join("\n\n"), html: frame("Customer replied", fields) };
+    const body = renderBrandedEmail({ approvedOrigin: configuration.siteUrl, preheader: `Customer reply for ${context.reference}`, heading: "A customer has replied", greeting: "Hello BoomoTech team,", introduction: "A customer added a message to an existing request.", fields: [{ label: "Reference", value: context.reference }, { label: "Customer", value: context.fullName }, { label: "Service", value: service }], message: { label: "Customer reply", value: context.messageBody ?? "" }, action: { label: "View request", url: adminLink(context, configuration) }, safety });
+    return { to: configuration.adminEmail, subject: `Customer reply ${context.reference}`, ...body };
   }
   if (kind === "BOOKING_CUSTOMER_ACK") {
-    const lines = [`Thank you for contacting BoomoTech.`, `Reference: ${context.reference}`, `Requested service: ${service}`, "This is a request, not a confirmed appointment. BoomoTech will review it before scope and availability are agreed.", safety, ...(dashboard ? [`View your verified account requests: ${dashboard}`] : [])];
-    return { to: context.email, subject: `BoomoTech request received: ${context.reference}`, replyTo: configuration.customerReplyTo, text: lines.join("\n\n"), html: frame("Your request has been received", lines) };
+    const body = renderBrandedEmail({ approvedOrigin: configuration.siteUrl, preheader: `We received request ${context.reference}`, heading: "We’ve received your request", greeting: `Hi ${context.fullName || "there"},`, introduction: "Thank you for contacting BoomoTech. Your request has been saved for review.", fields: [{ label: "Reference", value: context.reference }, { label: "Service", value: service }], paragraphs: ["BoomoTech will review the information and contact you using the details supplied if clarification or next steps are needed.", "This request is not a confirmed appointment. Scope, availability and any work must be agreed separately."], ...(dashboard ? { action: { label: "View your request", url: dashboard } } : {}), safety });
+    return { to: context.email, subject: `BoomoTech request received: ${context.reference}`, replyTo: configuration.customerReplyTo, ...body };
   }
   if (kind === "REQUEST_ADMIN_REPLY") {
-    const lines = [`BoomoTech has responded to request ${context.reference}.`, context.messageBody ?? "", ...(dashboard ? [`View the conversation securely in your dashboard: ${dashboard}`] : ["This request was submitted as a guest. This email contains the response; no account is required."]), safety];
-    return { to: context.email, subject: `BoomoTech response: ${context.reference}`, replyTo: configuration.customerReplyTo, text: lines.join("\n\n"), html: frame("BoomoTech response", lines) };
+    const body = renderBrandedEmail({ approvedOrigin: configuration.siteUrl, preheader: `An update for request ${context.reference}`, heading: "BoomoTech has replied", greeting: `Hi ${context.fullName || "there"},`, introduction: `There is a new response for request ${context.reference}.`, fields: [{ label: "Reference", value: context.reference }, { label: "Service", value: service }], message: { label: "BoomoTech response", value: context.messageBody ?? "" }, paragraphs: dashboard ? ["Use your verified account to review the conversation securely."] : ["This request was submitted as a guest. The response is included here; you do not need to create an account to receive it."], ...(dashboard ? { action: { label: "View conversation", url: dashboard } } : {}), safety });
+    return { to: context.email, subject: `BoomoTech response: ${context.reference}`, replyTo: configuration.customerReplyTo, ...body };
   }
-  const lines = [`Request ${context.reference} has been marked resolved.`, ...(context.messageBody ? [context.messageBody] : []), "If more work is required, submit a new request or contact BoomoTech through the secure booking form.", ...(dashboard ? [`Review your request history: ${dashboard}`] : []), safety];
-  return { to: context.email, subject: `Request resolved: ${context.reference}`, replyTo: configuration.customerReplyTo, text: lines.join("\n\n"), html: frame("Request resolved", lines) };
+  const body = renderBrandedEmail({ approvedOrigin: configuration.siteUrl, preheader: `Request ${context.reference} was marked resolved`, heading: "Your request has been marked resolved", greeting: `Hi ${context.fullName || "there"},`, introduction: `BoomoTech has marked request ${context.reference} as resolved.`, fields: [{ label: "Reference", value: context.reference }, { label: "Service", value: service }], ...(context.messageBody ? { message: { label: "Resolution note", value: context.messageBody } } : {}), paragraphs: ["If you need help with a separate issue or more work is required, send a new request through the secure request form."], ...(dashboard ? { action: { label: "Review request", url: dashboard } } : { action: { label: "Send another request", url: new URL("/booking", configuration.siteUrl).toString() } }), safety });
+  return { to: context.email, subject: `Request resolved: ${context.reference}`, replyTo: configuration.customerReplyTo, ...body };
 }
 
 async function recoverStaleClaims(transaction: Parameters<Parameters<typeof db.transaction>[0]>[0], now: Date, staleBefore: Date) {
@@ -123,7 +133,7 @@ async function contextFor(item: ClaimedNotification): Promise<NotificationContex
   const [record] = await db.select({
     reference: bookingRequest.reference, fullName: bookingRequest.fullName, email: bookingRequest.email,
     phone: bookingRequest.phone, servicePath: bookingRequest.servicePath, requestBody: bookingRequest.message,
-    userId: bookingRequest.userId, emailVerified: user.emailVerified,
+    userId: bookingRequest.userId, emailVerified: user.emailVerified, createdAt: bookingRequest.createdAt,
   }).from(bookingRequest).leftJoin(user, eq(bookingRequest.userId, user.id)).where(eq(bookingRequest.id, item.bookingId)).limit(1);
   if (!record) throw new Error("booking-not-found");
   let messageBody: string | null = null;

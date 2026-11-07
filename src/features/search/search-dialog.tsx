@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ButtonLink } from "@/components/ui/button-link";
 import { searchSite } from "./search-index";
 
 function SearchIcon() {
@@ -11,12 +12,14 @@ function SearchIcon() {
 export function SearchDialog() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const results = useMemo(() => searchSite(query), [query]);
 
-  function open() {
+  function open(opener: HTMLElement | null = triggerRef.current) {
+    openerRef.current = opener;
     dialogRef.current?.showModal();
     requestAnimationFrame(() => inputRef.current?.focus());
   }
@@ -26,24 +29,24 @@ export function SearchDialog() {
   }
 
   useEffect(() => {
-    const openFromMobile = () => open();
+    const openFromMobile = (event: Event) => open(event instanceof CustomEvent && event.detail instanceof HTMLElement ? event.detail : null);
     window.addEventListener("boomotech:open-search", openFromMobile);
     return () => window.removeEventListener("boomotech:open-search", openFromMobile);
   }, []);
 
   return <>
-    <button aria-label="Search BoomoTech" className="header-control header-search" onClick={open} ref={triggerRef} type="button"><SearchIcon /><span>Search</span></button>
-    <dialog aria-labelledby="site-search-title" className="search-dialog" onClose={() => triggerRef.current?.focus()} onCancel={(event) => { event.preventDefault(); close(); }} onKeyDownCapture={(event) => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); close(); } }} ref={dialogRef}>
+    <button aria-label="Search BoomoTech" className="header-control header-search" onClick={(event) => open(event.currentTarget)} ref={triggerRef} type="button"><SearchIcon /><span>Search</span></button>
+    <dialog aria-labelledby="site-search-title" className="search-dialog" onClose={() => { const opener = openerRef.current; if (opener?.isConnected) opener.focus(); openerRef.current = null; }} onCancel={(event) => { event.preventDefault(); close(); }} onKeyDownCapture={(event) => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); close(); } }} ref={dialogRef}>
       <div className="search-dialog__surface">
         <header><div><p className="eyebrow">SITE SEARCH</p><h2 id="site-search-title">What can we help you find?</h2></div><button aria-label="Close search" className="search-dialog__close" onClick={close} type="button">×</button></header>
         <label className="search-dialog__input"><SearchIcon /><span className="sr-only">Search BoomoTech</span><input autoComplete="off" placeholder="Try “Wi-Fi”, “backup” or “Microsoft 365”" ref={inputRef} type="search" value={query} onChange={(event) => { setQuery(event.target.value); setActive(0); }} onKeyDown={(event) => {
-          if (!results.length) return;
+          if (!results.length || !results[active]) return;
           if (event.key === "ArrowDown") { event.preventDefault(); setActive((current) => (current + 1) % results.length); }
           if (event.key === "ArrowUp") { event.preventDefault(); setActive((current) => (current - 1 + results.length) % results.length); }
           if (event.key === "Enter") { event.preventDefault(); window.location.assign(results[active].path); }
         }} /></label>
         <p aria-live="polite" className="search-dialog__status">{query.length >= 2 ? `${results.length} ${results.length === 1 ? "result" : "results"}` : "Enter at least two characters"}</p>
-        {results.length ? <ul className="search-results">{results.map((result, index) => <li className={index === active ? "is-active" : ""} key={result.path}><Link href={result.path} onClick={close} onFocus={() => setActive(index)}><span>{result.category}</span><strong>{result.title}</strong><p>{result.description}</p></Link></li>)}</ul> : query.length >= 2 ? <div className="search-empty"><h3>We can still help you find the right starting point.</h3><p>Send the problem in your own words without choosing a service first.</p><Link className="button-link button-link--primary" href="/booking?service=other&intent=consultation" onClick={close}>Send a request</Link></div> : <div className="search-suggestions"><span>Popular starting points</span><Link href="/services/it-support" onClick={close}>IT support</Link><Link href="/services/network-wifi" onClick={close}>Wi-Fi and networks</Link><Link href="/tools/it-health-check" onClick={close}>IT Health Check</Link></div>}
+        {results.length ? <ul className="search-results">{results.map((result, index) => <li className={index === active ? "is-active" : ""} key={result.path}><Link href={result.path} onClick={close} onFocus={() => setActive(index)}><span>{result.category}</span><strong>{result.title}</strong><p>{result.description}</p></Link></li>)}</ul> : query.length >= 2 ? <div className="search-empty"><h3>We can still help you find the right starting point.</h3><p>Send the problem in your own words without choosing a service first.</p><ButtonLink href="/booking?service=other&intent=consultation" onClick={close}>Send a request</ButtonLink></div> : <div className="search-suggestions"><span>Popular starting points</span><Link href="/services/it-support" onClick={close}>IT support</Link><Link href="/services/network-wifi" onClick={close}>Wi-Fi and networks</Link><Link href="/tools/it-health-check" onClick={close}>IT Health Check</Link></div>}
       </div>
     </dialog>
   </>;

@@ -37,7 +37,7 @@ The migration is additive. Rollback should restore the pre-migration database ba
 
 ## Administrator bootstrap and recovery
 
-`pnpm admin:seed` reads `ADMIN_USERNAME`, `ADMIN_EMAIL` and `ADMIN_TEMP_PASSWORD` from the protected environment. It resets the selected administrator's sessions and MFA enrolment, then requires fresh setup on next sign-in. Remove the temporary password from the environment immediately after use.
+`pnpm admin:seed` reads `ADMIN_USERNAME`, `ADMIN_EMAIL` and `ADMIN_TEMP_PASSWORD` from the protected environment for initial creation only. An exact existing verified administrator is left unchanged; conflicting identities fail closed. Bootstrap does not reset passwords, sessions or MFA enrolment. Remove the temporary password from the environment immediately after initial creation and use the supported password-reset flow for recovery.
 
 Lost-device recovery uses one saved recovery code at `/admin/mfa`. If no recovery code remains, use the owner-approved identity recovery process and rerun the protected administrator seed command during a controlled maintenance window. This deliberately invalidates current sessions and existing factors.
 

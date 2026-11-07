@@ -1,9 +1,21 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import path from "node:path";
 import * as schema from "./schema";
 import { getDatabaseUrl } from "@/lib/config/environment";
 
-const e2eDatabasePath = process.env.AUTH_E2E_DATABASE_PATH;
+const configuredE2ePath = process.env.AUTH_E2E_DATABASE_PATH?.trim();
+const testDatabaseAllowed = process.env.NODE_ENV === "test" || process.env.AUTH_EMAIL_CAPTURE_MODE === "test";
+if (configuredE2ePath && !testDatabaseAllowed) {
+  throw new Error("Database configuration error: AUTH_E2E_DATABASE_PATH is permitted only in the isolated test environment.");
+}
+const e2eDatabasePath = configuredE2ePath ? path.resolve(configuredE2ePath) : undefined;
+if (e2eDatabasePath && process.env.NODE_ENV !== "test") {
+  const permittedRoot = path.resolve(process.cwd(), ".test-db");
+  if (!e2eDatabasePath.startsWith(`${permittedRoot}${path.sep}`)) {
+    throw new Error("Database configuration error: the isolated test database must remain under .test-db.");
+  }
+}
 const connectionString = e2eDatabasePath ? "" : getDatabaseUrl();
 
 const globalDatabase = globalThis as typeof globalThis & {

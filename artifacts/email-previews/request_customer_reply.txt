@@ -1,0 +1,21 @@
+BOOMOTECH
+
+A customer has replied
+
+Hello BoomoTech team,
+
+A customer added a message to an existing request.
+
+Reference: BT-PREVIEW001
+Customer: Alexandra A Very Long Fictional Customer Name <Example>
+Service: Cloud and infrastructure
+
+Customer reply:
+This is a fictional multiline update.
+No real customer or request data is included.
+
+View request: https://boomotech.com.au/admin/requests/BT-PREVIEW001
+
+Do not send passwords, MFA codes, recovery keys or payment-card information by email.
+
+BoomoTech — practical technology support and smarter systems.

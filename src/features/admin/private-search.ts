@@ -22,7 +22,9 @@ export function sealPrivateSearch(userId: string, query: string) {
 export function openPrivateSearch(value: string | undefined, userId: string) {
   if (!value) return undefined;
   try {
+    if (!/^[A-Za-z0-9_-]+$/.test(value)) return undefined;
     const packed = Buffer.from(value, "base64url");
+    if (packed.toString("base64url") !== value) return undefined;
     if (packed.length < 29) return undefined;
     const decipher = createDecipheriv("aes-256-gcm", key(), packed.subarray(0, 12));
     decipher.setAuthTag(packed.subarray(12, 28));

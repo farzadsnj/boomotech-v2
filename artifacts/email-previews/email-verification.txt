@@ -1,0 +1,17 @@
+BOOMOTECH
+
+Verify your BoomoTech email
+
+Hi Fictional Preview Customer,
+
+Verify your email address to activate your BoomoTech customer account.
+
+This fictional preview link expires in 60 minutes and can be used once.
+
+If you did not create this account, ignore this email.
+
+Verify email address: https://boomotech.com.au/verify-email?token=FICTIONAL_PREVIEW_ONLY
+
+BoomoTech will never ask you to send your password, MFA code or recovery code by email.
+
+BoomoTech — practical technology support and smarter systems.
