@@ -5,6 +5,11 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("server operations scripts", () => {
+  it("refuses a normal production start until the protected environment passes preflight", () => {
+    const packageManifest = JSON.parse(read("package.json")) as { scripts?: Record<string, string> };
+    expect(packageManifest.scripts?.start).toMatch(/^pnpm prod:check && next start /);
+  });
+
   it("creates and validates database and configuration backups with retention tiers", () => {
     const script = read("scripts/server/backup-boomotech.sh");
     expect(script).toContain('pg_dump --dbname="$DATABASE_URL" --format=custom');
@@ -107,6 +112,12 @@ describe("server operations scripts", () => {
     expect(nginx).toContain("image/svg+xml");
     expect(nginx).toContain("proxy_pass http://127.0.0.1:3000");
     expect(nginx).toContain("listen 127.0.0.1:80");
+  });
+
+  it("checks the protected production environment before systemd starts Next.js", () => {
+    const service = read("scripts/server/security/boomotech-hardening.conf.example");
+    expect(service).toContain("ExecStartPre=/var/www/boomotech/node_modules/.bin/tsx scripts/check-production-env.ts");
+    expect(service).toContain("next start --hostname 127.0.0.1 --port 3000");
   });
 
   it("isolates production credentials and origins from deployment unit tests", () => {

@@ -14,7 +14,7 @@ Better Auth's PostgreSQL rate limiter remains active as a complementary per-clie
 
 ## Mandatory administrator MFA (A15)
 
-Better Auth 1.7.6 supplies TOTP and encrypted recovery-code storage. The migration adds `user.two_factor_enabled` and the `two_factor` table. TOTP secrets and recovery codes are encrypted with `BETTER_AUTH_SECRET`; they are never written to logs, browser storage or analytics.
+Better Auth 1.7.18 supplies TOTP and encrypted recovery-code storage. The migration adds `user.two_factor_enabled` and the `two_factor` table. TOTP secrets and recovery codes are encrypted with `BETTER_AUTH_SECRET`; they are never written to logs, browser storage or analytics.
 
 Administrator access requires both `role=admin` and `twoFactorEnabled=true` on every server-rendered admin page and administrator request API. Better Auth administrator endpoints also reject an administrator session without MFA. Password-only sessions cannot reach privileged features. The challenge cookie lasts five minutes, trusted-device persistence is effectively disabled, and five invalid second-factor attempts cause Better Auth's 15-minute factor lockout.
 
@@ -39,7 +39,15 @@ The migration is additive. Rollback should restore the pre-migration database ba
 
 `pnpm admin:seed` reads `ADMIN_USERNAME`, `ADMIN_EMAIL` and `ADMIN_TEMP_PASSWORD` from the protected environment for initial creation only. An exact existing verified administrator is left unchanged; conflicting identities fail closed. Bootstrap does not reset passwords, sessions or MFA enrolment. Remove the temporary password from the environment immediately after initial creation and use the supported password-reset flow for recovery.
 
-Lost-device recovery uses one saved recovery code at `/admin/mfa`. If no recovery code remains, use the owner-approved identity recovery process and rerun the protected administrator seed command during a controlled maintenance window. This deliberately invalidates current sessions and existing factors.
+Lost-device recovery uses one saved recovery code at `/admin/mfa`. If no recovery code remains, stop and use an owner-approved identity-recovery procedure. The create-only administrator bootstrap cannot recover an existing account and must not be used to reset a password, remove MFA or invalidate sessions. An exceptional MFA recovery tool is not currently implemented; direct production-row changes are outside the approved procedure.
+
+## November 2026 login investigation
+
+The isolated regression matrix can create an existing customer and an MFA-enabled administrator, perform fresh password logins, rerun bootstrap, reapply migrations and reload the application modules against the same persistent database without changing the credential hash, MFA row or existing sessions. It also confirms that a supported older short password hash remains usable and that passwords containing Unicode or surrounding whitespace are verified exactly rather than trimmed or normalised.
+
+No repository test reproduced rejection of a correct existing password. This means the reported production failures must not be declared fixed from local evidence alone. The remaining production hypotheses are an unintended database/schema or volume, a changed `BETTER_AUTH_SECRET` affecting sessions/MFA material, an origin/proxy/cookie mismatch, a valid temporary lockout, or a damaged/duplicate credential relationship. A changed authentication secret does not rewrite the Argon2id password hash.
+
+Two configuration risks were hardened: non-production connection caching now refuses to reuse a database connection when the configured database identity changes, and both the normal `pnpm start` command and the reviewed systemd drop-in run `pnpm prod:check`/the equivalent preflight before starting Next.js. The preflight rejects test database/email modes, temporary bootstrap passwords, missing production database/authentication values and the wrong public origin.
 
 ## SEC-017 and CodeQL High
 

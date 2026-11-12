@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { generateMetadata as generateContentMetadata } from "./[...segments]/page";
-import { generateMetadata as generateArticleMetadata } from "./blog/[slug]/page";
-import { metadata as blogMetadata } from "./blog/page";
-import { metadata as homeMetadata } from "./page";
+import { generateMetadata as generateContentMetadata } from "./(site)/[...segments]/page";
+import { generateMetadata as generateArticleMetadata } from "./(site)/blog/[slug]/page";
+import { metadata as blogMetadata } from "./(site)/blog/page";
+import { metadata as homeMetadata } from "./(site)/page";
 import { siteMetadata as rootMetadata } from "@/lib/site-metadata";
 import { publishedArticles } from "@/content/blog";
 

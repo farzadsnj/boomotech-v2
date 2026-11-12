@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import * as schema from "./schema";
 import { getDatabaseUrl } from "@/lib/config/environment";
@@ -17,12 +18,21 @@ if (e2eDatabasePath && process.env.NODE_ENV !== "test") {
   }
 }
 const connectionString = e2eDatabasePath ? "" : getDatabaseUrl();
+const connectionIdentity = e2eDatabasePath
+  ? `test:${e2eDatabasePath}`
+  : `postgres:${createHash("sha256").update(connectionString).digest("hex")}`;
 
 const globalDatabase = globalThis as typeof globalThis & {
   boomotechSql?: ReturnType<typeof postgres>;
   boomotechDb?: ReturnType<typeof drizzle<typeof schema>>;
   boomotechClose?: () => Promise<void>;
+  boomotechConnectionIdentity?: string;
 };
+
+if (process.env.NODE_ENV !== "production" && globalDatabase.boomotechDb
+  && globalDatabase.boomotechConnectionIdentity !== connectionIdentity) {
+  throw new Error("Database configuration changed while this process was running. Restart the process before continuing so it cannot reuse a connection to a different database.");
+}
 
 async function createDatabase() {
   if (e2eDatabasePath) {
@@ -50,6 +60,7 @@ const connection = globalDatabase.boomotechDb && globalDatabase.boomotechClose
 if (process.env.NODE_ENV !== "production") {
   globalDatabase.boomotechDb = connection.database;
   globalDatabase.boomotechClose = connection.close;
+  globalDatabase.boomotechConnectionIdentity = connectionIdentity;
 }
 
 export const db = connection.database;

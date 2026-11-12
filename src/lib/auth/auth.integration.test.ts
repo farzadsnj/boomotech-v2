@@ -2,7 +2,7 @@ import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PGlite } from "@electric-sql/pglite";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 
 let auth: (typeof import("./auth"))["auth"];
@@ -153,6 +153,28 @@ describe("database-backed account authentication", () => {
     expect(await after.json()).toBeNull();
   });
 
+  it("keeps existing supported hashes usable without trimming or rewriting passwords", async () => {
+    const { hashPassword } = await import("./password");
+    const legacyId = "existing-customer-password-compatibility";
+    const legacyPassword = "Legacy9!x";
+    const exactId = "exact-customer-password-input";
+    const exactPassword = "  🧪Exact Password9  ";
+    await db.insert(userTable).values([
+      { id: legacyId, name: "Existing Customer", email: "existing-password@example.test", emailVerified: true },
+      { id: exactId, name: "Exact Password Customer", email: "exact-password@example.test", emailVerified: true },
+    ]);
+    await db.insert(account).values([
+      { id: "existing-customer-password-account", accountId: legacyId, providerId: "credential", userId: legacyId, password: await hashPassword(legacyPassword) },
+      { id: "exact-customer-password-account", accountId: exactId, providerId: "credential", userId: exactId, password: await hashPassword(exactPassword) },
+    ]);
+
+    expect((await call("/sign-in/email", { email: "existing-password@example.test", password: legacyPassword })).status).toBe(200);
+    expect((await call("/sign-in/email", { email: "exact-password@example.test", password: exactPassword })).status).toBe(200);
+    expect((await call("/sign-in/email", { email: "exact-password@example.test", password: exactPassword.trim() })).status).toBe(401);
+    await db.delete(authLoginGuard);
+    await db.delete(rateLimitTable);
+  });
+
   it("rotates session material on sign-in and revokes every device session", async () => {
     const fixedCookie = "better-auth.session_token=synthetic-fixed-session";
     const firstLogin = await call("/sign-in/email", { email: "taylor@example.com", password: "SecurePassword9" }, fixedCookie);
@@ -225,11 +247,22 @@ describe("database-backed account authentication", () => {
     const id = "lockout-customer";
     await db.insert(userTable).values({ id, name: "Lockout Customer", email: "lockout@example.test", emailVerified: true });
     await db.insert(account).values({ id: "lockout-account", accountId: id, providerId: "credential", userId: id, password: await hashPassword("CorrectPassword99") });
+    const warnings = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     let fifth: Response | undefined;
     for (let attempt = 0; attempt < 5; attempt += 1) fifth = await call("/sign-in/email", { email: "lockout@example.test", password: "IncorrectPassword99" });
+    const warningMessages = warnings.mock.calls.map(([message]) => String(message));
+    warnings.mockRestore();
+    const events = warningMessages.flatMap((message) => {
+      if (!message.trimStart().startsWith("{")) return [];
+      try { return [JSON.parse(message) as { event?: string; route?: string }]; } catch { return []; }
+    });
+    expect(events).toContainEqual(expect.objectContaining({ event: "authentication_lockout", route: "/sign-in/email" }));
+    expect(JSON.stringify(events)).not.toContain("lockout@example.test");
+    expect(JSON.stringify(events)).not.toContain("IncorrectPassword99");
     const locked = await call("/sign-in/email", { email: "lockout@example.test", password: "CorrectPassword99" });
-    expect(locked.status).toBe(401);
-    expect(await locked.json()).toEqual(await fifth!.json());
+    expect(fifth!.status).toBe(401);
+    expect(locked.status).toBe(429);
+    expect(await locked.json()).toMatchObject({ code: "AUTHENTICATION_LOCKED" });
     const [guard] = await db.select().from(authLoginGuard);
     expect(guard.failedAttempts).toBe(5);
     expect(guard.lockedUntil?.getTime()).toBeGreaterThan(Date.now());
@@ -249,7 +282,7 @@ describe("database-backed account authentication", () => {
     await Promise.all(Array.from({ length: 5 }, () => call("/sign-in/email", { email: "concurrent@example.test", password: "IncorrectPassword88" })));
     const guards = await db.select().from(authLoginGuard);
     expect(guards.find((guard) => guard.failedAttempts === 5)?.lockedUntil?.getTime()).toBeGreaterThan(Date.now());
-    expect((await call("/sign-in/email", { email: "concurrent@example.test", password: "CorrectPassword88" })).status).toBe(401);
+    expect((await call("/sign-in/email", { email: "concurrent@example.test", password: "CorrectPassword88" })).status).toBe(429);
   });
 
   it("requires administrator TOTP, revokes pre-enrolment sessions and consumes recovery codes once", async () => {

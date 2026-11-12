@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { consumeVerificationGrant } from "@/features/email-verification/grants";
 import { getSiteUrl } from "@/lib/site-url";
+import { validatedReturnPath } from "@/lib/auth/return-path";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const token = url.searchParams.get("token") ?? "";
   const siteUrl = getSiteUrl();
+  const returnTo = validatedReturnPath(url.searchParams.get("returnTo"));
   const errorUrl = new URL("/email-verification-result", siteUrl);
+  if (returnTo) errorUrl.searchParams.set("returnTo", returnTo);
   if (!token || token.length > 4096) {
     errorUrl.searchParams.set("error", "invalid_token");
     return NextResponse.redirect(errorUrl);
@@ -18,7 +21,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(errorUrl);
   }
 
-  const callback = "/dashboard?verified=true";
+  const callback = returnTo ?? "/dashboard?verified=true";
   const authUrl = new URL("/api/auth/verify-email", siteUrl);
   authUrl.searchParams.set("token", token);
   authUrl.searchParams.set("callbackURL", callback);

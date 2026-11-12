@@ -124,6 +124,12 @@ Requirements:
 - Comparison or diagnostic tools
 - Newsletter with explicit consent
 
+## BoomoTech Learning — first implemented scope
+
+PTEpath Reading and Writing is implemented for local review at `/learning/pte-academic` using the existing BoomoTech account and a distinct learning interface. The first content bank covers seven task types, flexible onboarding/plans, mistakes, grammar/collocations and separate progress categories. Speaking and Listening are clearly labelled as future work. Other Learning hub categories remain planned and must not be described as active courses.
+
+The learning migration is generated but not approved for production execution. Public rollout additionally requires owner/legal decisions for learning-record retention, account deletion/export handling and whether manually entered score history should have a separate retention period. Pearson format sources need periodic editorial review because test terminology and scoring guidance can change.
+
 ## Production readiness polish
 
 - Transactional notification worker, customer acknowledgements and guest response emails implemented.

@@ -1,6 +1,6 @@
 # BoomoTech project status
 
-Last updated: 20 October 2026
+Last updated: 8 November 2026
 
 This document is the current operational snapshot of the BoomoTech V2 repository. It complements the detailed architecture, deployment, server-security and feature runbooks. It must be updated whenever a release changes authentication, data handling, infrastructure, public routes, provider integrations or deployment requirements.
 
@@ -34,6 +34,7 @@ Implemented and in active use or production-ready review:
 - Resend outbound email for account and request notifications;
 - Ubuntu/Nginx/Cloudflare Tunnel deployment, monitoring, backup, UFW, Fail2ban and systemd hardening;
 - CI checks for application tests, dependency audit, secret scanning and CodeQL.
+- BoomoTech Learning discovery plus a locally implemented PTEpath Reading/Writing workspace with the original distinct shell, shared verified accounts and generated additive learning migration (not applied to production).
 
 Deliberately disabled or not yet operational:
 
@@ -43,6 +44,9 @@ Deliberately disabled or not yet operational:
 - payments/checkout;
 - public file uploads;
 - inbound business email/web inbox.
+- PTE Speaking and Listening practice, automated/AI grading and any claim of official Pearson scoring or endorsement.
+
+The PTEpath implementation is review-stage local work. Migration `0009_wandering_vapor.sql` has been generated for review and has not been applied to production. The current security release gate and owner/legal decisions remain in force; local learning checks do not change the repository-wide release decision.
 
 ## Security-hardening status
 

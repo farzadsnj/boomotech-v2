@@ -1,4 +1,6 @@
 type SecurityEvent =
+  | "authentication_failed"
+  | "authentication_lockout"
   | "authorization_denied"
   | "origin_rejected"
   | "rate_limit_hit"
@@ -22,6 +24,7 @@ export function recordSecurityEvent(
 ) {
   console.warn(JSON.stringify({
     timestamp: new Date().toISOString(),
+    eventId: crypto.randomUUID(),
     category: "security",
     event,
     ...redactSecurityMetadata(metadata),

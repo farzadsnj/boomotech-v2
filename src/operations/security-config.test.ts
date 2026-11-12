@@ -19,7 +19,7 @@ describe("production security configuration", () => {
 
   it("binds the production Next.js process to loopback on port 3000", () => {
     const packageJson = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")) as { scripts: { start: string } };
-    expect(packageJson.scripts.start).toBe("next start --hostname 127.0.0.1 --port 3000");
+    expect(packageJson.scripts.start).toBe("pnpm prod:check && next start --hostname 127.0.0.1 --port 3000");
   });
 
   it("adds conservative HSTS only in production", async () => {

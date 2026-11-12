@@ -145,10 +145,9 @@ Verified founder copy may state that Farzad Sanjarani is a Brisbane-based IT pro
 
 ## Learning and pricing content
 
-The future learning portal uses typed categories in `src/content/learning.ts`.
-Until reviewed course material exists, `/learning` must describe the planned
-structure honestly and direct visitors to current articles and services. Do not
-present future courses, quizzes, certificates or progress tracking as active.
+The Learning hub uses typed discovery content in `src/content/learning.ts`. PTE Academic Reading and Writing is the first available tool; the remaining IT, networking, Microsoft 365, cybersecurity, cloud, Python/automation and website-development categories remain explicitly planned. Do not advertise lessons, enrolment or certificates for those planned areas.
+
+PTEpath content lives under `src/features/pte`. Its seven task types, 70 original exercises, 24 concise grammar/cohesion lessons and 150 bilingual collocations are independent practice material. The UI must keep app-calculated Reading accuracy, Writing form/self-review and manually entered official/mock results separate. It must never convert a practice percentage into a PTE score or imply Pearson endorsement, official grading, complete four-skill preparation or a result guarantee. Official format URLs and review dates are stored with the task guidance and documented in `docs/LEARNING-PTEPATH.md`.
 
 Pricing presentation uses `src/content/pricing.ts`. Each record explains the
 pricing basis, possible inclusions and limitations. Numeric rates, starting

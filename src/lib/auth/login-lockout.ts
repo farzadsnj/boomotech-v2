@@ -4,6 +4,7 @@ import { APIError, createAuthMiddleware, isAPIError } from "better-auth/api";
 import { db } from "@/db";
 import { authLoginGuard, session, user } from "@/db/schema";
 import { requireBetterAuthSecret } from "./auth-env";
+import { recordSecurityEvent } from "@/lib/security/events";
 
 export const LOGIN_FAILURE_LIMIT = 5;
 export const LOGIN_LOCK_MINUTES = 15;
@@ -29,13 +30,13 @@ async function guardKey(path: string, body: Record<string, unknown>) {
   return protectedLoginIdentifier(knownUser ? `user:${knownUser.id}` : `unknown:${path}:${identifier}`);
 }
 
-async function assertNotLocked(identifierHash: string, path: string) {
+async function assertNotLocked(identifierHash: string) {
   const [guard] = await db.select({ lockedUntil: authLoginGuard.lockedUntil }).from(authLoginGuard)
     .where(eq(authLoginGuard.identifierHash, identifierHash)).limit(1);
   if (guard?.lockedUntil && guard.lockedUntil.getTime() > Date.now()) {
-    throw APIError.from("UNAUTHORIZED", {
-      code: path === "/sign-in/username" ? "INVALID_USERNAME_OR_PASSWORD" : "INVALID_EMAIL_OR_PASSWORD",
-      message: path === "/sign-in/username" ? "Invalid username or password" : "Invalid email or password",
+    throw APIError.from("TOO_MANY_REQUESTS", {
+      code: "AUTHENTICATION_LOCKED",
+      message: "Too many sign-in attempts. Wait before trying again.",
     });
   }
 }
@@ -66,6 +67,9 @@ export async function recordLoginFailure(identifierHash: string) {
       END,
       updated_at = NOW()
   `);
+  const [state] = await db.select({ failedAttempts: authLoginGuard.failedAttempts, lockedUntil: authLoginGuard.lockedUntil })
+    .from(authLoginGuard).where(eq(authLoginGuard.identifierHash, identifierHash)).limit(1);
+  return state ?? { failedAttempts: 1, lockedUntil: null };
 }
 
 async function resetLoginFailures(identifierHash: string) {
@@ -87,7 +91,7 @@ export function persistentLoginLockout() {
         matcher: (context: { path?: string }) => Boolean(context.path && LOGIN_PATHS.has(context.path)),
         handler: createAuthMiddleware(async (context) => {
           try {
-            await assertNotLocked(await guardKey(context.path, context.body as Record<string, unknown>), context.path);
+            await assertNotLocked(await guardKey(context.path, context.body as Record<string, unknown>));
           } catch (error) {
             if (isAPIError(error)) throw error;
             throw unavailable();
@@ -102,7 +106,16 @@ export function persistentLoginLockout() {
             const returned = context.context.returned;
             if (isAPIError(returned)) {
               const code = typeof returned.body?.code === "string" ? returned.body.code : "";
-              if (INVALID_CREDENTIAL_CODES.has(code)) await recordLoginFailure(key);
+              if (INVALID_CREDENTIAL_CODES.has(code)) {
+                const state = await recordLoginFailure(key);
+                recordSecurityEvent(state.lockedUntil && state.lockedUntil.getTime() > Date.now()
+                  ? "authentication_lockout"
+                  : "authentication_failed", {
+                  route: context.path,
+                  reason: "invalid_credentials",
+                  attempt: Math.min(state.failedAttempts, LOGIN_FAILURE_LIMIT),
+                });
+              }
               return;
             }
             if (context.context.newSession && context.context.newSession.user.twoFactorEnabled !== true) await resetLoginFailures(key);

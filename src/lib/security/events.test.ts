@@ -14,7 +14,7 @@ describe("security event redaction", () => {
     const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     recordSecurityEvent("authorization_denied", { route: "/api/example", cookie: "synthetic-sensitive-value" });
     const output = String(warning.mock.calls[0]?.[0]);
-    expect(JSON.parse(output)).toMatchObject({ category: "security", event: "authorization_denied", route: "/api/example", cookie: "[REDACTED]" });
+    expect(JSON.parse(output)).toMatchObject({ category: "security", event: "authorization_denied", route: "/api/example", cookie: "[REDACTED]", eventId: expect.any(String) });
     expect(output).not.toContain("synthetic-sensitive-value");
     warning.mockRestore();
   });

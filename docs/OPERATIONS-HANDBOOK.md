@@ -522,6 +522,18 @@ PASSWORD_RESET_TTL_MINUTES=60
 
 `AUTH_FROM_EMAIL` is logically separate from `BOOKING_FROM_EMAIL`. The same Resend API key may be used, but sender permissions and templates remain isolated in code. Never configure `AUTH_EMAIL_CAPTURE_PATH` in production; that variable exists only for automated tests. Confirm signup, verification, forgot-password, reset, expiry, reuse rejection, resend cooldown, session revocation and dashboard blocking before launch.
 
+The application must not report an authentication email as sent when Resend rejects it. Verification and password-reset delivery failures now propagate as controlled provider errors and create redacted `security_dependency_unavailable` events. The public response contains no recipient address, provider body, key or token. The resend form displays a temporary-delivery error instead of a false success message.
+
+Before relying on authentication email, confirm the exact `AUTH_FROM_EMAIL` domain is marked **Verified for sending** in the Resend dashboard. Check every DNS record shown by Resend, not only DKIM. A default Resend return path normally requires the provider-supplied MX and SPF TXT records in addition to DKIM. Use the precise record names/values shown for the selected Resend domain; do not infer or copy records from another domain. A non-empty API key and sender variable do not prove that the sender domain is authorised.
+
+Safe delivery triage:
+
+1. Review redacted service logs for `dependency=authentication_email` and `reason=configuration|delivery`; do not paste tokens or recipient addresses into tickets.
+2. In Resend, confirm the configured API key belongs to the same team as the verified sender domain and inspect the email activity/rejection reason.
+3. Verify the current public DNS records against the Resend dashboard. DNS propagation alone cannot repair an incorrect host name.
+4. After the domain is verified, send one approved verification request to an owner-controlled test account and confirm receipt, one-time use and expiry.
+5. Do not use test capture variables in production and do not describe a request as delivered until the provider accepts it.
+
 ## 13. Booking email configuration
 
 Database storage works without email delivery. For real notifications, create and verify a Resend account and sender domain, then set server-only values:
@@ -1046,8 +1058,10 @@ Check:
 - PostgreSQL is running;
 - migrations are current;
 - browser cookies are enabled;
-- the admin seed completed successfully;
+- the approved existing account has exactly one credential relationship and the expected verified role state (checked read-only, without selecting the password hash);
 - the application was restarted after environment changes.
+
+Do not rerun administrator bootstrap as a login-repair step. It is create-only and an existing exact administrator is intentionally left unchanged. Check the redacted authentication event category, temporary login-lock expiry, database/schema identity and `boomotech.service` environment source before considering the supported password-reset flow. Never delete MFA or lockout records to make a login succeed.
 
 ### Booking stores but email is not sent
 

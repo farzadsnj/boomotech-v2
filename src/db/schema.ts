@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { bigint, boolean, check, index, integer, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { bigint, boolean, check, date, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -221,5 +221,108 @@ export const inAppNotificationRead = pgTable("in_app_notification_read", {
   primaryKey({ columns: [table.notificationId, table.userId] }),
   index("in_app_notification_read_user_idx").on(table.userId, table.readAt),
 ]);
+
+export const pteLearningProfile = pgTable("pte_learning_profile", {
+  userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+  onboardingComplete: boolean("onboarding_complete").default(false).notNull(),
+  startDate: date("start_date"),
+  examDate: date("exam_date"),
+  durationDays: integer("duration_days"),
+  dailyMinutes: integer("daily_minutes"),
+  studyDays: jsonb("study_days").$type<number[]>(),
+  preferredTime: text("preferred_time"),
+  timezone: text("timezone").default("Australia/Brisbane").notNull(),
+  targetScore: integer("target_score"),
+  currentLevel: text("current_level"),
+  previousReadingScore: integer("previous_reading_score"),
+  previousWritingScore: integer("previous_writing_score"),
+  persianHelp: boolean("persian_help").default(true).notNull(),
+  planRevision: integer("plan_revision").default(0).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  check("pte_learning_profile_duration_check", sql`${table.durationDays} is null or ${table.durationDays} between 1 and 730`),
+  check("pte_learning_profile_minutes_check", sql`${table.dailyMinutes} is null or ${table.dailyMinutes} between 10 and 480`),
+  check("pte_learning_profile_target_check", sql`${table.targetScore} is null or ${table.targetScore} between 10 and 90`),
+]);
+
+export const ptePlanDay = pgTable("pte_plan_day", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  planRevision: integer("plan_revision").notNull(),
+  studyDate: date("study_date").notNull(),
+  phase: text("phase").notNull(),
+  exerciseIds: jsonb("exercise_ids").$type<string[]>().notNull(),
+  review: boolean("review").default(false).notNull(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("pte_plan_day_user_revision_date_unique").on(table.userId, table.planRevision, table.studyDate),
+  index("pte_plan_day_user_date_idx").on(table.userId, table.studyDate),
+]);
+
+export const pteAttempt = pgTable("pte_attempt", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  idempotencyKey: text("idempotency_key").notNull(),
+  exerciseId: text("exercise_id").notNull(),
+  taskType: text("task_type").notNull(),
+  answer: jsonb("answer").$type<unknown>().notNull(),
+  correct: integer("correct"),
+  total: integer("total").default(0).notNull(),
+  resultKind: text("result_kind").notNull(),
+  selfReview: jsonb("self_review").$type<string[]>(),
+  elapsedSeconds: integer("elapsed_seconds").default(0).notNull(),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("pte_attempt_user_idempotency_unique").on(table.userId, table.idempotencyKey),
+  index("pte_attempt_user_submitted_idx").on(table.userId, table.submittedAt),
+  index("pte_attempt_user_task_idx").on(table.userId, table.taskType),
+  check("pte_attempt_elapsed_check", sql`${table.elapsedSeconds} between 0 and 86400`),
+]);
+
+export const pteDraft = pgTable("pte_draft", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  exerciseId: text("exercise_id").notNull(),
+  response: text("response").default("").notNull(),
+  elapsedSeconds: integer("elapsed_seconds").default(0).notNull(),
+  timerStartedAt: timestamp("timer_started_at", { withTimezone: true }),
+  timerDurationSeconds: integer("timer_duration_seconds"),
+  timerRunning: boolean("timer_running").default(false).notNull(),
+  version: integer("version").default(0).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("pte_draft_user_exercise_unique").on(table.userId, table.exerciseId),
+  index("pte_draft_user_updated_idx").on(table.userId, table.updatedAt),
+]);
+
+export const pteMistake = pgTable("pte_mistake", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  attemptId: text("attempt_id").notNull().references(() => pteAttempt.id, { onDelete: "cascade" }),
+  exerciseId: text("exercise_id").notNull(),
+  category: text("category").notNull(),
+  learnerAnswer: text("learner_answer").notNull(),
+  correctAnswer: text("correct_answer"),
+  explanation: text("explanation").notNull(),
+  lessonId: text("lesson_id"),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  reviewCount: integer("review_count").default(0).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("pte_mistake_user_reviewed_idx").on(table.userId, table.reviewedAt),
+  index("pte_mistake_attempt_idx").on(table.attemptId),
+]);
+
+export const pteManualScore = pgTable("pte_manual_score", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  source: text("source").notNull(),
+  scoreDate: date("score_date").notNull(),
+  readingScore: integer("reading_score"),
+  writingScore: integer("writing_score"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index("pte_manual_score_user_date_idx").on(table.userId, table.scoreDate)]);
 
 export const authSchema = { user, session, account, verification, rateLimit, twoFactor };

@@ -43,7 +43,7 @@ The script:
 
 There is no destructive Git reset and no automatic database rollback. Production credentials are never intentionally passed into the unit-test process, preventing tests from contacting the live database, Resend or OpenAI configuration. The production environment is loaded again only after tests pass, before migrations and the production build. A migration failure leaves the running service untouched. A restart or health-check failure prints service diagnostics and stops for manual investigation.
 
-The deployment script does not run `pnpm admin:seed` or any credential recovery command. `pnpm prod:check` rejects `ADMIN_TEMP_PASSWORD`, `AUTH_E2E_DATABASE_PATH`, email-capture variables and the E2E administrator password in the steady-state production environment. Unit tests explicitly remove production database and authentication variables. A deployment, build, migration or restart must never create, reseed or reset an administrator.
+The deployment script does not run `pnpm admin:seed` or any credential recovery command. `pnpm prod:check` rejects `ADMIN_TEMP_PASSWORD`, `AUTH_E2E_DATABASE_PATH`, email-capture variables and the E2E administrator password in the steady-state production environment. Unit tests explicitly remove production database and authentication variables. The normal `pnpm start` command runs this preflight before Next.js, and the reviewed systemd hardening template runs the same check through `ExecStartPre`. A deployment, build, migration or restart must never create, reseed or reset an administrator.
 
 ## Administrator sign-in diagnostics and recovery
 
@@ -54,7 +54,11 @@ The previously destructive bootstrap behaviour was a confirmed code defect, but 
 3. Check the aggregate login-guard lock expiry and wait for a valid temporary lockout to expire. Do not delete all protection records.
 4. Confirm `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SITE_URL`, proxy headers and secure-cookie mode come from the approved deployment environment. Compare secret-manager versions or protected configuration audit records; do not echo values.
 5. Distinguish an invalidated session from rejection of a fresh correct password, then distinguish password, email-verification, MFA and infrastructure stages using the redacted authentication error category in server logs.
+6. For an administrator blocked after repeated attempts, wait for the persisted lockout period to expire or use the supported password-reset route with the verified administrator email. Do not delete the lockout row, rerun bootstrap, disable MFA or recreate the account.
+7. Confirm the `AUTH_FROM_EMAIL` domain is verified for **sending** in Resend and that all provider-supplied DKIM, SPF and MX records are present. Environment preflight confirms configuration is present; it cannot prove that Resend has accepted the domain or API key.
 6. Confirm the database/volume was not recreated and review operator history for any manual `admin:seed` invocation. No lifecycle script calls it.
+
+The local isolated suite did not reproduce rejection of a correct existing customer or administrator password. Treat the checks above as required production evidence, not as instructions to mutate authentication data. If a fresh password attempt fails, capture only the redacted event category/event ID and the service/database identity checks. Do not print or copy the password, hash, cookie, token, MFA secret, recovery code, connection string or environment file.
 
 If the password genuinely needs recovery, use `/forgot-password` with the administrator's verified email and complete the single-use link. This revokes sessions according to the existing Better Auth policy but preserves MFA. Bootstrap is only for the initial account; when it reports an existing identity, no recovery action occurs. A conflicting identity requires an owner-reviewed database investigation rather than an automatic role, password or MFA change.
 

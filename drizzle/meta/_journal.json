@@ -64,6 +64,13 @@
       "when": 1792663139347,
       "tag": "0008_powerful_baron_strucker",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794058637191,
+      "tag": "0009_wandering_vapor",
+      "breakpoints": true
     }
   ]
 }

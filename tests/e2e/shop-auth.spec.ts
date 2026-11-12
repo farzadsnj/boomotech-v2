@@ -66,9 +66,13 @@ test.describe("shop catalogue", () => {
 
   test("mobile product rows keep touch-sized snap tracks", async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 568 }); await page.goto("/shop");
+    await page.waitForLoadState("networkidle");
     const row = page.getByTestId("product-row").first();
+    await row.scrollIntoViewIfNeeded();
+    await expect(row.locator(".product-card").first()).toBeVisible();
     expect(await row.evaluate((node) => getComputedStyle(node).scrollSnapType)).toMatch(/(x|inline) mandatory/);
     const rowBox = await row.boundingBox(); const cardBox = await row.locator(".product-card").first().boundingBox();
+    expect(rowBox).not.toBeNull(); expect(cardBox).not.toBeNull();
     expect(cardBox!.width).toBeGreaterThan(250); expect(cardBox!.width).toBeLessThan(rowBox!.width);
   });
 
@@ -86,6 +90,7 @@ test.describe("shop catalogue", () => {
 
   test("shop search is keyboard accessible", async ({ page }) => {
     await page.goto("/shop");
+    await page.waitForLoadState("networkidle");
     await page.getByLabel("Category").focus();
     await page.keyboard.press("Tab");
     await expect(page.getByLabel("Search products")).toBeFocused();
@@ -110,6 +115,26 @@ test.describe("database-backed accounts", () => {
     password: "CustomerPassword9",
   };
   let requestReference = "";
+
+  test("reports verification delivery failures honestly and exposes administrator recovery", async ({ page }) => {
+    await page.route("**/api/auth/send-verification-email", async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ code: "AUTHENTICATION_TEMPORARILY_UNAVAILABLE", message: "Email service unavailable" }),
+      });
+    });
+    await page.goto("/check-email");
+    await page.waitForLoadState("networkidle");
+    await page.getByLabel("Email address").fill("fictional-customer@example.test");
+    await page.getByRole("button", { name: "Resend verification email" }).click();
+    await expect(page.locator(".auth-form__error[role='alert']")).toContainText("Verification email is temporarily unavailable");
+    await expect(page.getByText(/new link will be sent/i)).toHaveCount(0);
+
+    await page.unroute("**/api/auth/send-verification-email");
+    await page.goto("/admin/login");
+    await expect(page.getByRole("link", { name: "Forgot the administrator password?" })).toHaveAttribute("href", "/forgot-password");
+  });
 
   test("registers a customer, protects the dashboard and invalidates the session", async ({ page }) => {
     await page.goto("/verify-email?token=invalid-token");

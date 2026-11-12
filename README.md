@@ -51,6 +51,8 @@ Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:security`, `pnpm buil
 
 The architecture and outstanding assumptions are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Search indexing stays disabled until `SITE_URL=https://boomotech.com.au` and `SITE_INDEXING_ENABLED=true` are applied to a reviewed production rebuild after launch approval. Preview and staging origins remain non-indexable. See [docs/WEBSITE-OPTIMISATION.md](docs/WEBSITE-OPTIMISATION.md) for the measured performance and SEO audit, and [docs/UI-UX-IMPROVEMENTS.md](docs/UI-UX-IMPROVEMENTS.md) for the wider layout, service discovery, orbital interactions, pricing and learning architecture.
 
+`/learning/pte-academic` is the integrated PTEpath Reading and Writing workspace. It deliberately uses its own route-group layout and original pale-blue/sidebar visual template rather than the marketing shell. Guests can preview the workspace; durable plans, drafts, attempts, mistakes and manually entered score history require the existing verified BoomoTech account. Learning records are owned by the immutable Better Auth user ID in PostgreSQL and are never authorised from an email address, URL user ID or legacy cookie. See [docs/LEARNING-PTEPATH.md](docs/LEARNING-PTEPATH.md) for routes, content, official-rule sources, migration review and scoring boundaries.
+
 ## Interface and content system
 
 The public navigation and service catalogue use the Support, Secure, Improve and Build taxonomy in `src/content/service-groups.ts`. This file derives its records from the canonical service catalogue, so the header mega menu, homepage capability layout and services directory do not maintain disconnected service names or URLs.

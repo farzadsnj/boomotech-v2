@@ -9,6 +9,9 @@ describe("local public search", () => {
     expect(searchSite("printer").some((result) => result.path === "/services/it-support")).toBe(true);
     expect(searchSite("multi factor").some((result) => result.path === "/services/cybersecurity")).toBe(true);
   });
+  it.each(["learning", "PTE", "reading practice", "writing practice"])("finds the PTE introduction for %s", (query) => {
+    expect(searchSite(query).some((result) => result.path === "/learning/pte-academic")).toBe(true);
+  });
   it.each([
     ["my laptop is slow", "/services/it-support"],
     ["wifi keeps dropping", "/services/network-wifi"],
