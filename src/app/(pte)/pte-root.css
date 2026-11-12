@@ -1,0 +1,9 @@
+body:has(.pte-route-root) {
+  margin: 0;
+  background: #f3f9fd;
+}
+
+.pte-route-root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
