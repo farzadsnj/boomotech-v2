@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { serviceGroups } from "@/content/service-groups";
 import { NavigationLink } from "./navigation-link";
 import { ServiceDiscoveryPanel } from "./service-discovery-panel";
+import { learningNavigation } from "@/content/learning";
 
 function Chevron() { return <svg aria-hidden="true" viewBox="0 0 12 8"><path d="m1 1 5 5 5-5" /></svg>; }
 
@@ -33,7 +34,7 @@ export function DesktopNavigation() {
       {serviceActive ? <span className="sr-only">Current section</span> : null}
       {open === "services" ? <div className="mega-menu mega-menu--services">
         <ServiceDiscoveryPanel />
-        <div className="mega-menu__groups">{serviceGroups.map((group) => <section key={group.id}><h3>{group.label}</h3><p>{group.heading}</p><ul>{group.services.map((service) => <li key={service.path}><Link href={service.path}>{service.name}</Link></li>)}</ul></section>)}</div>
+        <div className="mega-menu__groups">{serviceGroups.map((group) => <section key={group.id}><h3>{group.label}</h3><p>{group.heading}</p><ul>{group.services.map((service) => <li key={service.path}><Link href={service.path}>{service.name}</Link></li>)}</ul></section>)}<section className="mega-menu__learning"><div><h3>Learning</h3><p>Build skills through practice</p></div><ul>{learningNavigation.map((item) => <li key={item.href}><Link href={item.href}>{item.label}</Link><small>{item.description}</small></li>)}</ul></section></div>
       </div> : null}
     </div>
     <NavigationLink href="/solutions/home-office-individuals">Individuals</NavigationLink>

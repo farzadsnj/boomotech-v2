@@ -4,11 +4,11 @@ Status: proposal requiring owner approval. No external alert destination was con
 
 ## Events
 
-The application emits structured, redacted events for rejected origins, authorization failures and rate-limit decisions. Before launch, approved Better Auth hooks must add failed-login, lockout, password-change, password-reset and administrator-factor-change events without recording credentials, tokens, cookies, request bodies or full personal data.
+The application emits structured, redacted events for rejected origins, authorization failures, authentication failures, account lockouts, dependency failures and rate-limit decisions. Authentication events contain a random event ID, endpoint, safe category and bounded attempt number; they do not contain the email address, username, identifier hash, password, cookie, token, request body or MFA material. Password-change, password-reset and administrator-factor-change audit events still require a reviewed implementation before launch.
 
 ## Proposed thresholds
 
-- Repeated authentication failures for one client source or identifier: warning; escalate when the approved A3 threshold is reached.
+- Authentication failures are retained as operational warnings; the `authentication_lockout` event is the aggregate escalation point after the approved A3 threshold is reached.
 - Repeated authorization failures or origin rejections: warning with a bounded source fingerprint.
 - Booking, request, email or AI rate-limit spikes: warning; paid-provider cost threshold: critical.
 - Administrator role or MFA changes: immediate critical notification.

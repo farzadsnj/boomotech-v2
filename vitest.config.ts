@@ -8,7 +8,10 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
-    hookTimeout: 30_000,
+    // PGlite-backed integration suites create isolated databases. Bounding the
+    // worker count avoids starving their setup hooks on high-core workstations.
+    maxWorkers: 8,
+    hookTimeout: 60_000,
     testTimeout: 20_000,
   },
 });

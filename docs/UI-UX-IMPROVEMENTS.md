@@ -24,7 +24,7 @@ a stable prompt, and the changing visual text is hidden from assistive technolog
 to avoid repeated announcements.
 
 The Resources navigation is now labelled **Resources & Learning** and separates
-blog posts, the future learning portal, the IT Health Check and FAQs. Pricing is
+blog posts, the Learning hub, the IT Health Check and FAQs. Pricing is
 a distinct primary navigation item. Mobile navigation exposes the same routes.
 
 Navigation underline animation is limited to top-level navigation links. Mega
@@ -50,11 +50,12 @@ step.
 
 ## Learning portal architecture
 
-`src/content/learning.ts` is the single typed source for learning categories and
-future portal stages. `/learning` clearly states that courses are not open and
-links visitors to current reviewed articles and services. Courses, lessons,
-quizzes and account progress are represented only as future structure. No
-learning management system or unavailable enrolment flow was added.
+`src/content/learning.ts` remains the typed discovery source. PTE Academic
+Reading and Writing is now the one available Learning item; other listed
+categories remain planned. `/learning/pte-academic` opens the distinct PTEpath
+shell rather than a marketing-template course page. It reuses the verified
+BoomoTech account and PostgreSQL learning records; no separate credential
+store, iframe or external-publication redirect is used.
 
 ## Pricing architecture
 

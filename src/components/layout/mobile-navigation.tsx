@@ -6,6 +6,7 @@ import { ArrowIcon } from "@/components/ui/arrow-icon";
 import { ChatBookingButton } from "./chat-booking-button";
 import { NavigationLink } from "./navigation-link";
 import { ArticleIcon } from "@/components/ui/article-icon";
+import { learningNavigation } from "@/content/learning";
 
 function AccountIcon() {
   return <svg aria-hidden="true" className="account-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6" /></svg>;
@@ -45,6 +46,7 @@ export function MobileNavigation({ shopEnabled = false }: { shopEnabled?: boolea
       </summary>
       <nav aria-label="Mobile primary">
         <NavigationLink href="/services"><span className="mobile-nav__link-label">Services</span><ArrowIcon diagonal /></NavigationLink>
+        <div className="mobile-nav__learning" aria-label="Learning"><strong>Learning</strong>{learningNavigation.map((item) => <NavigationLink href={item.href} key={item.href}><span className="mobile-nav__link-label">{item.label}</span><ArrowIcon diagonal /></NavigationLink>)}</div>
         <NavigationLink href="/solutions/home-office-individuals"><span className="mobile-nav__link-label">Help for individuals</span><ArrowIcon diagonal /></NavigationLink>
         <NavigationLink href="/solutions/small-business"><span className="mobile-nav__link-label">Help for businesses</span><ArrowIcon diagonal /></NavigationLink>
         <NavigationLink href="/pricing"><span className="mobile-nav__link-label">Pricing &amp; quotes</span><ArrowIcon diagonal /></NavigationLink>

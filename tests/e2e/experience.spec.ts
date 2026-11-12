@@ -9,9 +9,13 @@ async function fillContact(page: Page) {
 }
 
 async function fillProblem(page: Page, service = "/services/network-wifi", message = "Our office Wi-Fi is unreliable in two work areas.") {
+  await page.waitForLoadState("networkidle");
   await page.getByLabel(/Service required/).selectOption(service);
   await page.getByLabel(/Problem or requested work/).fill(message);
+  await expect(page.getByLabel(/Service required/)).toHaveValue(service);
+  await expect(page.getByLabel(/Problem or requested work/)).toHaveValue(message);
   await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByText("How can we contact you?", { exact: true })).toBeVisible();
 }
 
 async function reachReview(page: Page) {
@@ -31,6 +35,21 @@ test("header consultation action opens the full enquiry page", async ({ page }) 
   await page.goto("/"); const booking = page.getByRole("link", { name: "Request a consultation" }).first();
   await expect(booking).toHaveAttribute("href", "/booking"); await booking.click();
   await expect(page).toHaveURL(/\/booking$/); await expect(page.getByText("What do you need help with?", { exact: true })).toBeVisible();
+});
+
+test("customer login distinguishes a provider outage from verification without getting stuck", async ({ page }) => {
+  await page.route("**/api/auth/sign-in/email", (route) => route.fulfill({
+    status: 503,
+    contentType: "application/json",
+    body: '{"code":"AUTHENTICATION_TEMPORARILY_UNAVAILABLE","message":"Unavailable"}',
+  }));
+  await page.goto("/login");
+  await page.getByLabel("Email address").fill("fictional-customer@example.test");
+  await page.locator('input[name="password"]').fill("FictionalPassword9");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.locator(".auth-form__error[role='alert']")).toHaveText("Sign in is temporarily unavailable. Try again later.");
+  await expect(page.getByRole("button", { name: "Sign in" })).toBeEnabled();
 });
 
 test("service and pricing actions preserve enquiry context on the full page", async ({ page }) => {
@@ -70,7 +89,7 @@ test("visual catalogues, support resources and founder content are complete", as
   await page.goto("/services"); await expect(page.locator(".service-directory__card img")).toHaveCount(11); await expect(page.locator(".service-directory__group")).toHaveCount(4);
   await page.goto("/solutions"); await expect(page.locator(".catalogue-card__visual img")).toHaveCount(5);
   await page.goto("/support"); await expect(page.getByText("What should I never share?")).toBeVisible(); await expect(page.getByText("The exact safe error message")).toBeVisible();
-  await page.goto("/resources"); const resourceLinks = page.locator(".resource-feature, .resource-card"); await expect(resourceLinks).toHaveCount(10);
+  await page.goto("/resources"); const resourceLinks = page.locator(".resource-feature, .resource-card"); await expect(resourceLinks).toHaveCount(11);
   for (const href of await resourceLinks.evaluateAll((nodes) => nodes.map((node) => (node as HTMLAnchorElement).getAttribute("href")!))) expect((await request.get(href)).status()).toBe(200);
   await page.goto("/about"); await expect(page.getByRole("heading", { name: "Farzad Sanjarani" })).toBeVisible(); await expect(page.getByText(/Master of Information Technology in Software Development from QUT/)).toBeVisible();
 });
@@ -140,7 +159,7 @@ test("orbital diagrams support focus, dismissal and reduced motion", async ({ pa
 test("pricing and learning routes are clear, linked and honest", async ({ page }) => {
   await page.goto("/pricing"); await expect(page.getByRole("heading", { name: "Pricing and quote preparation" })).toBeVisible(); await expect(page.locator(".pricing-card")).toHaveCount(7); await expect(page.getByText("Request a scoped quote")).toBeVisible(); await expect(page.locator("main")).not.toContainText(/\$\s*\d|AUD\s*\d/);
   await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Pricing & quotes" })).toHaveAttribute("aria-current", "page");
-  await page.goto("/learning"); await expect(page.getByText("Courses are not open yet")).toBeVisible(); await expect(page.locator(".learning-grid article")).toHaveCount(7); await expect(page.getByRole("link", { name: "Read current articles" })).toHaveAttribute("href", "/blog");
+  await page.goto("/learning"); await expect(page.getByRole("heading", { name: "Learn, practise and build confidence." })).toBeVisible(); await expect(page.locator(".learning-grid article")).toHaveCount(8); await expect(page.getByRole("link", { name: "Explore PTE practice" }).first()).toHaveAttribute("href", "/learning/pte-academic");
 });
 
 test("service categories preselect an approved service", async ({ page }) => {
@@ -308,6 +327,21 @@ test("unknown routes return HTTP 404 and approved legacy paths redirect", async 
 test("reveals remain visible without JavaScript and reduced motion", async ({ browser }) => {
   const noJs = await browser.newContext({ javaScriptEnabled: false }); const noJsPage = await noJs.newPage(); await noJsPage.goto("/"); await expect(noJsPage.locator(".reveal").first()).toBeVisible(); await noJs.close();
   const reduced = await browser.newContext({ reducedMotion: "reduce" }); const reducedPage = await reduced.newPage(); await reducedPage.goto("/"); expect(await reducedPage.locator(".reveal").first().evaluate((node) => ({ opacity: getComputedStyle(node).opacity, transform: getComputedStyle(node).transform }))).toEqual({ opacity: "1", transform: "none" }); await reduced.close();
+});
+
+test("reveal enhancement uses the client lifecycle without hiding visible content", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+  await page.goto("/");
+  await expect(page.locator("html")).not.toHaveClass(/motion-enabled/);
+  const visibleStates = await page.locator(".reveal").evaluateAll((nodes) => nodes
+    .filter((node) => { const box = node.getBoundingClientRect(); return box.bottom >= 0 && box.top <= window.innerHeight; })
+    .map((node) => ({ opacity: getComputedStyle(node).opacity, pending: node.classList.contains("reveal-pending") })));
+  expect(visibleStates.every(({ opacity, pending }) => opacity === "1" && !pending)).toBe(true);
+  const finalReveal = page.locator(".reveal").last();
+  await finalReveal.scrollIntoViewIfNeeded();
+  await expect(finalReveal).toHaveClass(/is-visible/);
+  expect(errors.filter((message) => /script tag while rendering|hydration/i.test(message))).toEqual([]);
 });
 
 for (const viewport of [{ width: 320, height: 568 }, { width: 375, height: 812 }, { width: 390, height: 844 }, { width: 430, height: 932 }, { width: 768, height: 1024 }, { width: 1024, height: 768 }, { width: 1280, height: 800 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) test(`has no horizontal overflow at ${viewport.width}x${viewport.height}`, async ({ page }) => {

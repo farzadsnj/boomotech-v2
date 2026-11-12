@@ -13,6 +13,7 @@ import { getBetterAuthUrl, requireBetterAuthSecret, usesSecureAuthenticationCook
 import { persistentLoginLockout } from "./login-lockout";
 import { passwordLengthProtection } from "./password-protection";
 import { administratorMfaEnforcement } from "./admin-mfa";
+import { requireAuthenticationEmailDelivery } from "./email-delivery";
 
 const siteOrigin = getSiteUrl().origin;
 const authOrigin = getBetterAuthUrl().origin;
@@ -36,13 +37,11 @@ export const auth = betterAuth({
     autoSignIn: false,
     resetPasswordTokenExpiresIn: passwordResetTtlMinutes() * 60,
     revokeSessionsOnPasswordReset: true,
-    sendResetPassword: async ({ user, token }) => {
-      try {
-        await sendAccountPasswordResetEmail({ user: { email: user.email, name: user.name }, token });
-      } catch (error) {
-        const category = error instanceof Error && error.name.includes("Configuration") ? "configuration" : "delivery";
-        console.error(`Password reset email ${category} error. Check the server-only email settings and provider status.`);
-      }
+    sendResetPassword: async ({ user, token, url }) => {
+      await requireAuthenticationEmailDelivery("password-reset", async () => {
+        const callbackURL = new URL(url).searchParams.get("callbackURL") ?? undefined;
+        await sendAccountPasswordResetEmail({ user: { email: user.email, name: user.name }, token, callbackURL });
+      });
     },
     password: { hash: hashPassword, verify: verifyPassword },
   },
@@ -51,13 +50,11 @@ export const auth = betterAuth({
     sendOnSignIn: false,
     autoSignInAfterVerification: true,
     expiresIn: verificationTtlMinutes() * 60,
-    sendVerificationEmail: async ({ user, token }) => {
-      try {
-        await sendAccountVerificationEmail({ user: { id: user.id, email: user.email, name: user.name }, token });
-      } catch (error) {
-        const category = error instanceof Error && error.name.includes("Configuration") ? "configuration" : "delivery";
-        console.error(`Authentication email ${category} error. Check the server-only email settings and provider status.`);
-      }
+    sendVerificationEmail: async ({ user, token, url }) => {
+      await requireAuthenticationEmailDelivery("verification", async () => {
+        const callbackURL = new URL(url).searchParams.get("callbackURL") ?? undefined;
+        await sendAccountVerificationEmail({ user: { id: user.id, email: user.email, name: user.name }, token, callbackURL });
+      });
     },
   },
   verification: { storeIdentifier: "hashed" },

@@ -23,7 +23,9 @@ Resources, blog posts, FAQs and the IT Health Check remain available through mob
 - `/book` — Consultation options and preparation guidance linking to `/booking`
 - `/shop` — Curated product catalogue
 - `/resources` — Blog, guides, FAQs and downloads
-- `/learning` — Future learning portal structure; reviewed courses are not active yet
+- `/learning` — BoomoTech Learning hub; PTE Academic practice is available and other listed learning areas remain planned
+- `/learning/pte-academic` — PTEpath dashboard/guest preview with its distinct learning shell
+- `/learning/pte-academic/practice` — protected practice studio; related mistake, grammar, progress, plan and settings views use the same route namespace
 - `/pricing` — Service pricing approach and quote pathways without unapproved fixed rates
 - `/tools/it-health-check` — Local deterministic technology self-check
 - `/about`
@@ -129,6 +131,8 @@ Never invent case studies. An anonymised case study must still be factual and ap
 
 New customers verify their email before signing in. Forgot/reset password uses expiring, single-use links and revokes existing sessions after a successful reset. The protected customer dashboard shows account-linked requests, descriptions and conversations. The role-protected administrator area lists and filters all requests, provides a deep-linked response workflow and keeps internal notes private from customers. Accounts are not required for browsing or guest booking. Broader profile functions remain later work.
 
+PTEpath reuses this account and session. A validated `returnTo` intent may carry only `/learning/pte-academic` or one of its nested views through login, registration, verification, resend and recovery. External, protocol-relative, encoded and authentication-loop destinations are rejected. PTEpath progress is account-linked; it is not merged from a display name, email address, caller-supplied user ID or legacy anonymous cookie.
+
 ### Portal — later phase
 
 - `/account/profile`
@@ -176,6 +180,7 @@ Policies require owner/legal review before launch.
 | Scope a project | Service → Quote/discovery | Qualified lead |
 | Buy a product | Shop → Product → Checkout | Order |
 | Learn and build trust | Search/Blog → Article → Relevant service | Consultation/support |
+| Practise PTE Reading and Writing | Learning/PTEpath → BoomoTech account → onboarding → practice | Saved account-linked learning progress |
 | Existing customer needs help | Support/Portal → Request/status | Resolved request |
 
 ### Shared discovery and request context

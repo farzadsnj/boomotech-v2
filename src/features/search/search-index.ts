@@ -2,6 +2,7 @@ import { publishedArticles } from "@/content/blog";
 import { hubPages, infoPages } from "@/content/pages";
 import { services } from "@/content/services";
 import { solutions } from "@/content/solutions";
+import { learningNavigation } from "@/content/learning";
 
 export type SearchRecord = {
   path: string;
@@ -56,6 +57,7 @@ export const searchIndex: SearchRecord[] = [
     category: page.path === "/resources" ? "Resource" as const : page.kind === "support" ? "Support" as const : "Information" as const,
     body: join(page.metaDescription, page.cards?.flatMap((item) => [item.title, item.description]), page.sections?.flatMap((section) => [section.title, ...(section.description ? [section.description] : []), ...(section.items ?? [])]), page.faqs?.flatMap((faq) => [faq.question, faq.answer])),
   })),
+  ...learningNavigation.filter(({ href }) => href !== "/learning").map((item) => ({ path: item.href, title: item.label, description: item.description, category: "Resource" as const, aliases: ["learning", "pte", "pte academic", "reading practice", "writing practice", "persian pte"], body: "learning English reading writing practice exercises timers mistakes study plan Persian explanations" })),
 ];
 
 export function searchSite(query: string, limit = 8): SearchRecord[] {

@@ -7,6 +7,7 @@ import type { ZodError } from "zod";
 import { authClient } from "@/lib/auth/client";
 import { adminLoginSchema, loginSchema, registrationSchema } from "@/lib/auth/schemas";
 import { authenticationErrorCategory } from "@/lib/auth/client-error";
+import { authHref, validatedReturnPath } from "@/lib/auth/return-path";
 import { PasswordInput, PasswordRequirements } from "./password-input";
 
 type Mode = "register" | "login" | "admin";
@@ -16,7 +17,7 @@ function errorsFrom(error: ZodError): Errors {
   return Object.fromEntries(error.issues.map((issue) => [String(issue.path[0] ?? "form"), issue.message]));
 }
 
-export function AccountForm({ mode }: { mode: Mode }) {
+export function AccountForm({ mode, returnTo }: { mode: Mode; returnTo?: string }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<Errors>({});
@@ -24,6 +25,7 @@ export function AccountForm({ mode }: { mode: Mode }) {
   const [pending, setPending] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
+  const safeReturn = validatedReturnPath(returnTo);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,9 +45,9 @@ export function AccountForm({ mode }: { mode: Mode }) {
     try {
       if (mode === "register") {
         const parsed = registrationSchema.parse(values);
-        const result = await authClient.signUp.email({ name: parsed.name, email: parsed.email, password: parsed.password, callbackURL: "/dashboard?verified=true" });
+        const result = await authClient.signUp.email({ name: parsed.name, email: parsed.email, password: parsed.password, callbackURL: safeReturn ?? "/dashboard?verified=true" });
         if (result.error) throw new Error("registration");
-        router.push("/check-email");
+        router.push(authHref("/check-email", safeReturn));
       } else if (mode === "admin") {
         const parsed = adminLoginSchema.parse(values);
         const result = await authClient.signIn.username({ username: parsed.username, password: parsed.password });
@@ -69,7 +71,7 @@ export function AccountForm({ mode }: { mode: Mode }) {
         const result = await authClient.signIn.email({ email: parsed.email, password: parsed.password });
         if (result.error) {
           const category = authenticationErrorCategory(result.error);
-          if (category === "verification-required") { router.push("/check-email"); return; }
+          if (category === "verification-required") { router.push(authHref("/check-email", safeReturn)); return; }
           if (category === "rate-limited") { setFormError("Too many sign-in attempts. Wait before trying again."); return; }
           if (category === "unavailable") { setFormError("Sign in is temporarily unavailable. Try again later."); return; }
           throw new Error("login");
@@ -78,7 +80,7 @@ export function AccountForm({ mode }: { mode: Mode }) {
           router.push("/admin/mfa");
           return;
         }
-        router.push(result.data?.user.role === "admin" ? "/admin" : "/dashboard");
+        router.push(result.data?.user.role === "admin" ? "/admin" : safeReturn ?? "/dashboard");
       }
       router.refresh();
     } catch {
@@ -116,6 +118,6 @@ export function AccountForm({ mode }: { mode: Mode }) {
     {mode === "register" ? <><PasswordRequirements confirmation={confirmation} password={password} /><p className="auth-form__hint">By creating an account, you acknowledge the <Link href="/privacy">Privacy Policy</Link> and <Link href="/cookies">Cookies & browser storage</Link>.</p></> : null}
     {formError ? <p className="auth-form__error" role="alert">{formError}</p> : null}
     <button className="auth-submit" disabled={pending} type="submit">{pending ? "Please wait…" : mode === "register" ? "Create account" : "Sign in"}</button>
-    {mode === "register" ? <p className="auth-form__alternate">Already registered? <Link href="/login">Sign in</Link></p> : mode === "login" ? <><p className="auth-form__alternate"><Link href="/forgot-password">Forgot your password?</Link></p><p className="auth-form__alternate">New customer? <Link href="/register">Create an account</Link></p></> : null}
+    {mode === "register" ? <p className="auth-form__alternate">Already registered? <Link href={authHref("/login", safeReturn)}>Sign in</Link></p> : mode === "login" ? <><p className="auth-form__alternate"><Link href={authHref("/forgot-password", safeReturn)}>Forgot your password?</Link></p><p className="auth-form__alternate">New customer? <Link href={authHref("/register", safeReturn)}>Create an account</Link></p></> : <p className="auth-form__alternate"><Link href="/forgot-password">Forgot the administrator password?</Link> Resetting the password does not disable MFA.</p>}
   </form>;
 }

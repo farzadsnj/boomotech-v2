@@ -1,16 +1,34 @@
 import { toNextJsHandler } from "better-auth/next-js";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
+import { recordSecurityEvent } from "@/lib/security/events";
 
 const handlers = toNextJsHandler(auth);
+const signInPaths = new Set(["/api/auth/sign-in/email", "/api/auth/sign-in/username"]);
+
+function safeAuthCode(value: unknown) {
+  return typeof value === "string" && /^[A-Z0-9_]{1,64}$/.test(value) ? value : "UNCLASSIFIED";
+}
 
 export async function POST(request: Request) {
   try {
     const response = await handlers.POST(request);
-    if (response.status >= 500) console.error(`[authentication] category=provider-or-infrastructure-failure status=${response.status}`);
+    const route = new URL(request.url).pathname;
+    if (response.status === 429) {
+      recordSecurityEvent("rate_limit_hit", { route, control: "authentication" });
+    } else if (signInPaths.has(route) && response.status === 403) {
+      const payload = await response.clone().json().catch(() => null) as { code?: unknown } | null;
+      recordSecurityEvent("authentication_failed", { route, reason: safeAuthCode(payload?.code), status: response.status });
+    } else if (response.status >= 500) {
+      recordSecurityEvent("security_dependency_unavailable", { route, dependency: "authentication", status: response.status });
+    }
     return response;
   } catch (error) {
-    console.error(`[authentication] category=handler-failure type=${error instanceof Error ? error.name : "unknown"}`);
+    recordSecurityEvent("security_dependency_unavailable", {
+      route: new URL(request.url).pathname,
+      dependency: "authentication",
+      errorType: error instanceof Error ? error.name : "unknown",
+    });
     throw error;
   }
 }

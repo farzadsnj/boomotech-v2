@@ -30,7 +30,9 @@ describe("local Phase 1 content", () => {
     expect(intendedPublicRoutes).toContain("/tools/it-health-check");
     expect(intendedPublicRoutes).not.toContain("/privacy");
     expect(intendedPublicRoutes).not.toContain("/shop");
-    expect(intendedPublicRoutes).toHaveLength(1 + 2 + services.length + solutions.length + 9 + publishedArticles.length);
+    expect(intendedPublicRoutes).toContain("/learning/pte-academic");
+    expect(intendedPublicRoutes).not.toContain("/learning/pte-academic/practice");
+    expect(intendedPublicRoutes).toHaveLength(1 + 2 + services.length + solutions.length + 10 + publishedArticles.length);
     expect(allPages.every((page) => page.indexing === "public" || page.indexing === "noindex")).toBe(true);
     expect(allPages.filter((page) => page.indexing === "noindex").every((page) => !intendedPublicRoutes.includes(page.path))).toBe(true);
   });
@@ -85,7 +87,7 @@ describe("local Phase 1 content", () => {
     const resources = allPages.find(({ path }) => path === "/resources");
     const about = allPages.find(({ path }) => path === "/about");
     expect(support && "faqs" in support ? support.faqs : []).toHaveLength(10);
-    expect(resources && "resources" in resources ? resources.resources : []).toHaveLength(10);
+    expect(resources && "resources" in resources ? resources.resources : []).toHaveLength(11);
     expect(JSON.stringify(about)).toContain("Farzad Sanjarani");
     expect(JSON.stringify(about)).toContain("QUT");
     expect(JSON.stringify(allPages)).not.toMatch(/Marvin McKinney|Sophia Rodriguez/i);
@@ -94,7 +96,8 @@ describe("local Phase 1 content", () => {
   it("provides reviewed FAQ, learning and pricing structures without invented rates", () => {
     const faq = allPages.find(({ path }) => path === "/faq");
     expect(faq && "faqs" in faq ? faq.faqs : []).toHaveLength(15);
-    expect(learningCategories).toHaveLength(7);
+    expect(learningCategories).toHaveLength(8);
+    expect(learningCategories.filter(({ status }) => status === "available").map(({ title }) => title)).toEqual(["PTE Academic: Reading and Writing"]);
     expect(pricingOptions).toHaveLength(7);
     expect(pricingOptions.every((option) => option.pricingBasis.length > 20 && option.includes.length >= 3)).toBe(true);
     expect(JSON.stringify(pricingOptions)).not.toMatch(/\$\s*\d|AUD\s*\d|per hour|hourly rate/i);
